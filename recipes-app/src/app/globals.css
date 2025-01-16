@@ -1,0 +1,212 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --navbar-height: 4rem;
+  --footer-height: 3rem;
+  --primary-color: #228be6;
+  --primary-hover: #1c7ed6;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+  padding: 2rem 0;
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8));
+}
+
+/* Navbar Styles */
+.navbar {
+  height: var(--navbar-height);
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  background-color: light-dark(#fff, var(--mantine-color-dark-7));
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+}
+
+.navbar-content {
+  height: 100%;
+  padding: 0 1rem;
+  max-width: var(--mantine-container-size-lg);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
+  font-weight: 500;
+  transition: color 0.2s ease;
+  position: relative;
+}
+
+.nav-link:hover {
+  color: var(--primary-color);
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  bottom: -4px;
+  left: 0;
+  background-color: var(--primary-color);
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
+}
+
+.nav-link:hover::after {
+  transform: scaleX(1);
+}
+
+/* Recipe Card Styles */
+.recipe-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.recipe-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--mantine-shadow-lg);
+}
+
+.recipe-image {
+  aspect-ratio: 16/9;
+  object-fit: cover;
+}
+
+.recipe-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.recipe-actions {
+  margin-top: auto;
+}
+
+/* Footer Styles */
+.footer {
+  height: var(--footer-height);
+  border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  background-color: light-dark(#fff, var(--mantine-color-dark-7));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+[data-mantine-color-scheme='dark'] {
+  color-scheme: dark;
+}
+
+[data-mantine-color-scheme='light'] {
+  color-scheme: light;
+} 
+
+.mantine-Paper-root {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mantine-Paper-root:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--mantine-shadow-lg);
+}
+
+.mantine-TextInput-input,
+.mantine-Textarea-input,
+.mantine-Select-input {
+  transition: border-color 0.2s ease;
+}
+
+.mantine-TextInput-input:focus,
+.mantine-Textarea-input:focus,
+.mantine-Select-input:focus {
+  border-color: var(--primary-color);
+}
+
+/* Recipe Details Styles */
+.recipe-image {
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  width: 100%;
+}
+
+.mantine-List-item {
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  padding: 1rem;
+  border-radius: var(--mantine-radius-md);
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mantine-List-item:hover {
+  transform: translateX(4px);
+  box-shadow: var(--mantine-shadow-sm);
+}
+
+/* Loading States */
+.mantine-LoadingOverlay-root {
+  backdrop-filter: blur(2px);
+}
+
+.favorite-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+  z-index: 10;
+}
+
+.favorite-button:hover {
+  transform: scale(1.1);
+}
+
+[data-mantine-color-scheme='dark'] .favorite-button {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+  .mantine-Title-root {
+    font-size: 1.5rem;
+  }
+  
+  .mantine-Text-root {
+    font-size: 0.9rem;
+  }
+}
