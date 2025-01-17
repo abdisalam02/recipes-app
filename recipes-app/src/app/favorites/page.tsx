@@ -1,5 +1,3 @@
-// app/favorites/page.tsx
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -8,14 +6,14 @@ import {
   Text,
   Grid,
   Card,
-  Image,
+  Image, // MANTINE Image
   Badge,
   Button,
   Group,
   Stack,
   Center,
   Paper,
-  ActionIcon,
+  ActionIcon, // must import to avoid ReferenceError
 } from "@mantine/core";
 import { IconHeartFilled, IconHeartOff } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
@@ -37,15 +35,14 @@ interface Favorite {
 export default function FavoritesPage() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [loading, setLoading] = useState(true);
-  const userId = 1; // Fixed user ID since no authentication
 
   useEffect(() => {
     fetchFavorites();
-  }, [userId]);
+  }, []);
 
   const fetchFavorites = async () => {
     try {
-      const response = await fetch(`/api/favorites`);
+      const response = await fetch("/api/favorites");
       if (!response.ok) throw new Error("Failed to fetch favorites");
       const data: Favorite[] = await response.json();
       setFavorites(data);
@@ -60,7 +57,7 @@ export default function FavoritesPage() {
       setLoading(false);
     }
   };
-  
+
   const removeFavorite = async (recipeId: number) => {
     try {
       const response = await fetch("/api/favorites", {
@@ -69,7 +66,7 @@ export default function FavoritesPage() {
         body: JSON.stringify({ recipeId }),
       });
       if (response.ok) {
-        setFavorites(favorites.filter((fav) => fav.recipe.id !== recipeId));
+        setFavorites((prev) => prev.filter((fav) => fav.recipe.id !== recipeId));
         notifications.show({
           title: "Success",
           message: "Recipe removed from favorites",
@@ -102,7 +99,7 @@ export default function FavoritesPage() {
     return (
       <Container size="lg" py="xl">
         <Paper p="xl" withBorder radius="md" shadow="sm">
-          <Stack align="center" spacing="md">
+          <Stack align="center" gap="md">
             <IconHeartOff size={48} stroke={1.5} />
             <Text size="xl" fw={500}>No Favorite Recipes Yet</Text>
             <Text c="dimmed" ta="center">
@@ -119,7 +116,7 @@ export default function FavoritesPage() {
 
   return (
     <Container size="lg" py="xl">
-      <Stack spacing="xl">
+      <Stack gap="xl">
         <Text size="xl" fw={700} ta="center">
           Your Favorite Recipes
         </Text>
@@ -128,40 +125,33 @@ export default function FavoritesPage() {
           {favorites.map((favorite) => (
             <Grid.Col key={favorite.id} span={{ base: 12, sm: 6, md: 4 }}>
               <Card shadow="sm" p="lg" radius="md" withBorder>
-                <Card.Section style={{ position: 'relative' }}>
-                  <Image
-                    src={favorite.recipe.image}
-                    alt={favorite.recipe.title}
-                    height={160}
-                    fit="cover"
-                    withPlaceholder
-                    placeholder={
-                      <Image
-                        src="https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg"
-                        height={160}
-                        alt="Default Image"
-                        fit="cover"
-                      />
-                    }
-                  />
+                <Card.Section style={{ position: "relative" }}>
+                <Image
+  src={favorite.recipe.image}
+  alt={favorite.recipe.title}
+  height={160}
+  fit="cover"
+  // Removed withPlaceholder and placeholder props
+/>
+
                   <ActionIcon
                     variant="filled"
                     color="red"
                     size="lg"
-                    style={{ position: 'absolute', top: 10, right: 10 }}
+                    style={{ position: "absolute", top: 10, right: 10 }}
                     onClick={() => removeFavorite(favorite.recipe.id)}
-                    aria-label="Remove from Favorites"
                   >
                     <IconHeartFilled size={20} />
                   </ActionIcon>
                 </Card.Section>
-                <div style={{ padding: '16px' }}>
-                  <Group justify="space-between" mb="xs">
+                <div style={{ padding: "16px" }}>
+                  <Group  mb="xs">
                     <Text fw={500} size="lg">
                       {favorite.recipe.title}
                     </Text>
                     <Badge color="blue" variant="light">
-                      {favorite.recipe.category.charAt(0).toUpperCase() + favorite.recipe.category.slice(1)}
+                      {favorite.recipe.category.charAt(0).toUpperCase() +
+                        favorite.recipe.category.slice(1)}
                     </Badge>
                   </Group>
                   <Text size="sm" c="dimmed" mb="lg">

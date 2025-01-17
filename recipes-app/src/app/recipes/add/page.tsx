@@ -1,5 +1,3 @@
-// app/recipes/add/page.tsx
-
 "use client";
 
 import { useState } from "react";
@@ -19,10 +17,14 @@ import {
   NumberInput,
   Group,
   ActionIcon,
+  Box,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconChefHat, IconPlus, IconMinus } from "@tabler/icons-react";
 
+//
+// 1. We define the Category, Ingredient, Step, FormData, and JsonData interfaces
+//
 const categories = [
   "Breakfast",
   "Lunch",
@@ -51,7 +53,7 @@ interface FormData {
   ingredients: Ingredient[];
   steps: Step[];
   image?: string; // Optional
-  portion: number; // New field
+  portion: number;
 }
 
 interface JsonData {
@@ -59,18 +61,21 @@ interface JsonData {
   category: string;
   description: string;
   image?: string;
-  portion: number; // New field
+  portion: number;
   ingredients: Array<{ quantity: number; unit: string; name: string }>;
   steps: Array<{ order?: number; description: string }>;
 }
 
+//
+// 2. The AddRecipePage component
+//
 export default function AddRecipePage() {
   const [activeTab, setActiveTab] = useState<string>("form");
   const [formData, setFormData] = useState<FormData>({
     title: "",
     category: "",
     description: "",
-    ingredients: [{ quantity: 1, unit: "units", name: "Unknown Ingredient" }], // Valid defaults
+    ingredients: [{ quantity: 1, unit: "units", name: "Unknown Ingredient" }],
     steps: [{ description: "" }],
     image: "",
     portion: 1,
@@ -78,51 +83,71 @@ export default function AddRecipePage() {
   const [jsonData, setJsonData] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
-  // Handlers for dynamic ingredients and steps
+  //
+  // 3. Utility Handlers for Ingredients
+  //
   const handleAddIngredient = () => {
-    setFormData({
-      ...formData,
-      ingredients: [...formData.ingredients, { quantity: 1, unit: "units", name: "" }],
-    });
+    // Append a new default ingredient to the array
+    setFormData((prev) => ({
+      ...prev,
+      ingredients: [...prev.ingredients, { quantity: 1, unit: "units", name: "" }],
+    }));
   };
 
   const handleRemoveIngredient = (index: number) => {
-    const updatedIngredients = formData.ingredients.filter((_, i) => i !== index);
-    setFormData({ ...formData, ingredients: updatedIngredients });
+    // Remove ingredient at index
+    setFormData((prev) => ({
+      ...prev,
+      ingredients: prev.ingredients.filter((_, i) => i !== index),
+    }));
   };
 
   const handleIngredientChange = (
     index: number,
     field: keyof Ingredient,
-    value: string | number
+    value: number | string
   ) => {
-    console.log(`Updating ingredient ${index} - ${field}:`, value);
-    const updatedIngredients = formData.ingredients.map((ing, i) =>
-      i === index ? { ...ing, [field]: value } : ing
-    );
-    setFormData({ ...formData, ingredients: updatedIngredients });
-  };
-
-  const handleAddStep = () => {
-    setFormData({
-      ...formData,
-      steps: [...formData.steps, { description: "" }],
+    setFormData((prev) => {
+      const updated = [...prev.ingredients];
+      // Ingredient at index => update field
+      if (typeof value === "number" && field === "quantity") {
+        updated[index].quantity = value;
+      } else if (typeof value === "string") {
+        // unit or name
+        (updated[index] as any)[field] = value;
+      }
+      return { ...prev, ingredients: updated };
     });
   };
 
+  //
+  // 4. Utility Handlers for Steps
+  //
+  const handleAddStep = () => {
+    setFormData((prev) => ({
+      ...prev,
+      steps: [...prev.steps, { description: "" }],
+    }));
+  };
+
   const handleRemoveStep = (index: number) => {
-    const updatedSteps = formData.steps.filter((_, i) => i !== index);
-    setFormData({ ...formData, steps: updatedSteps });
+    setFormData((prev) => ({
+      ...prev,
+      steps: prev.steps.filter((_, i) => i !== index),
+    }));
   };
 
   const handleStepChange = (index: number, value: string) => {
-    const updatedSteps = formData.steps.map((step, i) =>
-      i === index ? { ...step, description: value } : step
-    );
-    setFormData({ ...formData, steps: updatedSteps });
+    setFormData((prev) => {
+      const updated = [...prev.steps];
+      updated[index].description = value;
+      return { ...prev, steps: updated };
+    });
   };
 
-  // Helper function to check form validity
+  //
+  // 5. Basic Form Validation Check
+  //
   const isFormValid = () => {
     if (
       !formData.title ||
@@ -138,33 +163,54 @@ export default function AddRecipePage() {
     return true;
   };
 
+  //
+  // 6. Fetch Default Image Using Recipe Title
+  //
+  const fetchDefaultImage = async () => {
+    if (!formData.title.trim()) {
+      notifications.show({
+        title: "Error",
+        message: "Please provide a recipe title before fetching an image.",
+        color: "red",
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await fetch(
+        `/api/fetch-default-image?query=${encodeURIComponent(formData.title)}`
+      );
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to fetch default image");
+      }
+      const data = await res.json();
+      setFormData({ ...formData, image: data.imageUrl });
+      notifications.show({
+        title: "Image Fetched",
+        message: "A default image has been fetched via Google!",
+        color: "green",
+      });
+    } catch (error: any) {
+      notifications.show({
+        title: "Error",
+        message: error.message || "Failed to fetch default image.",
+        color: "red",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  //
+  // 7. Submitting with Manual Form
+  //
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      console.log("Form Data Before Validation:", formData);
-
-      // Validate ingredients
-      for (const [index, ing] of formData.ingredients.entries()) {
-        if (ing.quantity <= 0) {
-          throw new Error(`Ingredient ${index + 1}: Quantity must be greater than zero.`);
-        }
-        if (!ing.unit.trim()) {
-          throw new Error(`Ingredient ${index + 1}: Unit is required.`);
-        }
-        if (!ing.name.trim()) {
-          throw new Error(`Ingredient ${index + 1}: Name is required.`);
-        }
-      }
-
-      // Validate steps
-      for (const [index, step] of formData.steps.entries()) {
-        if (!step.description.trim()) {
-          throw new Error(`Step ${index + 1}: Description is required.`);
-        }
-      }
-
       const payload = {
         title: formData.title,
         category: formData.category,
@@ -174,8 +220,6 @@ export default function AddRecipePage() {
         steps: formData.steps,
         image: formData.image || undefined,
       };
-
-      console.log("Sending data:", payload); // Debugging
 
       const response = await fetch("/api/recipes", {
         method: "POST",
@@ -194,7 +238,9 @@ export default function AddRecipePage() {
           title: "",
           category: "",
           description: "",
-          ingredients: [{ quantity: 1, unit: "units", name: "Unknown Ingredient" }],
+          ingredients: [
+            { quantity: 1, unit: "units", name: "Unknown Ingredient" },
+          ],
           steps: [{ description: "" }],
           image: "",
           portion: 1,
@@ -204,7 +250,6 @@ export default function AddRecipePage() {
         throw new Error(errorData.error || "Failed to add recipe");
       }
     } catch (error: any) {
-      console.error("Error adding recipe:", error);
       notifications.show({
         title: "Error",
         message: error.message || "Failed to add recipe. Please try again.",
@@ -215,6 +260,9 @@ export default function AddRecipePage() {
     }
   };
 
+  //
+  // 8. Submitting with JSON
+  //
   const handleJsonSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -222,58 +270,11 @@ export default function AddRecipePage() {
     try {
       const parsedData: JsonData = JSON.parse(jsonData);
 
-      // Basic validation
-      const { title, category, description, ingredients, steps, image, portion } = parsedData;
-      if (
-        !title ||
-        !category ||
-        !description ||
-        !ingredients ||
-        !steps ||
-        !Array.isArray(ingredients) ||
-        !Array.isArray(steps)
-      ) {
-        throw new Error("Invalid JSON format. Please check your data.");
-      }
-
-      // Assign order to steps if not present
-      const formattedSteps = steps.map((step, index) => ({
-        order: step.order || index + 1,
-        description: step.description,
-      }));
-
-      // Validate ingredients
-      for (const ing of ingredients) {
-        if (ing.quantity <= 0 || !ing.unit.trim() || !ing.name.trim()) {
-          throw new Error("Please provide valid ingredient details in JSON.");
-        }
-      }
-
-      // Validate steps
-      for (const step of formattedSteps) {
-        if (!step.description.trim()) {
-          throw new Error("Please provide descriptions for all steps in JSON.");
-        }
-      }
-
-      const payload = {
-        title,
-        category,
-        description,
-        portion: portion || 1,
-        ingredients,
-        steps: formattedSteps,
-        image: image || undefined,
-      };
-
-      console.log("Sending JSON data:", payload); // Debugging
-
       const response = await fetch("/api/recipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(parsedData),
       });
-
       if (response.ok) {
         notifications.show({
           title: "Success",
@@ -286,7 +287,6 @@ export default function AddRecipePage() {
         throw new Error(errorData.error || "Failed to add recipe via JSON");
       }
     } catch (error: any) {
-      console.error("Error adding recipe via JSON:", error);
       notifications.show({
         title: "Error",
         message:
@@ -299,30 +299,9 @@ export default function AddRecipePage() {
     }
   };
 
-  const fetchDefaultImage = async () => {
-    try {
-      const res = await fetch(`/api/fetch-default-image?category=${encodeURIComponent(formData.category)}`);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to fetch default image");
-      }
-      const data = await res.json();
-      setFormData({ ...formData, image: data.imageUrl });
-      notifications.show({
-        title: "Image Fetched",
-        message: "A default image has been fetched for your recipe.",
-        color: "green",
-      });
-    } catch (error: any) {
-      console.error("Error fetching default image:", error);
-      notifications.show({
-        title: "Error",
-        message: error.message || "Failed to fetch default image.",
-        color: "red",
-      });
-    }
-  };
-
+  //
+  // 9. Rendering the Component
+  //
   return (
     <Container size="sm" py="xl">
       <Paper withBorder shadow="md" p={30} radius="md" className="relative">
@@ -331,8 +310,7 @@ export default function AddRecipePage() {
           zIndex={1000}
           overlayProps={{ radius: "sm", blur: 2 }}
         />
-
-        <Stack align="center" mb="md">
+        <Stack align="center" mb="md" gap="md">
           <IconChefHat size={48} stroke={1.5} />
           <Title order={2}>Add New Recipe</Title>
           <Text color="dimmed" size="sm">
@@ -340,121 +318,165 @@ export default function AddRecipePage() {
           </Text>
         </Stack>
 
-        <Tabs value={activeTab} onChange={setActiveTab}>
+        <Tabs
+          value={activeTab}
+          onChange={(value: string | null) => setActiveTab(value ?? "form")}
+        >
           <Tabs.List grow>
             <Tabs.Tab value="form">Form Input</Tabs.Tab>
             <Tabs.Tab value="json">JSON Input</Tabs.Tab>
           </Tabs.List>
 
+          {/* Form Input Panel */}
           <Tabs.Panel value="form" pt="md">
             <form onSubmit={handleFormSubmit}>
               <Stack gap="md">
+                {/* Title Field */}
                 <TextInput
-                  name="title"
                   label="Recipe Title"
-                  placeholder="Enter recipe title"
                   required
                   value={formData.title}
                   onChange={(e) =>
                     setFormData({ ...formData, title: e.target.value })
                   }
+                  radius="xl"
+                  size="md"
                 />
 
+                {/* Category Field */}
                 <Select
-                  name="category"
                   label="Category"
-                  placeholder="Select a category"
                   data={categories}
                   required
                   value={formData.category}
                   onChange={(value) =>
                     setFormData({ ...formData, category: value || "" })
                   }
+                  radius="xl"
+                  size="md"
                 />
 
+                {/* Description Field */}
                 <Textarea
-                  name="description"
                   label="Description"
-                  placeholder="Describe your recipe"
-                  minRows={3}
                   required
+                  minRows={3}
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
+                  radius="xl"
+                  size="md"
                 />
 
+                {/* Image Field */}
                 <TextInput
-                  name="image"
                   label="Image URL (optional)"
-                  placeholder="Enter image URL"
                   value={formData.image}
                   onChange={(e) =>
                     setFormData({ ...formData, image: e.target.value })
                   }
+                  radius="xl"
+                  size="md"
                 />
 
-                <Button variant="outline" color="blue" onClick={fetchDefaultImage}>
-                  Fetch Default Image
+                {/* Fetch Default Image Button */}
+                <Button
+                  variant="outline"
+                  color="blue"
+                  onClick={fetchDefaultImage}
+                  radius="xl"
+                  size="md"
+                >
+                  Fetch Default Image (Google)
                 </Button>
 
-                <NumberInput
-                  name="portion"
-                  label="Portions"
-                  placeholder="Enter number of portions"
-                  min={1}
-                  required
-                  value={formData.portion}
-                  onChange={(value) =>
-                    setFormData({ ...formData, portion: value || 1 })
-                  }
-                />
+                {/* Portions Field */}
+                <Group align="center">
+                  <Text size="sm">Portions:</Text>
+                  <NumberInput
+  label="Portions"
+  min={1}
+  required
+  value={formData.portion}
+  onChange={(value: string | number) => {
+    if (typeof value === "number") {
+      setFormData({ ...formData, portion: value });
+    } else {
+      // Handle cases where value is a string (e.g., empty input)
+      setFormData({ ...formData, portion: 1 });
+    }
+  }}
+  radius="xl"
+  size="md"
+/>
+
+                </Group>
 
                 {/* Ingredients Section */}
-                <Stack spacing="sm">
-                  <Group position="apart" align="flex-end">
-                    <Text size="sm" weight={500}>
-                      Ingredients
-                    </Text>
-                    <ActionIcon color="green" onClick={handleAddIngredient}>
+                <Stack gap="sm">
+                  <Group align="flex-end">
+                    <Text size="sm">Ingredients</Text>
+                    <ActionIcon
+                      color="green"
+                      onClick={handleAddIngredient}
+                      radius="xl"
+                      size="lg"
+                      variant="filled"
+                      aria-label="Add Ingredient"
+                    >
                       <IconPlus size={16} />
                     </ActionIcon>
                   </Group>
+
                   {formData.ingredients.map((ing, index) => (
                     <Group key={index} grow>
-                      <NumberInput
-                        label="Quantity"
-                        placeholder="e.g., 2"
-                        value={ing.quantity}
-                        onChange={(value) =>
-                          handleIngredientChange(index, "quantity", value || 0)
-                        }
-                        min={0.1} // Prevent zero or negative values
-                        step={0.1}
-                        required
-                      />
+                     <NumberInput
+  label="Quantity"
+  value={ing.quantity}
+  min={0.1}
+  step={0.1}
+  required
+  onChange={(value: string | number) => {
+    if (typeof value === "number") {
+      handleIngredientChange(index, "quantity", value);
+    } else {
+      // Handle cases where value is a string (e.g., empty input)
+      handleIngredientChange(index, "quantity", 0);
+    }
+  }}
+  radius="xl"
+  size="md"
+/>
+
                       <TextInput
                         label="Unit"
-                        placeholder="e.g., cups, grams"
                         value={ing.unit}
+                        required
                         onChange={(e) =>
                           handleIngredientChange(index, "unit", e.target.value)
                         }
-                        required
+                        radius="xl"
+                        size="md"
                       />
                       <TextInput
                         label="Ingredient"
-                        placeholder="e.g., flour, sugar"
                         value={ing.name}
+                        required
                         onChange={(e) =>
                           handleIngredientChange(index, "name", e.target.value)
                         }
-                        required
+                        radius="xl"
+                        size="md"
                       />
                       {formData.ingredients.length > 1 && (
                         <ActionIcon
                           color="red"
                           onClick={() => handleRemoveIngredient(index)}
+                          radius="xl"
+                          size="lg"
+                          variant="filled"
+                          aria-label="Remove Ingredient"
                         >
                           <IconMinus size={16} />
                         </ActionIcon>
@@ -464,37 +486,47 @@ export default function AddRecipePage() {
                 </Stack>
 
                 {/* Steps Section */}
-                <Stack spacing="sm">
-                  <Group position="apart" align="flex-end">
-                    <Text size="sm" weight={500}>
-                      Steps
-                    </Text>
-                    <ActionIcon color="green" onClick={handleAddStep}>
+                <Stack gap="sm">
+                  <Group align="flex-end">
+                    <Text size="sm">Steps</Text>
+                    <ActionIcon
+                      color="green"
+                      onClick={handleAddStep}
+                      radius="xl"
+                      size="lg"
+                      variant="filled"
+                      aria-label="Add Step"
+                    >
                       <IconPlus size={16} />
                     </ActionIcon>
                   </Group>
+
                   {formData.steps.map((step, index) => (
                     <Group key={index} grow align="flex-end">
                       <NumberInput
                         label="Order"
-                        placeholder="e.g., 1"
                         value={step.order || index + 1}
                         readOnly
+                        radius="xl"
+                        size="md"
                       />
                       <Textarea
                         label="Description"
-                        placeholder="Describe this step"
                         minRows={2}
-                        value={step.description}
-                        onChange={(e) =>
-                          handleStepChange(index, e.target.value)
-                        }
                         required
+                        value={step.description}
+                        onChange={(e) => handleStepChange(index, e.target.value)}
+                        radius="xl"
+                        size="md"
                       />
                       {formData.steps.length > 1 && (
                         <ActionIcon
                           color="red"
                           onClick={() => handleRemoveStep(index)}
+                          radius="xl"
+                          size="lg"
+                          variant="filled"
+                          aria-label="Remove Step"
                         >
                           <IconMinus size={16} />
                         </ActionIcon>
@@ -507,7 +539,9 @@ export default function AddRecipePage() {
                   type="submit"
                   fullWidth
                   size="md"
-                  disabled={!isFormValid()} // Disable if form is invalid
+                  disabled={!isFormValid()}
+                  radius="xl"
+                  color="blue"
                 >
                   Add Recipe
                 </Button>
@@ -515,17 +549,13 @@ export default function AddRecipePage() {
             </form>
           </Tabs.Panel>
 
+          {/* JSON Panel */}
           <Tabs.Panel value="json" pt="md">
             <form onSubmit={handleJsonSubmit}>
               <Stack gap="md">
                 <Textarea
                   name="jsonData"
                   label="Recipe JSON"
-                  description={
-                    <Text size="sm" color="dimmed" component="span">
-                      Paste your recipe in JSON format. Ensure it follows the structure shown in the example below.
-                    </Text>
-                  }
                   placeholder={`{
   "title": "Chocolate Cake",
   "category": "dessert",
@@ -534,38 +564,28 @@ export default function AddRecipePage() {
   "portion": 8,
   "ingredients": [
     { "quantity": 2, "unit": "cups", "name": "flour" },
-    { "quantity": 1.5, "unit": "cups", "name": "sugar" },
-    { "quantity": 0.75, "unit": "cups", "name": "cocoa powder" },
-    { "quantity": 2, "unit": "teaspoons", "name": "baking powder" },
-    { "quantity": 1.5, "unit": "teaspoons", "name": "baking soda" },
-    { "quantity": 1, "unit": "teaspoon", "name": "salt" },
-    { "quantity": 2, "unit": "units", "name": "eggs" },
-    { "quantity": 1, "unit": "cup", "name": "milk" },
-    { "quantity": 0.5, "unit": "cup", "name": "vegetable oil" },
-    { "quantity": 2, "unit": "teaspoons", "name": "vanilla extract" }
+    { "quantity": 1.5, "unit": "cups", "name": "sugar" }
   ],
   "steps": [
     { "order": 1, "description": "Preheat oven to 350°F (175°C)." },
-    { "order": 2, "description": "Grease and flour two 9-inch cake pans." },
-    { "order": 3, "description": "In a large bowl, stir together the dry ingredients." },
-    { "order": 4, "description": "Add eggs, milk, oil, and vanilla; beat for 2 minutes on medium speed." },
-    { "order": 5, "description": "Pour into prepared pans." },
-    { "order": 6, "description": "Bake for 30-35 minutes or until a toothpick comes out clean." },
-    { "order": 7, "description": "Cool for 10 minutes; remove from pans to wire racks." },
-    { "order": 8, "description": "Cool completely before frosting." }
+    { "order": 2, "description": "Mix all dry ingredients." }
   ]
 }`}
                   minRows={10}
                   required
                   value={jsonData}
                   onChange={(e) => setJsonData(e.target.value)}
+                  radius="xl"
+                  size="md"
                 />
 
                 <Button
                   type="submit"
                   fullWidth
                   size="md"
-                  disabled={!jsonData.trim()} // Disable if JSON is empty
+                  disabled={!jsonData.trim()}
+                  radius="xl"
+                  color="blue"
                 >
                   Add Recipe via JSON
                 </Button>
@@ -579,25 +599,11 @@ export default function AddRecipePage() {
   "portion": 8,
   "ingredients": [
     { "quantity": 2, "unit": "cups", "name": "flour" },
-    { "quantity": 1.5, "unit": "cups", "name": "sugar" },
-    { "quantity": 0.75, "unit": "cups", "name": "cocoa powder" },
-    { "quantity": 2, "unit": "teaspoons", "name": "baking powder" },
-    { "quantity": 1.5, "unit": "teaspoons", "name": "baking soda" },
-    { "quantity": 1, "unit": "teaspoon", "name": "salt" },
-    { "quantity": 2, "unit": "units", "name": "eggs" },
-    { "quantity": 1, "unit": "cup", "name": "milk" },
-    { "quantity": 0.5, "unit": "cup", "name": "vegetable oil" },
-    { "quantity": 2, "unit": "teaspoons", "name": "vanilla extract" }
+    { "quantity": 1.5, "unit": "cups", "name": "sugar" }
   ],
   "steps": [
     { "order": 1, "description": "Preheat oven to 350°F (175°C)." },
-    { "order": 2, "description": "Grease and flour two 9-inch cake pans." },
-    { "order": 3, "description": "In a large bowl, stir together the dry ingredients." },
-    { "order": 4, "description": "Add eggs, milk, oil, and vanilla; beat for 2 minutes on medium speed." },
-    { "order": 5, "description": "Pour into prepared pans." },
-    { "order": 6, "description": "Bake for 30-35 minutes or until a toothpick comes out clean." },
-    { "order": 7, "description": "Cool for 10 minutes; remove from pans to wire racks." },
-    { "order": 8, "description": "Cool completely before frosting." }
+    { "order": 2, "description": "Mix all dry ingredients." }
   ]
 }`}
                 </Code>

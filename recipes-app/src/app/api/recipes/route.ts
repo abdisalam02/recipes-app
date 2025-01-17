@@ -2,7 +2,7 @@
 
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
-import { fetchRandomImage } from "../../../../lib/pexels";
+import { fetchGoogleImages } from "../../../../lib/googleSearch";
 
 export async function POST(request: Request) {
   try {
@@ -16,9 +16,11 @@ export async function POST(request: Request) {
       );
     }
 
+    // If user provided an image, use it. Otherwise fetch from Google using the title
     let imageUrl = image;
     if (!imageUrl || imageUrl.trim() === "") {
-      imageUrl = await fetchRandomImage(category); // Fetch image based on category
+      const images = await fetchGoogleImages(title, 1); // search by title
+      imageUrl = images && images.length > 0 ? images[0] : "";
     }
 
     const recipe = await prisma.recipe.create({

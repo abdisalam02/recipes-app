@@ -1,11 +1,9 @@
-// app/recipes/[id]/page.tsx
-
 "use client";
 
 import {
   Container,
   Title,
-  Image,
+  Image, // Mantine Image
   Text,
   Badge,
   Group,
@@ -14,11 +12,12 @@ import {
   ThemeIcon,
   Skeleton,
   NumberInput,
+  ActionIcon,
+  Button,
 } from "@mantine/core";
 import { IconCheck, IconPlus, IconMinus } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { notifications } from "@mantine/notifications";
 
 interface Ingredient {
   id: number;
@@ -56,7 +55,6 @@ export default function RecipeDetailPage() {
 
   useEffect(() => {
     if (id) {
-      // Fetch recipe details
       fetch(`/api/recipes/${id}`)
         .then((res) => {
           if (!res.ok) {
@@ -71,7 +69,7 @@ export default function RecipeDetailPage() {
           setCurrentPortion(data.portion);
           setLoading(false);
         })
-        .catch((err) => {
+        .catch((err: any) => {
           console.error("Error fetching recipe:", err);
           setError(err.message);
           setLoading(false);
@@ -79,24 +77,22 @@ export default function RecipeDetailPage() {
     }
   }, [id]);
 
-  // Function to calculate scaled quantity
   const calculateScaledQuantity = (quantity: number): number => {
     if (!recipe) return quantity;
     const scale = currentPortion / recipe.portion;
     return quantity * scale;
   };
 
-  // Function to format quantity
   const formatQuantity = (quantity: number): string => {
-    return quantity % 1 === 0 ? quantity.toString() : quantity.toFixed(2);
+    return Number.isInteger(quantity) ? String(quantity) : quantity.toFixed(2);
   };
 
   if (loading) {
     return (
       <Container size="md" py="xl">
-        <Title align="center" mb="xl">
-          Loading...
-        </Title>
+        <Group align="center" mb="xl">
+          <Title order={2}>Loading...</Title>
+        </Group>
         <Skeleton height={300} radius="md" mb="md" />
         <Skeleton height={40} radius="md" mb="md" />
         <Skeleton height={20} mb="sm" />
@@ -109,46 +105,56 @@ export default function RecipeDetailPage() {
   if (error || !recipe) {
     return (
       <Container size="md" py="xl">
-        <Title align="center" mb="xl">
-          {error ? "Error" : "Recipe Not Found"}
-        </Title>
-        <Text align="center">
-          {error || "The recipe you are looking for does not exist."}
-        </Text>
+        <Group align="center" mb="xl">
+          <Title order={2}>{error ? "Error" : "Recipe Not Found"}</Title>
+        </Group>
+        <Group align="center">
+          <Text>{error || "The recipe you are looking for does not exist."}</Text>
+        </Group>
       </Container>
     );
   }
 
   return (
     <Container size="md" py="xl">
-      <Image src={recipe.image} height={300} alt={recipe.title} radius="md" />
+      <Image
+        src={recipe.image}
+        height={300}
+        alt={recipe.title}
+        radius="md"
+        mb="md"
+      />
 
-      <Group position="apart" style={{ marginTop: 20 }}>
+      <Group justify="apart" mb="md">
         <Title order={2}>{recipe.title}</Title>
         <Badge color="pink" variant="light">
           {recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)}
         </Badge>
       </Group>
 
-      <Text size="sm" color="dimmed" mt="sm">
+      <Text size="sm" color="dimmed" mb="md">
         Base Portions: {recipe.portion}
       </Text>
 
-      {/* Portion Adjustment */}
-      <Group spacing="xs" align="center" mt="md">
-        <Text size="sm" weight={500}>
-          Adjust Portions:
-        </Text>
+   
+      <Group gap="xs" align="center" mb="md">
+        <Text size="sm">Adjust Portions:</Text>
         <NumberInput
           value={currentPortion}
-          onChange={(value) => setCurrentPortion(value || 1)}
+          onChange={(value) => {
+            if (typeof value === "number") {
+              setCurrentPortion(value);
+            } else {
+              setCurrentPortion(1);
+            }
+          }}
           min={1}
           step={1}
           hideControls
-          styles={(theme) => ({
-            input: { width: 60, textAlign: "center" },
-          })}
+          styles={{ input: { width: 60, textAlign: "center" } }}
         />
+        {/* Optional: Uncomment below to add +/- buttons for adjusting portions */}
+        {/* 
         <ActionIcon
           variant="light"
           color="blue"
@@ -160,21 +166,22 @@ export default function RecipeDetailPage() {
         <ActionIcon
           variant="light"
           color="blue"
-          onClick={() =>
-            setCurrentPortion((prev) => (prev > 1 ? prev - 1 : 1))
-          }
+          onClick={() => setCurrentPortion((prev) => (prev > 1 ? prev - 1 : 1))}
           aria-label="Decrease Portions"
         >
           <IconMinus size={16} />
         </ActionIcon>
+        */}
       </Group>
 
-      <Text size="lg" mt="md">
+      <Text size="lg" mb="md">
         {recipe.description}
       </Text>
 
-      <Stack spacing="sm" mt="md">
-        <Title order={4}>Ingredients</Title>
+      <Stack gap="sm" mb="md">
+        <Group align="center" mb="sm">
+          <Title order={4}>Ingredients</Title>
+        </Group>
         <List
           spacing="xs"
           size="sm"
@@ -186,15 +193,16 @@ export default function RecipeDetailPage() {
         >
           {recipe.ingredients.map((ing) => (
             <List.Item key={ing.id}>
-              {formatQuantity(calculateScaledQuantity(ing.quantity))} {ing.unit}{" "}
-              {ing.name}
+              {formatQuantity(calculateScaledQuantity(ing.quantity))} {ing.unit} {ing.name}
             </List.Item>
           ))}
         </List>
       </Stack>
 
-      <Stack spacing="sm" mt="md">
-        <Title order={4}>Steps</Title>
+      <Stack gap="sm">
+        <Group align="center" mb="sm">
+          <Title order={4}>Steps</Title>
+        </Group>
         <List
           spacing="xs"
           size="sm"
@@ -204,7 +212,7 @@ export default function RecipeDetailPage() {
             </ThemeIcon>
           }
         >
-          {recipe.steps
+          {[...recipe.steps]
             .sort((a, b) => a.order - b.order)
             .map((step) => (
               <List.Item key={step.id}>

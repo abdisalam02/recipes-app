@@ -1,4 +1,3 @@
-// /app/layout.tsx (Assuming this is your RootLayout)
 "use client";
 
 import { MantineProvider, createTheme, Button } from "@mantine/core";
@@ -54,10 +53,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <MantineProvider 
-          theme={{
-            ...theme,
-            colorScheme,
-          }}
+          theme={theme} // Pass theme separately
+          colorScheme={colorScheme} // Pass colorScheme as a separate prop
+          withGlobalStyles
+          withNormalizeCSS
         >
           <nav className="navbar">
             <div className="navbar-content">
