@@ -83,7 +83,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </main>
           <footer className="footer">
-            <p>&copy; {new Date().getFullYear()} Recipes App. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Recipes App. All rights reserved.hihi</p>
           </footer>
         </MantineProvider>
       </body>
