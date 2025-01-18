@@ -6,7 +6,7 @@ import prisma from "../../../../../lib/prisma";
 // 1) GET: Fetch a single recipe by ID
 export async function GET(
   request: Request,
-  { params, searchParams: _searchParams }: { params: { id: string }; searchParams: URLSearchParams }
+  { params }: { params: { id: string } }
 ) {
   const { id } = params;
 
