@@ -1,9 +1,11 @@
+// src/pages/recipeDetailPage.tsx
+
 "use client";
 
 import {
   Container,
   Title,
-  Image, // Mantine Image
+  Image,
   Text,
   Badge,
   Group,
@@ -69,9 +71,14 @@ export default function RecipeDetailPage() {
           setCurrentPortion(data.portion);
           setLoading(false);
         })
-        .catch((err: any) => {
-          console.error("Error fetching recipe:", err);
-          setError(err.message);
+        .catch((err: unknown) => {
+          if (err instanceof Error) {
+            console.error("Error fetching recipe:", err.message);
+            setError(err.message);
+          } else {
+            console.error("Unknown error fetching recipe.");
+            setError("An unknown error occurred.");
+          }
           setLoading(false);
         });
     }
@@ -136,7 +143,6 @@ export default function RecipeDetailPage() {
         Base Portions: {recipe.portion}
       </Text>
 
-   
       <Group gap="xs" align="center" mb="md">
         <Text size="sm">Adjust Portions:</Text>
         <NumberInput
@@ -152,6 +158,9 @@ export default function RecipeDetailPage() {
           step={1}
           hideControls
           styles={{ input: { width: 60, textAlign: "center" } }}
+          radius="xl"
+          size="md"
+          aria-label="Adjust Portions"
         />
         {/* Optional: Uncomment below to add +/- buttons for adjusting portions */}
         {/* 

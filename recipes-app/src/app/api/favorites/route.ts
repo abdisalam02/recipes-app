@@ -5,17 +5,38 @@ import prisma from "../../../../lib/prisma";
 
 const userId = 1; // Fixed user ID since no authentication
 
+// Define Types for Favorite and Recipe
+interface Recipe {
+  id: number;
+  title: string;
+  category: string;
+  image: string;
+  description: string;
+  portion: number;
+}
+
+interface Favorite {
+  id: number;
+  userId: number;
+  recipeId: number;
+  recipe: Recipe;
+}
+
 // GET /api/favorites
 export async function GET(request: Request) {
   try {
-    const favorites = await prisma.favorite.findMany({
+    const favorites: Favorite[] = await prisma.favorite.findMany({
       where: { userId: userId },
       include: { recipe: true },
     });
 
     return NextResponse.json(favorites, { status: 200 });
-  } catch (error) {
-    console.error("Error fetching favorites:", error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error fetching favorites:", error.message);
+    } else {
+      console.error("Unknown error fetching favorites.");
+    }
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
@@ -48,13 +69,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const newFavorite = await prisma.favorite.create({
+    const newFavorite: Favorite = await prisma.favorite.create({
       data: { userId: userId, recipeId: recipeIdNumber },
+      include: { recipe: true }, // Ensure recipe is included
     });
 
     return NextResponse.json(newFavorite, { status: 201 });
-  } catch (error) {
-    console.error("Error adding favorite:", error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error adding favorite:", error.message);
+    } else {
+      console.error("Unknown error adding favorite.");
+    }
     return NextResponse.json(
       { error: "Failed to add favorite" },
       { status: 500 }
@@ -84,8 +110,12 @@ export async function DELETE(request: Request) {
     });
 
     return NextResponse.json({ message: "Favorite removed successfully" }, { status: 200 });
-  } catch (error) {
-    console.error("Error removing favorite:", error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error removing favorite:", error.message);
+    } else {
+      console.error("Unknown error removing favorite.");
+    }
     return NextResponse.json(
       { error: "Failed to remove favorite" },
       { status: 500 }

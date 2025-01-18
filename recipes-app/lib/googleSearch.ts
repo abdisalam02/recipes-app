@@ -1,14 +1,11 @@
 // lib/googleSearch.ts
 
-/**
- * fetchGoogleImages
- * Queries the Google Custom Search API for images matching the given query.
- *
- * @param query - The search term (e.g. "pizza", "chocolate cake", etc.)
- * @param num   - Number of image results to fetch (default = 1)
- * @returns     - An array of image URLs (strings). Could be empty if none found.
- */
-export async function fetchGoogleImages(query: string, num: number = 1): Promise<string[]> {
+interface GoogleSearchItem {
+    link: string;
+    // You can add more fields if needed based on the API response
+  }
+  
+  export async function fetchGoogleImages(query: string, num: number = 1): Promise<string[]> {
     const API_KEY = process.env.GOOGLE_API_KEY;
     const CX = process.env.GOOGLE_CSE_ID;
   
@@ -31,16 +28,20 @@ export async function fetchGoogleImages(query: string, num: number = 1): Promise
         return [];
       }
   
-      const data = await response.json();
+      const data: { items?: GoogleSearchItem[] } = await response.json();
       // Data structure: data.items[i].link => image URL
       if (!data.items) {
         console.error("No items found in Google CSE response.");
         return [];
       }
   
-      return data.items.map((item: any) => item.link).filter((link: string) => !!link);
-    } catch (err) {
-      console.error("Error in fetchGoogleImages:", err);
+      return data.items.map((item: GoogleSearchItem) => item.link).filter((link: string) => !!link);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error("Error in fetchGoogleImages:", err.message);
+      } else {
+        console.error("Unknown error in fetchGoogleImages.");
+      }
       return [];
     }
   }

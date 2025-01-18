@@ -1,4 +1,5 @@
 // src/pages/index.tsx or app/page.tsx
+
 "use client";
 
 import {
@@ -16,10 +17,8 @@ import {
   TextInput,
   Select,
   Loader,
-  Box,
 } from "@mantine/core";
-// Removed the incorrect import of EmotionSx
-// import type { EmotionSx as sx } from '@mantine/emotion';
+// Removed unused imports like Box
 import { IconHeart, IconHeartFilled, IconX } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { notifications } from "@mantine/notifications";
@@ -78,12 +77,20 @@ export default function HomePage() {
         }
         const data: Recipe[] = await res.json();
         setRecipes(data);
-      } catch (error: any) {
-        notifications.show({
-          title: "Error",
-          message: error.message || "Failed to load recipes.",
-          color: "red",
-        });
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          notifications.show({
+            title: "Error",
+            message: error.message || "Failed to load recipes.",
+            color: "red",
+          });
+        } else {
+          notifications.show({
+            title: "Error",
+            message: "An unknown error occurred while fetching recipes.",
+            color: "red",
+          });
+        }
       }
     };
 
@@ -96,12 +103,20 @@ export default function HomePage() {
         }
         const data: Favorite[] = await res.json();
         setFavorites(data);
-      } catch (error: any) {
-        notifications.show({
-          title: "Error",
-          message: error.message || "Failed to load favorites.",
-          color: "red",
-        });
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          notifications.show({
+            title: "Error",
+            message: error.message || "Failed to load favorites.",
+            color: "red",
+          });
+        } else {
+          notifications.show({
+            title: "Error",
+            message: "An unknown error occurred while fetching favorites.",
+            color: "red",
+          });
+        }
       }
     };
 
@@ -158,12 +173,20 @@ export default function HomePage() {
           color: "green",
         });
       }
-    } catch (error: any) {
-      notifications.show({
-        title: "Error",
-        message: error.message || "An error occurred.",
-        color: "red",
-      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        notifications.show({
+          title: "Error",
+          message: error.message || "An error occurred.",
+          color: "red",
+        });
+      } else {
+        notifications.show({
+          title: "Error",
+          message: "An unknown error occurred.",
+          color: "red",
+        });
+      }
     }
   };
 
@@ -196,13 +219,11 @@ export default function HomePage() {
 
   return (
     <Container size="lg" py="xl">
-      {/* Wrap Title in a Box with textAlign */}
+      {/* Wrap Title in a Group for alignment */}
       <Group align="center">
-      <Box mb="xl">
         <Title>
           Recipe Collection
         </Title>
-      </Box>
       </Group>
 
       {/* Search and Filter Section */}
@@ -254,18 +275,14 @@ export default function HomePage() {
       {/* Recipes Grid */}
       {filteredRecipes.length === 0 ? (
         <Group align="center">
-          <Box >
           <Text color="dimmed">
             No recipes found.
           </Text>
-        </Box>
-
         </Group>
       ) : (
         <SimpleGrid
           cols={3}
           spacing="lg"
-         
         >
           {filteredRecipes.map((recipe) => (
             <Card
@@ -274,7 +291,7 @@ export default function HomePage() {
               radius="md"
               withBorder
               key={recipe.id}
-              sx={{ // Corrected from 'Sx' to 'sx'
+              sx={{
                 transition: "transform 0.2s ease, box-shadow 0.2s ease",
                 "&:hover": {
                   transform: "translateY(-5px)",
@@ -329,7 +346,7 @@ export default function HomePage() {
                 radius="md"
                 component={Link}
                 href={`/recipes/${recipe.id}`} // Navigates to single recipe detail
-                sx={{ // Correct prop name
+                sx={{
                   transition: "background-color 0.2s ease",
                   "&:hover": {
                     backgroundColor: "#e3f2fd",

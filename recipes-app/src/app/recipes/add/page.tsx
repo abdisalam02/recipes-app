@@ -1,6 +1,8 @@
+// src/pages/AddRecipePage.tsx
+
 "use client";
 
-import { useState } from "react";
+import React, { useState, ChangeEvent, FormEvent } from "react";
 import {
   Container,
   Title,
@@ -17,14 +19,12 @@ import {
   NumberInput,
   Group,
   ActionIcon,
-  Box,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconChefHat, IconPlus, IconMinus } from "@tabler/icons-react";
 
-//
-// 1. We define the Category, Ingredient, Step, FormData, and JsonData interfaces
-//
+// 1. Define the Category, Ingredient, Step, FormData, RecipeInput, and JsonData interfaces
+
 const categories = [
   "Breakfast",
   "Lunch",
@@ -66,36 +66,46 @@ interface JsonData {
   steps: Array<{ order?: number; description: string }>;
 }
 
-//
-// 2. The AddRecipePage component
-//
+interface RecipeInput {
+  title: string;
+  category: string;
+  description: string;
+  image?: string;
+  portion: number;
+  ingredients: Ingredient[];
+  steps: Step[];
+}
+
 export default function AddRecipePage() {
+  // 2. Initialize State Variables with Proper Types
   const [activeTab, setActiveTab] = useState<string>("form");
   const [formData, setFormData] = useState<FormData>({
     title: "",
     category: "",
     description: "",
-    ingredients: [{ quantity: 1, unit: "units", name: "Unknown Ingredient" }],
+    ingredients: [
+      { quantity: 1, unit: "units", name: "Unknown Ingredient" },
+    ],
     steps: [{ description: "" }],
     image: "",
     portion: 1,
   });
   const [jsonData, setJsonData] = useState<string>("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  //
   // 3. Utility Handlers for Ingredients
-  //
-  const handleAddIngredient = () => {
-    // Append a new default ingredient to the array
+
+  const handleAddIngredient = (): void => {
     setFormData((prev) => ({
       ...prev,
-      ingredients: [...prev.ingredients, { quantity: 1, unit: "units", name: "" }],
+      ingredients: [
+        ...prev.ingredients,
+        { quantity: 1, unit: "units", name: "New Ingredient" },
+      ],
     }));
   };
 
-  const handleRemoveIngredient = (index: number) => {
-    // Remove ingredient at index
+  const handleRemoveIngredient = (index: number): void => {
     setFormData((prev) => ({
       ...prev,
       ingredients: prev.ingredients.filter((_, i) => i !== index),
@@ -106,55 +116,54 @@ export default function AddRecipePage() {
     index: number,
     field: keyof Ingredient,
     value: number | string
-  ) => {
+  ): void => {
     setFormData((prev) => {
-      const updated = [...prev.ingredients];
-      // Ingredient at index => update field
-      if (typeof value === "number" && field === "quantity") {
-        updated[index].quantity = value;
-      } else if (typeof value === "string") {
-        // unit or name
-        (updated[index] as any)[field] = value;
-      }
-      return { ...prev, ingredients: updated };
+      const updatedIngredients = [...prev.ingredients];
+      updatedIngredients[index] = {
+        ...updatedIngredients[index],
+        [field]: value,
+      };
+      return { ...prev, ingredients: updatedIngredients };
     });
   };
 
-  //
   // 4. Utility Handlers for Steps
-  //
-  const handleAddStep = () => {
+
+  const handleAddStep = (): void => {
     setFormData((prev) => ({
       ...prev,
       steps: [...prev.steps, { description: "" }],
     }));
   };
 
-  const handleRemoveStep = (index: number) => {
+  const handleRemoveStep = (index: number): void => {
     setFormData((prev) => ({
       ...prev,
       steps: prev.steps.filter((_, i) => i !== index),
     }));
   };
 
-  const handleStepChange = (index: number, value: string) => {
+  const handleStepChange = (index: number, value: string): void => {
     setFormData((prev) => {
-      const updated = [...prev.steps];
-      updated[index].description = value;
-      return { ...prev, steps: updated };
+      const updatedSteps = [...prev.steps];
+      updatedSteps[index] = { ...updatedSteps[index], description: value };
+      return { ...prev, steps: updatedSteps };
     });
   };
 
-  //
   // 5. Basic Form Validation Check
-  //
-  const isFormValid = () => {
+
+  const isFormValid = (): boolean => {
     if (
-      !formData.title ||
-      !formData.category ||
-      !formData.description ||
+      !formData.title.trim() ||
+      !formData.category.trim() ||
+      !formData.description.trim() ||
+      formData.portion < 1 ||
       formData.ingredients.some(
-        (ing) => ing.quantity <= 0 || !ing.unit.trim() || !ing.name.trim()
+        (ing) =>
+          ing.quantity <= 0 ||
+          !ing.unit.trim() ||
+          !ing.name.trim()
       ) ||
       formData.steps.some((step) => !step.description.trim())
     ) {
@@ -163,10 +172,9 @@ export default function AddRecipePage() {
     return true;
   };
 
-  //
   // 6. Fetch Default Image Using Recipe Title
-  //
-  const fetchDefaultImage = async () => {
+
+  const fetchDefaultImage = async (): Promise<void> => {
     if (!formData.title.trim()) {
       notifications.show({
         title: "Error",
@@ -186,39 +194,62 @@ export default function AddRecipePage() {
         throw new Error(errorData.error || "Failed to fetch default image");
       }
       const data = await res.json();
-      setFormData({ ...formData, image: data.imageUrl });
+      setFormData((prev) => ({ ...prev, image: data.imageUrl }));
       notifications.show({
         title: "Image Fetched",
         message: "A default image has been fetched via Google!",
         color: "green",
       });
-    } catch (error: any) {
-      notifications.show({
-        title: "Error",
-        message: error.message || "Failed to fetch default image.",
-        color: "red",
-      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        notifications.show({
+          title: "Error",
+          message: error.message || "Failed to fetch default image.",
+          color: "red",
+        });
+      } else {
+        notifications.show({
+          title: "Error",
+          message: "An unknown error occurred.",
+          color: "red",
+        });
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  //
   // 7. Submitting with Manual Form
-  //
-  const handleFormSubmit = async (e: React.FormEvent) => {
+
+  const handleFormSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
+    if (!isFormValid()) {
+      notifications.show({
+        title: "Invalid Form",
+        message: "Please fill out all required fields correctly.",
+        color: "red",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const payload = {
-        title: formData.title,
-        category: formData.category,
-        description: formData.description,
+      const payload: RecipeInput = {
+        title: formData.title.trim(),
+        category: formData.category.trim(),
+        description: formData.description.trim(),
         portion: formData.portion,
-        ingredients: formData.ingredients,
-        steps: formData.steps,
-        image: formData.image || undefined,
+        ingredients: formData.ingredients.map((ing) => ({
+          quantity: ing.quantity,
+          unit: ing.unit.trim(),
+          name: ing.name.trim(),
+        })),
+        steps: formData.steps.map((step, index) => ({
+          order: index + 1,
+          description: step.description.trim(),
+        })),
+        image: formData.image?.trim() || undefined,
       };
 
       const response = await fetch("/api/recipes", {
@@ -249,32 +280,61 @@ export default function AddRecipePage() {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to add recipe");
       }
-    } catch (error: any) {
-      notifications.show({
-        title: "Error",
-        message: error.message || "Failed to add recipe. Please try again.",
-        color: "red",
-      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        notifications.show({
+          title: "Error",
+          message: error.message || "Failed to add recipe. Please try again.",
+          color: "red",
+        });
+      } else {
+        notifications.show({
+          title: "Error",
+          message: "An unknown error occurred.",
+          color: "red",
+        });
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  //
   // 8. Submitting with JSON
-  //
-  const handleJsonSubmit = async (e: React.FormEvent) => {
+
+  const handleJsonSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
+    if (!jsonData.trim()) {
+      notifications.show({
+        title: "Invalid JSON",
+        message: "Please provide valid JSON data.",
+        color: "red",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       const parsedData: JsonData = JSON.parse(jsonData);
+
+      // Basic validation for parsed JSON
+      if (
+        !parsedData.title?.trim() ||
+        !parsedData.category?.trim() ||
+        !parsedData.description?.trim() ||
+        parsedData.portion < 1 ||
+        !Array.isArray(parsedData.ingredients) ||
+        !Array.isArray(parsedData.steps)
+      ) {
+        throw new Error("JSON data is missing required fields or has invalid formats.");
+      }
 
       const response = await fetch("/api/recipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsedData),
       });
+
       if (response.ok) {
         notifications.show({
           title: "Success",
@@ -286,22 +346,33 @@ export default function AddRecipePage() {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to add recipe via JSON");
       }
-    } catch (error: any) {
-      notifications.show({
-        title: "Error",
-        message:
-          error.message ||
-          "Failed to add recipe via JSON. Please check the format.",
-        color: "red",
-      });
+    } catch (error: unknown) {
+      if (error instanceof SyntaxError) {
+        notifications.show({
+          title: "JSON Syntax Error",
+          message: "Please ensure the JSON is correctly formatted.",
+          color: "red",
+        });
+      } else if (error instanceof Error) {
+        notifications.show({
+          title: "Error",
+          message:
+            error.message ||
+            "Failed to add recipe via JSON. Please check the format.",
+          color: "red",
+        });
+      } else {
+        notifications.show({
+          title: "Error",
+          message: "An unknown error occurred.",
+          color: "red",
+        });
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  //
-  // 9. Rendering the Component
-  //
   return (
     <Container size="sm" py="xl">
       <Paper withBorder shadow="md" p={30} radius="md" className="relative">
@@ -320,7 +391,9 @@ export default function AddRecipePage() {
 
         <Tabs
           value={activeTab}
-          onChange={(value: string | null) => setActiveTab(value ?? "form")}
+          onChange={(value: string | null) => setActiveTab(value || "form")}
+          variant="outline"
+          color="blue"
         >
           <Tabs.List grow>
             <Tabs.Tab value="form">Form Input</Tabs.Tab>
@@ -336,7 +409,7 @@ export default function AddRecipePage() {
                   label="Recipe Title"
                   required
                   value={formData.title}
-                  onChange={(e) =>
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
                     setFormData({ ...formData, title: e.target.value })
                   }
                   radius="xl"
@@ -349,7 +422,7 @@ export default function AddRecipePage() {
                   data={categories}
                   required
                   value={formData.category}
-                  onChange={(value) =>
+                  onChange={(value: string | null) =>
                     setFormData({ ...formData, category: value || "" })
                   }
                   radius="xl"
@@ -362,7 +435,7 @@ export default function AddRecipePage() {
                   required
                   minRows={3}
                   value={formData.description}
-                  onChange={(e) =>
+                  onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
                   radius="xl"
@@ -373,7 +446,7 @@ export default function AddRecipePage() {
                 <TextInput
                   label="Image URL (optional)"
                   value={formData.image}
-                  onChange={(e) =>
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
                     setFormData({ ...formData, image: e.target.value })
                   }
                   radius="xl"
@@ -395,22 +468,22 @@ export default function AddRecipePage() {
                 <Group align="center">
                   <Text size="sm">Portions:</Text>
                   <NumberInput
-  label="Portions"
-  min={1}
-  required
-  value={formData.portion}
-  onChange={(value: string | number) => {
-    if (typeof value === "number") {
-      setFormData({ ...formData, portion: value });
-    } else {
-      // Handle cases where value is a string (e.g., empty input)
-      setFormData({ ...formData, portion: 1 });
-    }
-  }}
-  radius="xl"
-  size="md"
-/>
-
+                    label="Portions"
+                    min={1}
+                    required
+                    value={formData.portion}
+                    onChange={(value: number | string) => {
+                      const numberValue =
+                        typeof value === "number" && value >= 1 ? value : 1;
+                      setFormData({
+                        ...formData,
+                        portion: numberValue,
+                      });
+                    }}
+                    radius="xl"
+                    size="md"
+                    aria-label="Portions"
+                  />
                 </Group>
 
                 {/* Ingredients Section */}
@@ -431,44 +504,46 @@ export default function AddRecipePage() {
 
                   {formData.ingredients.map((ing, index) => (
                     <Group key={index} grow>
-                     <NumberInput
-  label="Quantity"
-  value={ing.quantity}
-  min={0.1}
-  step={0.1}
-  required
-  onChange={(value: string | number) => {
-    if (typeof value === "number") {
-      handleIngredientChange(index, "quantity", value);
-    } else {
-      // Handle cases where value is a string (e.g., empty input)
-      handleIngredientChange(index, "quantity", 0);
-    }
-  }}
-  radius="xl"
-  size="md"
-/>
+                      <NumberInput
+                        label="Quantity"
+                        value={ing.quantity}
+                        min={0.1}
+                        step={0.1}
+                        required
+                        onChange={(value: number | string) => {
+                          const quantity =
+                            typeof value === "number" ? value : 0;
+                          handleIngredientChange(index, "quantity", quantity);
+                        }}
+                        radius="xl"
+                        size="md"
+                        aria-label={`Ingredient ${index + 1} Quantity`}
+                      />
 
                       <TextInput
                         label="Unit"
                         value={ing.unit}
                         required
-                        onChange={(e) =>
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
                           handleIngredientChange(index, "unit", e.target.value)
                         }
                         radius="xl"
                         size="md"
+                        aria-label={`Ingredient ${index + 1} Unit`}
                       />
+
                       <TextInput
                         label="Ingredient"
                         value={ing.name}
                         required
-                        onChange={(e) =>
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
                           handleIngredientChange(index, "name", e.target.value)
                         }
                         radius="xl"
                         size="md"
+                        aria-label={`Ingredient ${index + 1} Name`}
                       />
+
                       {formData.ingredients.length > 1 && (
                         <ActionIcon
                           color="red"
@@ -476,7 +551,7 @@ export default function AddRecipePage() {
                           radius="xl"
                           size="lg"
                           variant="filled"
-                          aria-label="Remove Ingredient"
+                          aria-label={`Remove Ingredient ${index + 1}`}
                         >
                           <IconMinus size={16} />
                         </ActionIcon>
@@ -509,16 +584,22 @@ export default function AddRecipePage() {
                         readOnly
                         radius="xl"
                         size="md"
+                        aria-label={`Step ${index + 1} Order`}
                       />
+
                       <Textarea
                         label="Description"
                         minRows={2}
                         required
                         value={step.description}
-                        onChange={(e) => handleStepChange(index, e.target.value)}
+                        onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+                          handleStepChange(index, e.target.value)
+                        }
                         radius="xl"
                         size="md"
+                        aria-label={`Step ${index + 1} Description`}
                       />
+
                       {formData.steps.length > 1 && (
                         <ActionIcon
                           color="red"
@@ -526,7 +607,7 @@ export default function AddRecipePage() {
                           radius="xl"
                           size="lg"
                           variant="filled"
-                          aria-label="Remove Step"
+                          aria-label={`Remove Step ${index + 1}`}
                         >
                           <IconMinus size={16} />
                         </ActionIcon>
@@ -574,7 +655,9 @@ export default function AddRecipePage() {
                   minRows={10}
                   required
                   value={jsonData}
-                  onChange={(e) => setJsonData(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+                    setJsonData(e.target.value)
+                  }
                   radius="xl"
                   size="md"
                 />
@@ -591,7 +674,7 @@ export default function AddRecipePage() {
                 </Button>
 
                 <Code block>
-                  {`{
+{`{
   "title": "Chocolate Cake",
   "category": "dessert",
   "description": "A rich and moist chocolate cake.",

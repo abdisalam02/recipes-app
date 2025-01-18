@@ -1,3 +1,5 @@
+// components/AdminDashboardPage.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -18,13 +20,12 @@ import {
   TextInput,
   Textarea,
   NumberInput,
-  Box,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconTrash, IconEdit, IconLock } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 
-// 1) Example Recipe Interface
+// 1. Define the Recipe Interface
 interface Recipe {
   id: number;
   title: string;
@@ -34,24 +35,24 @@ interface Recipe {
   portion: number;
 }
 
-// 2) AdminDashboard Page
+// 2. Define the AdminDashboard Page
 export default function AdminDashboardPage() {
-  // A. Auth states
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passwordInput, setPasswordInput] = useState("");
+  // A. Authentication States
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [passwordInput, setPasswordInput] = useState<string>("");
 
-  // B. Admin logic states
+  // B. Admin Logic States
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const [editModalOpen, editModalHandlers] = useDisclosure(false);
   const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(null);
 
   // C. Deletion Confirmation States
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
   const [recipeToDelete, setRecipeToDelete] = useState<Recipe | null>(null);
 
-  // 3) Check authentication status on mount
+  // 3. Check Authentication Status on Mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -59,8 +60,12 @@ export default function AdminDashboardPage() {
         if (localAuth === "true") {
           setIsAuthenticated(true);
         }
-      } catch (error) {
-        console.error("Error checking authentication:", error);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          console.error("Error checking authentication:", error.message);
+        } else {
+          console.error("Unknown error checking authentication.");
+        }
       } finally {
         setLoading(false); // Ensure loading is turned off after auth check
       }
@@ -69,7 +74,7 @@ export default function AdminDashboardPage() {
     checkAuth();
   }, []);
 
-  // 4) Handler: Submit password
+  // 4. Handler: Submit Password
   const handleLogin = async () => {
     if (!passwordInput) {
       notifications.show({
@@ -87,10 +92,12 @@ export default function AdminDashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: passwordInput }),
       });
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Invalid password");
       }
+
       // If success
       setIsAuthenticated(true);
       localStorage.setItem("admin-auth", "true");
@@ -99,18 +106,26 @@ export default function AdminDashboardPage() {
         message: "You are now logged in as Admin",
         color: "green",
       });
-    } catch (err: any) {
-      notifications.show({
-        title: "Error",
-        message: err.message || "Invalid password",
-        color: "red",
-      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        notifications.show({
+          title: "Error",
+          message: err.message || "Invalid password",
+          color: "red",
+        });
+      } else {
+        notifications.show({
+          title: "Error",
+          message: "An unknown error occurred.",
+          color: "red",
+        });
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // 5) Fetch recipes
+  // 5. Fetch Recipes
   const fetchRecipes = async () => {
     try {
       setLoading(true);
@@ -120,31 +135,39 @@ export default function AdminDashboardPage() {
       }
       const data: Recipe[] = await response.json();
       setRecipes(data);
-    } catch (err: any) {
-      notifications.show({
-        title: "Error",
-        message: err.message || "Failed to fetch recipes",
-        color: "red",
-      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        notifications.show({
+          title: "Error",
+          message: err.message || "Failed to fetch recipes",
+          color: "red",
+        });
+      } else {
+        notifications.show({
+          title: "Error",
+          message: "An unknown error occurred while fetching recipes.",
+          color: "red",
+        });
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch recipes when authenticated
+  // Fetch Recipes When Authenticated
   useEffect(() => {
     if (isAuthenticated) {
       fetchRecipes();
     }
   }, [isAuthenticated]);
 
-  // 6) Handle Delete (Triggers Confirmation Modal)
+  // 6. Handle Delete (Triggers Confirmation Modal)
   const handleDelete = (recipe: Recipe) => {
     setRecipeToDelete(recipe);
     setDeleteModalOpen(true);
   };
 
-  // 7) Confirm Delete (Performs Deletion)
+  // 7. Confirm Delete (Performs Deletion)
   const confirmDelete = async () => {
     if (!recipeToDelete) return;
 
@@ -161,12 +184,20 @@ export default function AdminDashboardPage() {
         message: "Recipe deleted",
         color: "green",
       });
-    } catch (err: any) {
-      notifications.show({
-        title: "Error",
-        message: err.message || "Failed to delete recipe",
-        color: "red",
-      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        notifications.show({
+          title: "Error",
+          message: err.message || "Failed to delete recipe",
+          color: "red",
+        });
+      } else {
+        notifications.show({
+          title: "Error",
+          message: "An unknown error occurred while deleting the recipe.",
+          color: "red",
+        });
+      }
     } finally {
       setLoading(false);
       setDeleteModalOpen(false);
@@ -174,7 +205,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // 8) Handle Edit
+  // 8. Handle Edit
   const handleEdit = (recipe: Recipe) => {
     setCurrentRecipe(recipe);
     editModalHandlers.open();
@@ -212,11 +243,13 @@ export default function AdminDashboardPage() {
           image: currentRecipe.image,
         }),
       });
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to update recipe");
       }
-      const updatedRecipe = await res.json();
+
+      const updatedRecipe: Recipe = await res.json();
       setRecipes((prev) =>
         prev.map((r) => (r.id === updatedRecipe.id ? updatedRecipe : r))
       );
@@ -226,23 +259,31 @@ export default function AdminDashboardPage() {
         color: "green",
       });
       editModalHandlers.close();
-    } catch (err: any) {
-      notifications.show({
-        title: "Error",
-        message: err.message || "Failed to update recipe",
-        color: "red",
-      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        notifications.show({
+          title: "Error",
+          message: err.message || "Failed to update recipe",
+          color: "red",
+        });
+      } else {
+        notifications.show({
+          title: "Error",
+          message: "An unknown error occurred while updating the recipe.",
+          color: "red",
+        });
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // 9) If NOT authenticated, show the password form
+  // 9. If NOT authenticated, show the password form
   if (!isAuthenticated) {
     return (
       <Container size="xs" py="xl">
-        {/* Ensure the Box has relative positioning for the LoadingOverlay */}
-        <Box pos="relative">
+        {/* Ensure the Container has relative positioning for the LoadingOverlay */}
+        <div style={{ position: "relative" }}>
           <LoadingOverlay
             visible={loading}
             overlayProps={{ blur: 2 }}
@@ -263,12 +304,12 @@ export default function AdminDashboardPage() {
               Submit
             </Button>
           </Stack>
-        </Box>
+        </div>
       </Container>
     );
   }
 
-  // 10) If authenticated, show the actual Admin Dashboard
+  // 10. If authenticated, show the actual Admin Dashboard
   return (
     <Container size="lg" py="xl">
       <LoadingOverlay
@@ -277,18 +318,14 @@ export default function AdminDashboardPage() {
         zIndex={1000}
       />
       <Stack gap="xl">
-        <Group >
+        <Group>
           <Title order={2}>Admin Dashboard</Title>
           <Button onClick={fetchRecipes} loading={loading}>
             Refresh
           </Button>
         </Group>
 
-        <SimpleGrid
-          cols={3}
-          spacing="lg"
-          
-        >
+        <SimpleGrid cols={3} spacing="lg">
           {recipes.map((recipe) => (
             <Card key={recipe.id} shadow="sm" p="lg" radius="md" withBorder>
               <Card.Section>
@@ -303,8 +340,7 @@ export default function AdminDashboardPage() {
               <Group mt="md" mb="xs">
                 <Text>{recipe.title}</Text>
                 <Badge color="pink" variant="light">
-                  {recipe.category.charAt(0).toUpperCase() +
-                    recipe.category.slice(1)}
+                  {recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)}
                 </Badge>
               </Group>
 
@@ -314,14 +350,15 @@ export default function AdminDashboardPage() {
                   : recipe.description}
               </Text>
 
-              <Group  mt="md">
+              <Group mt="md">
                 <Text size="sm">Portions: {recipe.portion}</Text>
-                <Group>
+                <Group gap="xs">
                   <ActionIcon
                     variant="outline"
                     color="blue"
                     onClick={() => handleEdit(recipe)}
                     title="Edit Recipe"
+                    aria-label={`Edit ${recipe.title}`}
                   >
                     <IconEdit size={18} />
                   </ActionIcon>
@@ -330,6 +367,7 @@ export default function AdminDashboardPage() {
                     color="red"
                     onClick={() => handleDelete(recipe)}
                     title="Delete Recipe"
+                    aria-label={`Delete ${recipe.title}`}
                   >
                     <IconTrash size={18} />
                   </ActionIcon>
@@ -348,7 +386,7 @@ export default function AdminDashboardPage() {
         centered
       >
         <Text>
-          Are you sure you want to delete the recipe "{recipeToDelete?.title}"?
+          Are you sure you want to delete the recipe &quot;{recipeToDelete?.title}&quot;?
         </Text>
         <Group mt="md">
           <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
@@ -397,29 +435,29 @@ export default function AdminDashboardPage() {
               }
               required
             />
-           <NumberInput
-  label="Portions"
-  min={1}
-  value={currentRecipe.portion}
-  onChange={(val: string | number) => {
-    if (typeof val === "number") {
-      setCurrentRecipe({
-        ...currentRecipe,
-        portion: val,
-      });
-    } else {
-      // Handle the case where val is a string (e.g., empty input)
-      // You can choose to set a default value or handle it differently
-      setCurrentRecipe({
-        ...currentRecipe,
-        portion: 1, // Default to 1 if input is invalid or empty
-      });
-    }
-  }}
-  required
-  radius="xl"
-  size="md"
-/>
+            <NumberInput
+              label="Portions"
+              min={1}
+              value={currentRecipe.portion}
+              onChange={(val: number | string) => {
+                if (typeof val === "number") {
+                  setCurrentRecipe({
+                    ...currentRecipe,
+                    portion: val,
+                  });
+                } else {
+                  // Handle the case where val is a string (e.g., empty input)
+                  setCurrentRecipe({
+                    ...currentRecipe,
+                    portion: 1, // Default to 1 if input is invalid or empty
+                  });
+                }
+              }}
+              required
+              radius="xl"
+              size="md"
+              aria-label="Portions"
+            />
 
             <TextInput
               label="Image URL"
@@ -442,9 +480,4 @@ export default function AdminDashboardPage() {
       </Modal>
     </Container>
   );
-}
-
-// Helper: confirm deletion (Optional Enhancement)
-async function handleDeleteConfirm() {
-  // Implement confirmation dialog if needed
 }
