@@ -6,7 +6,7 @@ import prisma from "../../../../../lib/prisma";
 // 1) GET: Fetch a single recipe by ID
 export async function GET(
   request: Request,
-  { params, searchParams }: { params: { id: string }; searchParams: URLSearchParams }
+  { params }: { params: { id: string } } // Removed 'searchParams'
 ) {
   const { id } = params;
 
@@ -24,8 +24,12 @@ export async function GET(
     }
 
     return NextResponse.json(recipe, { status: 200 });
-  } catch (error) {
-    console.error("Error fetching recipe:", error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error fetching recipe:", error.message);
+    } else {
+      console.error("Unknown error fetching recipe.");
+    }
     return NextResponse.json(
       { error: "Failed to fetch recipe. Please try again later." },
       { status: 500 }
@@ -36,7 +40,7 @@ export async function GET(
 // 2) PUT: Update a single recipe by ID
 export async function PUT(
   request: Request,
-  { params, searchParams }: { params: { id: string }; searchParams: URLSearchParams }
+  { params }: { params: { id: string } } // Removed 'searchParams'
 ) {
   const { id } = params;
   const recipeId = Number(id);
@@ -59,13 +63,17 @@ export async function PUT(
         portion: data.portion,
         // If you want to allow editing of ingredients/steps, you'd do that here,
         // but partial nested updates can get tricky with Prisma. 
-        // e.g. data.ingredients, data.steps, etc. if needed.
+        // e.g., data.ingredients, data.steps, etc. if needed.
       },
     });
 
     return NextResponse.json(updatedRecipe, { status: 200 });
-  } catch (error) {
-    console.error("Error updating recipe:", error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error updating recipe:", error.message);
+    } else {
+      console.error("Unknown error updating recipe.");
+    }
     return NextResponse.json(
       { error: "Failed to update recipe." },
       { status: 500 }
@@ -76,7 +84,7 @@ export async function PUT(
 // 3) DELETE: Remove a single recipe by ID
 export async function DELETE(
   request: Request,
-  { params, searchParams }: { params: { id: string }; searchParams: URLSearchParams }
+  { params }: { params: { id: string } } // Removed 'searchParams'
 ) {
   const { id } = params;
   const recipeId = Number(id);
@@ -102,8 +110,12 @@ export async function DELETE(
     });
 
     return NextResponse.json({ message: "Recipe deleted" }, { status: 200 });
-  } catch (error) {
-    console.error("Error deleting recipe:", error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error deleting recipe:", error.message);
+    } else {
+      console.error("Unknown error deleting recipe.");
+    }
     return NextResponse.json(
       { error: "Failed to delete recipe." },
       { status: 500 }
