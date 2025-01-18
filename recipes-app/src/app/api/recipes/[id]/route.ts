@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { type NextRequest } from "next/server";
 import prisma from "../../../../../lib/prisma";
 
 // 1) GET: Fetch a single recipe by ID
