@@ -46,8 +46,12 @@ export default function FavoritesPage() {
       if (!response.ok) throw new Error("Failed to fetch favorites");
       const data: Favorite[] = await response.json();
       setFavorites(data);
-    } catch (error: any) {
-      console.error("Error fetching favorites:", error);
+    } catch (error: unknown) { // Changed 'any' to 'unknown'
+      if (error instanceof Error) {
+        console.error("Error fetching favorites:", error.message);
+      } else {
+        console.error("Unknown error fetching favorites.");
+      }
       notifications.show({
         title: "Error",
         message: "Failed to load favorites",
@@ -75,13 +79,17 @@ export default function FavoritesPage() {
       } else {
         throw new Error("Failed to remove favorite");
       }
-    } catch (error: any) {
+    } catch (error: unknown) { // Changed 'any' to 'unknown'
+      if (error instanceof Error) {
+        console.error("Error removing favorite:", error.message);
+      } else {
+        console.error("Unknown error removing favorite.");
+      }
       notifications.show({
         title: "Error",
         message: "Failed to remove from favorites",
         color: "red",
       });
-      console.error(error);
     }
   };
 
@@ -131,7 +139,7 @@ export default function FavoritesPage() {
   alt={favorite.recipe.title}
   height={160}
   fit="cover"
-  // Removed withPlaceholder and placeholder props
+// Removed withPlaceholder and placeholder props
 />
 
                   <ActionIcon

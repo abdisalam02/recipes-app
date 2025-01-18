@@ -14,10 +14,9 @@ import {
   ThemeIcon,
   Skeleton,
   NumberInput,
-  ActionIcon,
-  Button,
+  // Removed ActionIcon and Button since they're not used
 } from "@mantine/core";
-import { IconCheck, IconPlus, IconMinus } from "@tabler/icons-react";
+import { IconCheck } from "@tabler/icons-react"; // Removed IconPlus and IconMinus
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 

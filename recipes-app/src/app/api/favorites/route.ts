@@ -23,7 +23,7 @@ interface Favorite {
 }
 
 // GET /api/favorites
-export async function GET(request: Request) {
+export async function GET() { // Removed 'request: Request'
   try {
     const favorites: Favorite[] = await prisma.favorite.findMany({
       where: { userId: userId },

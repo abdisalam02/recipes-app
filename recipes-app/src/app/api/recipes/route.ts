@@ -26,16 +26,16 @@ interface RecipeInput {
   image?: string;
 }
 
-interface RecipeOutput {
-  id: number;
-  title: string;
-  category: string;
-  description: string;
-  image?: string;
-  portion: number;
-  ingredients: IngredientInput[];
-  steps: StepInput[];
-}
+// interface RecipeOutput {
+//   id: number;
+//   title: string;
+//   category: string;
+//   description: string;
+//   image?: string;
+//   portion: number;
+//   ingredients: IngredientInput[];
+//   steps: StepInput[];
+// }
 
 export async function POST(request: Request) {
   try {
