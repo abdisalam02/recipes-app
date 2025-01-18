@@ -1,43 +1,51 @@
-// app/api/favorites/route.ts
-
 import { NextResponse } from "next/server";
-import prisma from "../../../../lib/prisma";
+import { PrismaClient } from "@prisma/client";
 
-const userId = 1; // Fixed user ID since no authentication
-
-// Define Types for Favorite and Recipe
+// Manually Define Types for Recipe and Favorite
 interface Recipe {
   id: number;
   title: string;
   category: string;
-  image: string;
   description: string;
+  image?: string | null; // Optional field
   portion: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface Favorite {
   id: number;
   userId: number;
   recipeId: number;
-  recipe: Recipe;
+  recipe: Recipe; // Relation with Recipe
+  createdAt: Date;
 }
 
+// Extend Prisma Client
+const prisma = new PrismaClient().$extends({
+  result: {
+    favorite: {
+      computedField: {
+        needs: { recipe: true }, // Ensure the `recipe` relation is included
+        compute: (favorite: Favorite) => {
+          return `Favorite Recipe: ${favorite.recipe.title}`;
+        },
+      },
+    },
+  },
+});
+
 // GET /api/favorites
-export async function GET() { // Removed 'request: Request'
+export async function GET() {
   try {
-    const favorites: Favorite[] = await prisma.favorite.findMany({
-      where: { userId: userId },
-      include: { recipe: true },
+    const favorites = await prisma.favorite.findMany({
+      include: { recipe: true }, // Include related Recipe data
     });
 
     return NextResponse.json(favorites, { status: 200 });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error("Error fetching favorites:", error.message);
-    } else {
-      console.error("Unknown error fetching favorites.");
-    }
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  } catch (error) {
+    console.error("Error fetching favorites:", error);
+    return NextResponse.json({ error: "Failed to fetch favorites" }, { status: 500 });
   }
 }
 
@@ -47,44 +55,18 @@ export async function POST(request: Request) {
     const { recipeId } = await request.json();
 
     if (!recipeId) {
-      return NextResponse.json(
-        { error: "Recipe ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Recipe ID is required" }, { status: 400 });
     }
 
-    const recipeIdNumber = parseInt(recipeId, 10);
-    if (isNaN(recipeIdNumber)) {
-      return NextResponse.json({ error: "Invalid recipe ID" }, { status: 400 });
-    }
-
-    const existingFavorite = await prisma.favorite.findFirst({
-      where: { userId: userId, recipeId: recipeIdNumber },
-    });
-
-    if (existingFavorite) {
-      return NextResponse.json(
-        { message: "Recipe is already in favorites" },
-        { status: 200 }
-      );
-    }
-
-    const newFavorite: Favorite = await prisma.favorite.create({
-      data: { userId: userId, recipeId: recipeIdNumber },
-      include: { recipe: true }, // Ensure recipe is included
+    const newFavorite = await prisma.favorite.create({
+      data: { recipeId, userId: 1 }, // Replace with authenticated user ID
+      include: { recipe: true },
     });
 
     return NextResponse.json(newFavorite, { status: 201 });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error("Error adding favorite:", error.message);
-    } else {
-      console.error("Unknown error adding favorite.");
-    }
-    return NextResponse.json(
-      { error: "Failed to add favorite" },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error("Error adding favorite:", error);
+    return NextResponse.json({ error: "Failed to add favorite" }, { status: 500 });
   }
 }
 
@@ -94,31 +76,16 @@ export async function DELETE(request: Request) {
     const { recipeId } = await request.json();
 
     if (!recipeId) {
-      return NextResponse.json(
-        { error: "Recipe ID is required" },
-        { status: 400 }
-      );
-    }
-
-    const recipeIdNumber = parseInt(recipeId, 10);
-    if (isNaN(recipeIdNumber)) {
-      return NextResponse.json({ error: "Invalid recipe ID" }, { status: 400 });
+      return NextResponse.json({ error: "Recipe ID is required" }, { status: 400 });
     }
 
     await prisma.favorite.deleteMany({
-      where: { userId: userId, recipeId: recipeIdNumber },
+      where: { recipeId, userId: 1 }, // Replace with authenticated user ID
     });
 
     return NextResponse.json({ message: "Favorite removed successfully" }, { status: 200 });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error("Error removing favorite:", error.message);
-    } else {
-      console.error("Unknown error removing favorite.");
-    }
-    return NextResponse.json(
-      { error: "Failed to remove favorite" },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error("Error removing favorite:", error);
+    return NextResponse.json({ error: "Failed to remove favorite" }, { status: 500 });
   }
 }
