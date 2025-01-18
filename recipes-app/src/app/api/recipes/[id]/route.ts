@@ -1,5 +1,3 @@
-// app/api/recipes/[id]/route.ts
-
 import { NextResponse } from "next/server";
 import prisma from "../../../../../lib/prisma";
 
@@ -40,7 +38,7 @@ export async function GET(
 // 2) PUT: Update a single recipe by ID
 export async function PUT(
   request: Request,
-  { params, searchParams: _searchParams }: { params: { id: string }; searchParams: URLSearchParams }
+  { params }: { params: { id: string } }
 ) {
   const { id } = params;
   const recipeId = Number(id);
@@ -80,7 +78,7 @@ export async function PUT(
 // 3) DELETE: Remove a single recipe by ID
 export async function DELETE(
   request: Request,
-  { params, searchParams: _searchParams }: { params: { id: string }; searchParams: URLSearchParams }
+  { params }: { params: { id: string } }
 ) {
   const { id } = params;
   const recipeId = Number(id);
