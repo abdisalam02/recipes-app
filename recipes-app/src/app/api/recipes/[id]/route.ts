@@ -6,7 +6,7 @@ import prisma from "../../../../../lib/prisma";
 // 1) GET: Fetch a single recipe by ID
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } } // Removed 'searchParams'
+  { params, searchParams: _searchParams }: { params: { id: string }; searchParams: URLSearchParams }
 ) {
   const { id } = params;
 
@@ -40,7 +40,7 @@ export async function GET(
 // 2) PUT: Update a single recipe by ID
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } } // Removed 'searchParams'
+  { params, searchParams: _searchParams }: { params: { id: string }; searchParams: URLSearchParams }
 ) {
   const { id } = params;
   const recipeId = Number(id);
@@ -68,12 +68,8 @@ export async function PUT(
     });
 
     return NextResponse.json(updatedRecipe, { status: 200 });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error("Error updating recipe:", error.message);
-    } else {
-      console.error("Unknown error updating recipe.");
-    }
+  } catch (error) {
+    console.error("Error updating recipe:", error);
     return NextResponse.json(
       { error: "Failed to update recipe." },
       { status: 500 }
@@ -84,7 +80,7 @@ export async function PUT(
 // 3) DELETE: Remove a single recipe by ID
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } } // Removed 'searchParams'
+  { params, searchParams: _searchParams }: { params: { id: string }; searchParams: URLSearchParams }
 ) {
   const { id } = params;
   const recipeId = Number(id);
@@ -110,12 +106,8 @@ export async function DELETE(
     });
 
     return NextResponse.json({ message: "Recipe deleted" }, { status: 200 });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error("Error deleting recipe:", error.message);
-    } else {
-      console.error("Unknown error deleting recipe.");
-    }
+  } catch (error) {
+    console.error("Error deleting recipe:", error);
     return NextResponse.json(
       { error: "Failed to delete recipe." },
       { status: 500 }
