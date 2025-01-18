@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import prisma from "../../../../../lib/prisma";
 
 // 1) GET: Fetch a single recipe by ID
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const { id } = params;
@@ -37,7 +38,7 @@ export async function GET(
 
 // 2) PUT: Update a single recipe by ID
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const { id } = params;
@@ -50,7 +51,6 @@ export async function PUT(
   try {
     const data = await request.json();
 
-    // For partial updates, include only the fields you allow users to change:
     const updatedRecipe = await prisma.recipe.update({
       where: { id: recipeId },
       data: {
@@ -59,9 +59,6 @@ export async function PUT(
         description: data.description,
         image: data.image,
         portion: data.portion,
-        // If you want to allow editing of ingredients/steps, you'd do that here,
-        // but partial nested updates can get tricky with Prisma. 
-        // e.g., data.ingredients, data.steps, etc. if needed.
       },
     });
 
@@ -77,7 +74,7 @@ export async function PUT(
 
 // 3) DELETE: Remove a single recipe by ID
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const { id } = params;
