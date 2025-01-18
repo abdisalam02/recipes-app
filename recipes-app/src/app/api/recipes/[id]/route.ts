@@ -2,12 +2,18 @@ import { NextResponse } from "next/server";
 import { type NextRequest } from "next/server";
 import prisma from "../../../../../lib/prisma";
 
+type Context = {
+  params: {
+    id: string;
+  };
+};
+
 // 1) GET: Fetch a single recipe by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: Context
 ) {
-  const { id } = params;
+  const { id } = context.params;
 
   try {
     const recipe = await prisma.recipe.findUnique({
@@ -39,9 +45,9 @@ export async function GET(
 // 2) PUT: Update a single recipe by ID
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: Context
 ) {
-  const { id } = params;
+  const { id } = context.params;
   const recipeId = Number(id);
 
   if (isNaN(recipeId)) {
@@ -75,9 +81,9 @@ export async function PUT(
 // 3) DELETE: Remove a single recipe by ID
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: Context
 ) {
-  const { id } = params;
+  const { id } = context.params;
   const recipeId = Number(id);
 
   if (isNaN(recipeId)) {
