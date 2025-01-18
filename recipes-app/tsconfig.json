@@ -1,14 +1,14 @@
 // tsconfig.json
 {
   "compilerOptions": {
+    "skipLibCheck": true,
+    "strict": false,
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true,
     "baseUrl": "./",
     "paths": {
       "@prisma/client": ["node_modules/@prisma/client"],

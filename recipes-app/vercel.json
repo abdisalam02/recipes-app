@@ -1,6 +1,2 @@
-{
-    "build": {
-      "ignoreCommand": "bash ./scripts/ignore-errors.sh"
-    }
-  }
+
   
