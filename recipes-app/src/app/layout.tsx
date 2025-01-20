@@ -1,5 +1,4 @@
 "use client";
-import { AuthProvider } from "./context/AuthContext";
 import { MantineProvider, createTheme, Button } from "@mantine/core";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -53,7 +52,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="color-scheme" content="light dark" />
       </head>
       <body>
-      <AuthProvider>
         <MantineProvider 
           theme={theme} // Pass theme separately
           defaultColorScheme={colorScheme} // Set default color scheme
@@ -86,7 +84,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <p>&copy; {new Date().getFullYear()} Recipes App. All rights reserved.</p>
           </footer>
         </MantineProvider>
-      </AuthProvider>
       </body>
     </html>
   );
