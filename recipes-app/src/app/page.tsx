@@ -1,5 +1,4 @@
-// src/pages/index.tsx or app/page.tsx
-
+// src/app/page.tsx
 "use client";
 
 import {
@@ -18,7 +17,6 @@ import {
   Select,
   Loader,
 } from "@mantine/core";
-// Removed unused imports like Box
 import { IconHeart, IconHeartFilled, IconX } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { notifications } from "@mantine/notifications";
@@ -51,9 +49,9 @@ interface Recipe {
 // Favorite Interface
 interface Favorite {
   id: number;
-  userId: number;
   recipeId: number;
   recipe: Recipe;
+  created_at: string;
 }
 
 export default function HomePage() {
@@ -195,7 +193,7 @@ export default function HomePage() {
     return (
       <Container size="md" py="xl">
         <Group align="center">
-          <Loader size="xl" color="blue" variant="dots" /> {/* Replaced static text with Loader */}
+          <Loader size="xl" color="blue" variant="dots" />
         </Group>
       </Container>
     );
@@ -221,9 +219,7 @@ export default function HomePage() {
     <Container size="lg" py="xl">
       {/* Wrap Title in a Group for alignment */}
       <Group align="center">
-        <Title>
-          Recipe Collection
-        </Title>
+        <Title>Recipe Collection</Title>
       </Group>
 
       {/* Search and Filter Section */}
@@ -235,7 +231,6 @@ export default function HomePage() {
           onChange={(event) => setSearchTerm(event.currentTarget.value)}
           radius="xl"
           size="md"
-          // Removed icon prop
           rightSection={
             searchTerm ? (
               <ActionIcon
@@ -275,15 +270,10 @@ export default function HomePage() {
       {/* Recipes Grid */}
       {filteredRecipes.length === 0 ? (
         <Group align="center">
-          <Text color="dimmed">
-            No recipes found.
-          </Text>
+          <Text color="dimmed">No recipes found.</Text>
         </Group>
       ) : (
-        <SimpleGrid
-          cols={3}
-          spacing="lg"
-        >
+        <SimpleGrid cols={3} spacing="lg">
           {filteredRecipes.map((recipe) => (
             <Card
               shadow="md"
@@ -309,9 +299,7 @@ export default function HomePage() {
               </Card.Section>
 
               <Group mt="md" mb="xs">
-                <Text size="lg">
-                  {recipe.title}
-                </Text>
+                <Text size="lg">{recipe.title}</Text>
                 <Badge color="pink" variant="light" size="sm">
                   {recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)}
                 </Badge>

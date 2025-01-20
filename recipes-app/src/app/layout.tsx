@@ -1,11 +1,12 @@
 "use client";
-
+import { AuthProvider } from "./context/AuthContext";
 import { MantineProvider, createTheme, Button } from "@mantine/core";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { IconBook2, IconSun, IconMoon } from "@tabler/icons-react";
-import '@mantine/core/styles.css';
-import './globals.css';
+import '@mantine/core/styles.css'; // Make sure you are importing Mantine styles
+import './globals.css'; // Your global CSS file
+import 'normalize.css'; // Import Normalize.css for consistent styles across browsers
 
 const theme = createTheme({
   fontFamily: 'Inter, sans-serif',
@@ -52,11 +53,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="color-scheme" content="light dark" />
       </head>
       <body>
+      <AuthProvider>
         <MantineProvider 
           theme={theme} // Pass theme separately
-          colorScheme={colorScheme} // Pass colorScheme as a separate prop
-          withGlobalStyles
-          withNormalizeCSS
+          defaultColorScheme={colorScheme} // Set default color scheme
         >
           <nav className="navbar">
             <div className="navbar-content">
@@ -83,9 +83,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </main>
           <footer className="footer">
-            <p>&copy; {new Date().getFullYear()} Recipes App. All rights reserved.hihi</p>
+            <p>&copy; {new Date().getFullYear()} Recipes App. All rights reserved.</p>
           </footer>
         </MantineProvider>
+      </AuthProvider>
       </body>
     </html>
   );

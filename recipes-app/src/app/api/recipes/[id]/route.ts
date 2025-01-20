@@ -1,33 +1,57 @@
+// src/app/api/recipes/[id]/route.ts
 import { NextResponse } from "next/server";
-import prisma from "../../../../../lib/prisma";
+import supabase from "../../../../../lib/supabaseClient";
+import { NextRequest } from "next/server";
 
-// 1) GET: Fetch a single recipe by ID
+// Function to retrieve user ID from the request (optional, for authenticated routes)
+const getUserId = async (request: NextRequest): Promise<string | null> => {
+  const authHeader = request.headers.get("Authorization");
+  const token = authHeader?.split("Bearer ")[1];
+  if (!token) return null;
+
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data.user) return null;
+
+  return data.user.id; // Supabase user ID is a string (UUID)
+};
+
+// GET /api/recipes/:id - Fetch a specific recipe
 export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
+  if (!params?.id) {
+    return NextResponse.json({ error: "ID parameter is required" }, { status: 400 });
+  }
+  const { id } = params;
 
   try {
-    const recipe = await prisma.recipe.findUnique({
-      where: { id: Number(id) },
-      include: {
-        ingredients: true,
-        steps: true,
-      },
-    });
+    const { data: recipe, error } = await supabase
+      .from("recipes")
+      .select(`
+        *,
+        ingredients (
+          id,
+          quantity,
+          unit,
+          name
+        ),
+        steps (
+          id,
+          order,
+          description
+        )
+      `)
+      .eq("id", id)
+      .single();
 
-    if (!recipe) {
+    if (error || !recipe) {
       return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
     }
 
     return NextResponse.json(recipe, { status: 200 });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error("Error fetching recipe:", error.message);
-    } else {
-      console.error("Unknown error fetching recipe.");
-    }
+  } catch (error: any) {
+    console.error("Error fetching recipe:", error.message);
     return NextResponse.json(
       { error: "Failed to fetch recipe. Please try again later." },
       { status: 500 }
@@ -35,48 +59,15 @@ export async function GET(
   }
 }
 
-// 2) PUT: Update a single recipe by ID
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-  const recipeId = Number(id);
-
-  if (isNaN(recipeId)) {
-    return NextResponse.json({ error: "Invalid recipe ID" }, { status: 400 });
-  }
-
-  try {
-    const data = await request.json();
-
-    const updatedRecipe = await prisma.recipe.update({
-      where: { id: recipeId },
-      data: {
-        title: data.title,
-        category: data.category,
-        description: data.description,
-        image: data.image,
-        portion: data.portion,
-      },
-    });
-
-    return NextResponse.json(updatedRecipe, { status: 200 });
-  } catch (error) {
-    console.error("Error updating recipe:", error);
-    return NextResponse.json(
-      { error: "Failed to update recipe." },
-      { status: 500 }
-    );
-  }
-}
-
-// 3) DELETE: Remove a single recipe by ID
+// DELETE /api/recipes/:id - Delete a specific recipe
 export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
+  if (!params?.id) {
+    return NextResponse.json({ error: "ID parameter is required" }, { status: 400 });
+  }
+  const { id } = params;
   const recipeId = Number(id);
 
   if (isNaN(recipeId)) {
@@ -84,24 +75,19 @@ export async function DELETE(
   }
 
   try {
-    // 1. Delete child references (if you have them)
-    await prisma.ingredient.deleteMany({
-      where: { recipeId },
-    });
-    await prisma.step.deleteMany({
-      where: { recipeId },
-    });
-    await prisma.favorite.deleteMany({
-      where: { recipeId },
-    });
-    // 2. Now delete the recipe
-    await prisma.recipe.delete({
-      where: { id: recipeId },
-    });
+    // Delete the recipe. If foreign keys are set with ON DELETE CASCADE, related records will be deleted automatically.
+    const { error: deleteError } = await supabase
+      .from("recipes")
+      .delete()
+      .eq("id", recipeId);
 
-    return NextResponse.json({ message: "Recipe deleted" }, { status: 200 });
-  } catch (error) {
-    console.error("Error deleting recipe:", error);
+    if (deleteError) {
+      throw new Error(deleteError.message);
+    }
+
+    return NextResponse.json({ message: "Recipe deleted successfully" }, { status: 200 });
+  } catch (error: any) {
+    console.error("Error deleting recipe:", error.message);
     return NextResponse.json(
       { error: "Failed to delete recipe." },
       { status: 500 }

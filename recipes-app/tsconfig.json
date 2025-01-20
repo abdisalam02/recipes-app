@@ -1,20 +1,18 @@
-// tsconfig.json
 {
   "compilerOptions": {
-    "skipLibCheck": true,
+    "types": ["node", "react"],
+    "skipLibCheck": true,  // Change to true to skip checking node_modules
     "strict": true,
-    "target": "ESNext",
-    "module": "ESNext",
+    "target": "es5",      // Change to es5 for better compatibility
+    "module": "esnext",   // Keep this as esnext for Next.js
     "moduleResolution": "node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": "./",
     "paths": {
-      "@prisma/client": ["node_modules/@prisma/client"],
-      "@/*": [
-        "./*"
-      ]
+      // "@prisma/client": ["node_modules/@prisma/client"],
+      "@/*": ["./*"]
     },
     "lib": [
       "dom",
@@ -39,7 +37,7 @@
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "emotion.d.ts"
-  ],
+, "prismaTest.ts"  ],
   "exclude": [
     "node_modules"
   ]

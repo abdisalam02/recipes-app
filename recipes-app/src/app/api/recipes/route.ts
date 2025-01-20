@@ -1,123 +1,112 @@
-// app/api/recipes/route.ts
-
+// src/app/api/recipes/route.ts
 import { NextResponse } from "next/server";
-import prisma from "../../../../lib/prisma";
-import { fetchGoogleImages } from "../../../../lib/googleSearch";
+import supabase from "../../../../lib/supabaseClient";
+import { NextRequest } from "next/server";
 
-// Define Interfaces
-interface IngredientInput {
-  quantity: number;
-  unit: string;
-  name: string;
-}
-
-interface StepInput {
-  order?: number;
-  description: string;
-}
-
-interface RecipeInput {
-  title: string;
-  category: string;
-  description: string;
-  ingredients: IngredientInput[];
-  steps: StepInput[];
-  portion?: number;
-  image?: string;
-}
-
-// interface RecipeOutput {
-//   id: number;
-//   title: string;
-//   category: string;
-//   description: string;
-//   image?: string;
-//   portion: number;
-//   ingredients: IngredientInput[];
-//   steps: StepInput[];
-// }
-
-export async function POST(request: Request) {
+// GET /api/recipes - Fetch all recipes
+export async function GET(request: NextRequest) {
   try {
-    const data: RecipeInput = await request.json();
+    const { data: recipes, error } = await supabase
+      .from("recipes")
+      .select(`
+        *,
+        ingredients (
+          id,
+          quantity,
+          unit,
+          name
+        ),
+        steps (
+          id,
+          order,
+          description
+        )
+      `)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return NextResponse.json(recipes, { status: 200 });
+  } catch (error: any) {
+    console.error("Error fetching recipes:", error.message);
+    return NextResponse.json(
+      { error: "Failed to fetch recipes. Please try again later." },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/recipes - Create a new recipe
+// src/app/api/recipes/route.ts
+export async function POST(request: NextRequest) {
+  try {
+    const data = await request.json();
     const { title, category, description, ingredients, steps, portion, image } = data;
 
-    if (!title || !category || !description || !ingredients || !steps) {
+    // Basic validation
+    if (!title || !category || !description || !ingredients || !steps || !portion) {
       return NextResponse.json(
         { error: "All fields are required" },
         { status: 400 }
       );
     }
 
-    // If user provided an image, use it. Otherwise fetch from Google using the title
-    let imageUrl = image;
-    if (!imageUrl || imageUrl.trim() === "") {
-      const images = await fetchGoogleImages(title, 1); // search by title
-      imageUrl = images && images.length > 0 ? images[0] : "";
+    // Insert recipe into Supabase
+    const { data: recipe, error: recipeError } = await supabase
+      .from("recipes")
+      .insert([
+        {
+          title,
+          category,
+          description,
+          image: image || null, // Handle optional image
+          portion,
+        },
+      ])
+      .select("*")
+      .single();
+
+    if (recipeError) {
+      throw new Error(`Supabase Error (recipes): ${recipeError.message}`);
     }
 
-    const recipe = await prisma.recipe.create({
-      data: {
-        title,
-        category,
-        description,
-        image: imageUrl || undefined,
-        portion: portion || 1,
-        ingredients: {
-          create: ingredients.map((ing: IngredientInput) => ({
-            quantity: ing.quantity,
-            unit: ing.unit,
-            name: ing.name,
-          })),
-        },
-        steps: {
-          create: steps.map((step: StepInput, index: number) => ({
-            order: step.order || index + 1,
-            description: step.description,
-          })),
-        },
-      },
-      include: {
-        ingredients: true,
-        steps: true,
-      },
-    });
+    // Prepare ingredients and steps with recipe_id
+    const ingredientsWithRecipeId = ingredients.map((ing: any) => ({
+      ...ing,
+      recipe_id: recipe.id,
+    }));
+
+    const stepsWithRecipeId = steps.map((step: any, index: number) => ({
+      ...step,
+      order: index + 1,
+      recipe_id: recipe.id,
+    }));
+
+    // Insert ingredients
+    const { error: ingredientsError } = await supabase
+      .from("ingredients")
+      .insert(ingredientsWithRecipeId);
+
+    if (ingredientsError) {
+      throw new Error(`Supabase Error (ingredients): ${ingredientsError.message}`);
+    }
+
+    // Insert steps
+    const { error: stepsError } = await supabase
+      .from("steps")
+      .insert(stepsWithRecipeId);
+
+    if (stepsError) {
+      throw new Error(`Supabase Error (steps): ${stepsError.message}`);
+    }
 
     return NextResponse.json(recipe, { status: 201 });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error("Error creating recipe:", error.message);
-      return NextResponse.json(
-        { error: error.message || "Failed to create recipe." },
-        { status: 500 }
-      );
-    } else {
-      console.error("Unknown error creating recipe.");
-      return NextResponse.json(
-        { error: "Failed to create recipe." },
-        { status: 500 }
-      );
-    }
-  }
-}
-
-export async function GET() {
-  try {
-    const recipes = await prisma.recipe.findMany({
-      include: {
-        ingredients: true,
-        steps: true,
-      },
-    });
-    return NextResponse.json(recipes, { status: 200 });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error("Error fetching recipes:", error.message);
-    } else {
-      console.error("Unknown error fetching recipes.");
-    }
+  } catch (error: any) {
+    console.error("Error creating recipe:", error.message);
     return NextResponse.json(
-      { error: "Failed to fetch recipes. Please try again later." },
+      { error: error.message || "Failed to create recipe." },
       { status: 500 }
     );
   }
