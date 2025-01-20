@@ -81,7 +81,13 @@ export async function POST(request: NextRequest) {
 
     // Prepare ingredients and steps with recipe_id
     const ingredientsWithRecipeId = ingredients.map((ing: unknown) => {
-      if (typeof ing === "object" && ing !== null && "quantity" in ing && "unit" in ing && "name" in ing) {
+      if (
+        typeof ing === "object" &&
+        ing !== null &&
+        "quantity" in ing &&
+        "unit" in ing &&
+        "name" in ing
+      ) {
         return {
           ...(ing as Record<string, unknown>),
           recipe_id: recipe.id,
@@ -92,7 +98,11 @@ export async function POST(request: NextRequest) {
     });
 
     const stepsWithRecipeId = steps.map((step: unknown, index: number) => {
-      if (typeof step === "object" && step !== null && "description" in step) {
+      if (
+        typeof step === "object" &&
+        step !== null &&
+        "description" in step
+      ) {
         return {
           ...(step as Record<string, unknown>),
           order: index + 1,
