@@ -3,21 +3,11 @@ import { NextResponse } from "next/server";
 import supabase from "../../../../../lib/supabaseClient";
 import { NextRequest } from "next/server";
 
-// Function to retrieve user ID from the request (optional, for authenticated routes)
-const getUserId = async (request: NextRequest): Promise<string | null> => {
-  const authHeader = request.headers.get("Authorization");
-  const token = authHeader?.split("Bearer ")[1];
-  if (!token) return null;
-
-  const { data, error } = await supabase.auth.getUser(token);
-  if (error || !data.user) return null;
-
-  return data.user.id; // Supabase user ID is a string (UUID)
-};
+// Removed getUserId function since authentication is not required
 
 // GET /api/recipes/:id - Fetch a specific recipe
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest, // Prefixed with underscore since it's unused
   { params }: { params: { id: string } }
 ) {
   if (!params?.id) {
@@ -50,18 +40,26 @@ export async function GET(
     }
 
     return NextResponse.json(recipe, { status: 200 });
-  } catch (error: any) {
-    console.error("Error fetching recipe:", error.message);
-    return NextResponse.json(
-      { error: "Failed to fetch recipe. Please try again later." },
-      { status: 500 }
-    );
+  } catch (error: unknown) { // Changed 'any' to 'unknown'
+    if (error instanceof Error) {
+      console.error("Error fetching recipe:", error.message);
+      return NextResponse.json(
+        { error: "Failed to fetch recipe. Please try again later." },
+        { status: 500 }
+      );
+    } else {
+      console.error("An unknown error occurred while fetching the recipe.");
+      return NextResponse.json(
+        { error: "An unknown error occurred." },
+        { status: 500 }
+      );
+    }
   }
 }
 
 // DELETE /api/recipes/:id - Delete a specific recipe
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest, // Prefixed with underscore since it's unused
   { params }: { params: { id: string } }
 ) {
   if (!params?.id) {
@@ -86,11 +84,19 @@ export async function DELETE(
     }
 
     return NextResponse.json({ message: "Recipe deleted successfully" }, { status: 200 });
-  } catch (error: any) {
-    console.error("Error deleting recipe:", error.message);
-    return NextResponse.json(
-      { error: "Failed to delete recipe." },
-      { status: 500 }
-    );
+  } catch (error: unknown) { // Changed 'any' to 'unknown'
+    if (error instanceof Error) {
+      console.error("Error deleting recipe:", error.message);
+      return NextResponse.json(
+        { error: "Failed to delete recipe." },
+        { status: 500 }
+      );
+    } else {
+      console.error("An unknown error occurred while deleting the recipe.");
+      return NextResponse.json(
+        { error: "An unknown error occurred." },
+        { status: 500 }
+      );
+    }
   }
 }

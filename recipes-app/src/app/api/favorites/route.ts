@@ -3,7 +3,7 @@ import { NextResponse, NextRequest } from "next/server";
 import supabase from "../../../../lib/supabaseClient";
 
 // GET /api/favorites - Fetch all favorites
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) { // Prefixed with underscore
   try {
     const { data: favorites, error } = await supabase
       .from("favorites")
@@ -28,9 +28,14 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(favorites, { status: 200 });
-  } catch (error: any) {
-    console.error("Error fetching favorites:", error.message);
-    return NextResponse.json({ error: "Failed to fetch favorites" }, { status: 500 });
+  } catch (error: unknown) { // Changed 'any' to 'unknown'
+    if (error instanceof Error) {
+      console.error("Error fetching favorites:", error.message);
+      return NextResponse.json({ error: "Failed to fetch favorites" }, { status: 500 });
+    } else {
+      console.error("An unknown error occurred while fetching favorites.");
+      return NextResponse.json({ error: "An unknown error occurred." }, { status: 500 });
+    }
   }
 }
 
@@ -84,9 +89,14 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(newFavorite, { status: 201 });
-  } catch (error: any) {
-    console.error("Error adding favorite:", error.message);
-    return NextResponse.json({ error: "Failed to add favorite" }, { status: 500 });
+  } catch (error: unknown) { // Changed 'any' to 'unknown'
+    if (error instanceof Error) {
+      console.error("Error adding favorite:", error.message);
+      return NextResponse.json({ error: "Failed to add favorite" }, { status: 500 });
+    } else {
+      console.error("An unknown error occurred while adding favorite.");
+      return NextResponse.json({ error: "An unknown error occurred." }, { status: 500 });
+    }
   }
 }
 
@@ -109,8 +119,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     return NextResponse.json({ message: "Favorite removed successfully" }, { status: 200 });
-  } catch (error: any) {
-    console.error("Error removing favorite:", error.message);
-    return NextResponse.json({ error: "Failed to remove favorite" }, { status: 500 });
+  } catch (error: unknown) { // Changed 'any' to 'unknown'
+    if (error instanceof Error) {
+      console.error("Error removing favorite:", error.message);
+      return NextResponse.json({ error: "Failed to remove favorite" }, { status: 500 });
+    } else {
+      console.error("An unknown error occurred while removing favorite.");
+      return NextResponse.json({ error: "An unknown error occurred." }, { status: 500 });
+    }
   }
 }
