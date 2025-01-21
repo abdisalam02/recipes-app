@@ -19,6 +19,7 @@ import {
   NumberInput,
   Group,
   ActionIcon,
+  Modal,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconChefHat, IconPlus, IconMinus } from "@tabler/icons-react";
@@ -34,6 +35,16 @@ const categories = [
   "Beverage",
   "Appetizer",
 ].map((category) => ({ value: category.toLowerCase(), label: category }));
+const regions = [
+  "Italian",
+  "American",
+  "Mexican",
+  "Mediterranean",
+  "Asian",
+  "French",
+  "Indian",
+].map((region) => ({ value: region.toLowerCase(), label: region }));
+
 
 interface Ingredient {
   quantity: number;
@@ -49,12 +60,14 @@ interface Step {
 interface FormData {
   title: string;
   category: string;
+  region: string;  // Add region field
   description: string;
   ingredients: Ingredient[];
   steps: Step[];
   image?: string; // Optional
   portion: number;
 }
+
 
 interface JsonData {
   title: string;
@@ -69,6 +82,7 @@ interface JsonData {
 interface RecipeInput {
   title: string;
   category: string;
+  region: string;  // Add region field
   description: string;
   image?: string;
   portion: number;
@@ -79,9 +93,11 @@ interface RecipeInput {
 export default function AddRecipePage() {
   // 2. Initialize State Variables with Proper Types
   const [activeTab, setActiveTab] = useState<string>("form");
+  const [modalOpened, setModalOpened] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     title: "",
     category: "",
+    region: "",
     description: "",
     ingredients: [
       { quantity: 1, unit: "units", name: "Unknown Ingredient" },
@@ -157,6 +173,7 @@ export default function AddRecipePage() {
     if (
       !formData.title.trim() ||
       !formData.category.trim() ||
+      !formData.region.trim() ||  // Check if region is selected
       !formData.description.trim() ||
       formData.portion < 1 ||
       formData.ingredients.some(
@@ -171,6 +188,7 @@ export default function AddRecipePage() {
     }
     return true;
   };
+  
 
   // 6. Fetch Default Image Using Recipe Title
 
@@ -221,8 +239,7 @@ export default function AddRecipePage() {
 
   // 7. Submitting with Manual Form
 
-  const handleFormSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault();
+  const handleFormSubmit = async (): Promise<void> => {
     if (!isFormValid()) {
       notifications.show({
         title: "Invalid Form",
@@ -231,13 +248,14 @@ export default function AddRecipePage() {
       });
       return;
     }
-
+  
     setLoading(true);
-
+  
     try {
       const payload: RecipeInput = {
         title: formData.title.trim(),
         category: formData.category.trim(),
+        region: formData.region.trim(),
         description: formData.description.trim(),
         portion: formData.portion,
         ingredients: formData.ingredients.map((ing) => ({
@@ -251,13 +269,13 @@ export default function AddRecipePage() {
         })),
         image: formData.image?.trim() || undefined,
       };
-
+  
       const response = await fetch("/api/recipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
+  
       if (response.ok) {
         notifications.show({
           title: "Success",
@@ -268,6 +286,7 @@ export default function AddRecipePage() {
         setFormData({
           title: "",
           category: "",
+          region: "",
           description: "",
           ingredients: [
             { quantity: 1, unit: "units", name: "Unknown Ingredient" },
@@ -298,80 +317,94 @@ export default function AddRecipePage() {
       setLoading(false);
     }
   };
+  
 
   // 8. Submitting with JSON
 
   const handleJsonSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault();
-    if (!jsonData.trim()) {
+  e.preventDefault();
+
+  if (!jsonData.trim()) {
+    notifications.show({
+      title: "Invalid JSON",
+      message: "Please provide valid JSON data.",
+      color: "red",
+    });
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const parsedData: JsonData = JSON.parse(jsonData);
+
+    // Basic validation for parsed JSON
+    if (
+      !parsedData.title?.trim() ||
+      !parsedData.category?.trim() ||
+      !parsedData.description?.trim() ||
+      parsedData.portion < 1 ||
+      !Array.isArray(parsedData.ingredients) ||
+      !Array.isArray(parsedData.steps)
+    ) {
+      throw new Error("JSON data is missing required fields or has invalid formats.");
+    }
+
+    // Check if image is missing and fetch a default image if necessary
+    if (!parsedData.image) {
+      const res = await fetch(`/api/fetch-default-image?query=${encodeURIComponent(parsedData.title)}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to fetch default image");
+      }
+      const data = await res.json();
+      parsedData.image = data.imageUrl; // Use the fetched image
+    }
+
+    // Proceed to submit the recipe with the image included
+    const response = await fetch("/api/recipes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(parsedData),
+    });
+
+    if (response.ok) {
       notifications.show({
-        title: "Invalid JSON",
-        message: "Please provide valid JSON data.",
+        title: "Success",
+        message: "Recipe added successfully via JSON!",
+        color: "green",
+      });
+      setJsonData("");
+    } else {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to add recipe via JSON");
+    }
+  } catch (error: unknown) {
+    if (error instanceof SyntaxError) {
+      notifications.show({
+        title: "JSON Syntax Error",
+        message: "Please ensure the JSON is correctly formatted.",
         color: "red",
       });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const parsedData: JsonData = JSON.parse(jsonData);
-
-      // Basic validation for parsed JSON
-      if (
-        !parsedData.title?.trim() ||
-        !parsedData.category?.trim() ||
-        !parsedData.description?.trim() ||
-        parsedData.portion < 1 ||
-        !Array.isArray(parsedData.ingredients) ||
-        !Array.isArray(parsedData.steps)
-      ) {
-        throw new Error("JSON data is missing required fields or has invalid formats.");
-      }
-
-      const response = await fetch("/api/recipes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsedData),
+    } else if (error instanceof Error) {
+      notifications.show({
+        title: "Error",
+        message:
+          error.message ||
+          "Failed to add recipe via JSON. Please check the format.",
+        color: "red",
       });
-
-      if (response.ok) {
-        notifications.show({
-          title: "Success",
-          message: "Recipe added successfully via JSON!",
-          color: "green",
-        });
-        setJsonData("");
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to add recipe via JSON");
-      }
-    } catch (error: unknown) {
-      if (error instanceof SyntaxError) {
-        notifications.show({
-          title: "JSON Syntax Error",
-          message: "Please ensure the JSON is correctly formatted.",
-          color: "red",
-        });
-      } else if (error instanceof Error) {
-        notifications.show({
-          title: "Error",
-          message:
-            error.message ||
-            "Failed to add recipe via JSON. Please check the format.",
-          color: "red",
-        });
-      } else {
-        notifications.show({
-          title: "Error",
-          message: "An unknown error occurred.",
-          color: "red",
-        });
-      }
-    } finally {
-      setLoading(false);
+    } else {
+      notifications.show({
+        title: "Error",
+        message: "An unknown error occurred.",
+        color: "red",
+      });
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <Container size="sm" py="xl">
@@ -428,6 +461,19 @@ export default function AddRecipePage() {
                   radius="xl"
                   size="md"
                 />
+                {/* Region Field */}
+                <Select
+                  label="Region"
+                  data={regions}
+                  required
+                  value={formData.region}
+                  onChange={(value: string | null) =>
+                    setFormData({ ...formData, region: value || "" })
+                  }
+                  radius="xl"
+                  size="md"
+                />
+
 
                 {/* Description Field */}
                 <Textarea
@@ -617,27 +663,28 @@ export default function AddRecipePage() {
                 </Stack>
 
                 <Button
-                  type="submit"
-                  fullWidth
-                  size="md"
-                  disabled={!isFormValid()}
-                  radius="xl"
-                  color="blue"
-                >
-                  Add Recipe
-                </Button>
-              </Stack>
-            </form>
-          </Tabs.Panel>
+  type="button"  // Open modal to confirm submission
+  fullWidth
+  size="md"
+  disabled={!isFormValid()}
+  radius="xl"
+  color="blue"
+  onClick={() => setModalOpened(true)}  // Open the modal for confirmation
+>
+  Add Recipe
+</Button>
+</Stack>
+</form>
+</Tabs.Panel>
 
-          {/* JSON Panel */}
-          <Tabs.Panel value="json" pt="md">
-            <form onSubmit={handleJsonSubmit}>
-              <Stack gap="md">
-                <Textarea
-                  name="jsonData"
-                  label="Recipe JSON"
-                  placeholder={`{
+{/* JSON Panel */}
+<Tabs.Panel value="json" pt="md">
+  <form onSubmit={handleJsonSubmit}>
+    <Stack gap="md">
+      <Textarea
+        name="jsonData"
+        label="Recipe JSON"
+        placeholder={`{
   "title": "Chocolate Cake",
   "category": "dessert",
   "description": "A rich and moist chocolate cake.",
@@ -652,28 +699,28 @@ export default function AddRecipePage() {
     { "order": 2, "description": "Mix all dry ingredients." }
   ]
 }`}
-                  minRows={10}
-                  required
-                  value={jsonData}
-                  onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-                    setJsonData(e.target.value)
-                  }
-                  radius="xl"
-                  size="md"
-                />
+        minRows={10}
+        required
+        value={jsonData}
+        onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+          setJsonData(e.target.value)
+        }
+        radius="xl"
+        size="md"
+      />
 
-                <Button
-                  type="submit"
-                  fullWidth
-                  size="md"
-                  disabled={!jsonData.trim()}
-                  radius="xl"
-                  color="blue"
-                >
-                  Add Recipe via JSON
-                </Button>
+      <Button
+        type="submit"
+        fullWidth
+        size="md"
+        disabled={!jsonData.trim()}
+        radius="xl"
+        color="blue"
+      >
+        Add Recipe via JSON
+      </Button>
 
-                <Code block>
+      <Code block>
 {`{
   "title": "Chocolate Cake",
   "category": "dessert",
@@ -689,12 +736,49 @@ export default function AddRecipePage() {
     { "order": 2, "description": "Mix all dry ingredients." }
   ]
 }`}
-                </Code>
-              </Stack>
-            </form>
-          </Tabs.Panel>
-        </Tabs>
-      </Paper>
-    </Container>
-  );
+      </Code>
+    </Stack>
+  </form>
+  <Button
+    type="button"  // This button will open the confirmation modal, not submit the form
+    fullWidth
+    size="md"
+    disabled={!isFormValid()}
+    radius="xl"
+    color="blue"
+    onClick={() => setModalOpened(true)}  // Open modal to confirm submission
+  >
+    Add Recipe
+  </Button>
+</Tabs.Panel>
+
+{/* JSON Input Panel */}
+</Tabs>
+
+{/* Confirmation Modal */}
+<Modal
+  opened={modalOpened}
+  onClose={() => setModalOpened(false)}
+  title="Confirm Submission"
+  centered
+>
+  <Text>Are you sure you want to submit this recipe?</Text>
+  <Group mt="md">
+    <Button color="red" onClick={() => setModalOpened(false)}>
+      Cancel
+    </Button>
+    <Button
+      color="green"
+      onClick={() => {
+        handleFormSubmit();  // Proceed to submit the form
+        setModalOpened(false);  // Close the modal after submission
+      }}
+    >
+      Yes, Submit
+    </Button>
+  </Group>
+</Modal>
+</Paper>
+</Container>
+);
 }

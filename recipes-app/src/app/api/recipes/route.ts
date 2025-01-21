@@ -50,10 +50,10 @@ export async function GET(_request: NextRequest) { // Prefixed with underscore s
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
-    const { title, category, description, ingredients, steps, portion, image } = data;
+    const { title, category, region, description, ingredients, steps, portion, image } = data;
 
     // Basic validation
-    if (!title || !category || !description || !ingredients || !steps || !portion) {
+    if (!title || !category || !region || !description || !ingredients || !steps || !portion) {
       return NextResponse.json(
         { error: "All fields are required" },
         { status: 400 }
@@ -61,23 +61,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert recipe into Supabase
-    const { data: recipe, error: recipeError } = await supabase
-      .from("recipes")
-      .insert([
-        {
-          title,
-          category,
-          description,
-          image: image || null, // Handle optional image
-          portion,
-        },
-      ])
-      .select("*")
-      .single();
-
-    if (recipeError) {
-      throw new Error(`Supabase Error (recipes): ${recipeError.message}`);
-    }
+    // Insert recipe into Supabase
+const { data: recipe, error: recipeError } = await supabase
+.from("recipes")
+.insert([
+  {
+    title,
+    category,
+    region, // Include region here
+    description,
+    image: image || null, // Handle optional image
+    portion,
+  },
+])
+.select("*")
+.single();
 
     // Prepare ingredients and steps with recipe_id
     const ingredientsWithRecipeId = ingredients.map((ing: unknown) => {

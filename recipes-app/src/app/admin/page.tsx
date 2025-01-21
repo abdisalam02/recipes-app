@@ -20,6 +20,8 @@ import {
   TextInput,
   Textarea,
   NumberInput,
+  Drawer,
+  Flex,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconTrash, IconEdit, IconLock } from "@tabler/icons-react";
@@ -37,6 +39,8 @@ interface Recipe {
 
 // 2. Define the AdminDashboard Page
 export default function AdminDashboardPage() {
+  const [editDrawerOpen, setEditDrawerOpen] = useState<boolean>(false);
+
   // A. Authentication States
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passwordInput, setPasswordInput] = useState<string>("");
@@ -209,11 +213,15 @@ export default function AdminDashboardPage() {
   const handleEdit = (recipe: Recipe) => {
     setCurrentRecipe(recipe);
     editModalHandlers.open();
+    setEditDrawerOpen(true);
+
   };
+   
+  
 
   const handleEditSubmit = async () => {
     if (!currentRecipe) return;
-
+  
     // Validate inputs
     if (
       !currentRecipe.title ||
@@ -229,7 +237,7 @@ export default function AdminDashboardPage() {
       });
       return;
     }
-
+  
     try {
       setLoading(true);
       const res = await fetch(`/api/recipes/${currentRecipe.id}`, {
@@ -243,12 +251,12 @@ export default function AdminDashboardPage() {
           image: currentRecipe.image,
         }),
       });
-
+  
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to update recipe");
       }
-
+  
       const updatedRecipe: Recipe = await res.json();
       setRecipes((prev) =>
         prev.map((r) => (r.id === updatedRecipe.id ? updatedRecipe : r))
@@ -258,7 +266,7 @@ export default function AdminDashboardPage() {
         message: "Recipe updated",
         color: "green",
       });
-      editModalHandlers.close();
+      setEditDrawerOpen(false);
     } catch (err: unknown) {
       if (err instanceof Error) {
         notifications.show({
@@ -277,6 +285,7 @@ export default function AdminDashboardPage() {
       setLoading(false);
     }
   };
+  
 
   // 9. If NOT authenticated, show the password form
   if (!isAuthenticated) {
@@ -324,58 +333,137 @@ export default function AdminDashboardPage() {
             Refresh
           </Button>
         </Group>
+        {/* Edit Recipe Drawer */}
+<Drawer
+  opened={editDrawerOpen}
+  onClose={() => setEditDrawerOpen(false)}
+  title="Edit Recipe"
+  padding="lg"
+  size="lg"
+>
+  {currentRecipe && (
+    <Stack gap="sm">
+      <TextInput
+        label="Title"
+        value={currentRecipe.title}
+        onChange={(e) =>
+          setCurrentRecipe({ ...currentRecipe, title: e.target.value })
+        }
+        required
+      />
+      <TextInput
+        label="Category"
+        value={currentRecipe.category}
+        onChange={(e) =>
+          setCurrentRecipe({ ...currentRecipe, category: e.target.value })
+        }
+        required
+      />
+      <Textarea
+        label="Description"
+        minRows={3}
+        value={currentRecipe.description}
+        onChange={(e) =>
+          setCurrentRecipe({
+            ...currentRecipe,
+            description: e.target.value,
+          })
+        }
+        required
+      />
+      <NumberInput
+        label="Portions"
+        min={1}
+        value={currentRecipe.portion}
+        onChange={(val: number | string) => {
+          if (typeof val === "number") {
+            setCurrentRecipe({
+              ...currentRecipe,
+              portion: val,
+            });
+          }
+        }}
+        required
+      />
+      <TextInput
+        label="Image URL"
+        value={currentRecipe.image}
+        onChange={(e) =>
+          setCurrentRecipe({ ...currentRecipe, image: e.target.value })
+        }
+        required
+      />
 
-        <SimpleGrid cols={3} spacing="lg">
-          {recipes.map((recipe) => (
-            <Card key={recipe.id} shadow="sm" p="lg" radius="md" withBorder>
-              <Card.Section>
-                <Image
-                  src={recipe.image}
-                  height={160}
-                  alt={recipe.title}
-                  fit="cover"
-                />
-              </Card.Section>
+      <Button
+        color="green"
+        onClick={handleEditSubmit}
+        loading={loading}
+      >
+        Save Changes
+      </Button>
+    </Stack>
+  )}
+</Drawer>
 
-              <Group mt="md" mb="xs">
-                <Text>{recipe.title}</Text>
-                <Badge color="pink" variant="light">
-                  {recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)}
-                </Badge>
-              </Group>
+<SimpleGrid
+  cols={{ base: 1, sm: 2, md: 3 }} // Responsive columns
+  spacing="lg"
+>
+  {recipes.map((recipe) => (
+    <Card key={recipe.id} shadow="sm" p="lg" radius="md" withBorder>
+      <Card.Section>
+        <Image
+          src={recipe.image}
+          height={160}
+          alt={recipe.title}
+          fit="cover"
+        />
+      </Card.Section>
 
-              <Text size="sm" color="dimmed">
-                {recipe.description.length > 100
-                  ? `${recipe.description.substring(0, 100)}...`
-                  : recipe.description}
-              </Text>
+      <Group mt="md" mb="xs">
+        <Text>{recipe.title}</Text>
+        <Badge color="pink" variant="light">
+          {recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)}
+        </Badge>
+      </Group>
 
-              <Group mt="md">
-                <Text size="sm">Portions: {recipe.portion}</Text>
-                <Group gap="xs">
-                  <ActionIcon
-                    variant="outline"
-                    color="blue"
-                    onClick={() => handleEdit(recipe)}
-                    title="Edit Recipe"
-                    aria-label={`Edit ${recipe.title}`}
-                  >
-                    <IconEdit size={18} />
-                  </ActionIcon>
-                  <ActionIcon
-                    variant="outline"
-                    color="red"
-                    onClick={() => handleDelete(recipe)}
-                    title="Delete Recipe"
-                    aria-label={`Delete ${recipe.title}`}
-                  >
-                    <IconTrash size={18} />
-                  </ActionIcon>
-                </Group>
-              </Group>
-            </Card>
-          ))}
-        </SimpleGrid>
+      <Text size="sm" color="dimmed">
+        {recipe.description.length > 100
+          ? `${recipe.description.substring(0, 100)}...`
+          : recipe.description}
+      </Text>
+
+      <Group mt="md"align="center">
+        <Text size="sm">Portions: {recipe.portion}</Text>
+
+        {/* Icons with Custom CSS */}
+        <div className="icon-container">
+          <ActionIcon
+            variant="outline"
+            color="blue"
+            onClick={() => handleEdit(recipe)}
+            title="Edit Recipe"
+            aria-label={`Edit ${recipe.title}`}
+          >
+            <IconEdit size={18} />
+          </ActionIcon>
+
+          <ActionIcon
+            variant="outline"
+            color="red"
+            onClick={() => handleDelete(recipe)}
+            title="Delete Recipe"
+            aria-label={`Delete ${recipe.title}`}
+          >
+            <IconTrash size={18} />
+          </ActionIcon>
+        </div>
+      </Group>
+    </Card>
+  ))}
+</SimpleGrid>
+
+
       </Stack>
 
       {/* Confirmation Modal for Deletion */}

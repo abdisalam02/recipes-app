@@ -20,6 +20,7 @@
     "@mantine/emotion": "^7.16.1",
     "@mantine/hooks": "^7.16.1",
     "@mantine/notifications": "^7.16.1",
+    "@mantine/styles": "^6.0.22",
     "@mui/material": "^6.3.1",
     "@nextui-org/react": "^2.6.11",
     "@nextui-org/theme": "^2.4.5",

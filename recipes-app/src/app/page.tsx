@@ -1,11 +1,9 @@
-// src/app/page.tsx
 "use client";
-
 import {
   Container,
   SimpleGrid,
   Card,
-  Image, // Mantine Image component
+  Image,
   Text,
   Badge,
   Button,
@@ -16,42 +14,38 @@ import {
   TextInput,
   Select,
   Loader,
-} from "@mantine/core";
-import { IconHeart, IconHeartFilled, IconX } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
-import { notifications } from "@mantine/notifications";
-import Link from "next/link";
-import { useDebouncedValue } from "@mantine/hooks"; // Added for debounced search
+  Stack,
+  Chip,
+  Autocomplete,
+  Drawer,
+  Affix,
+  Transition,
+} from '@mantine/core';
+import { IconHeart, IconHeartFilled, IconArrowUp } from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
+import { notifications } from '@mantine/notifications';
+import Link from 'next/link';
+import { useDebouncedValue, useWindowScroll, useDisclosure } from '@mantine/hooks';
 
 // Recipe Interface
 interface Recipe {
   id: number;
   title: string;
   category: string;
+  region: string;
   image: string;
   description: string;
   portion: number;
-  ingredients: Array<{
-    id: number;
-    quantity: number;
-    unit: string;
-    name: string;
-    recipeId: number;
-  }>;
-  steps: Array<{
-    id: number;
-    order: number;
-    description: string;
-    recipeId: number;
-  }>;
+  created_at: string;
+  updated_at: string;
 }
 
 // Favorite Interface
 interface Favorite {
   id: number;
-  recipeId: number;
-  recipe: Recipe;
+  recipe_id: number;
   created_at: string;
+  updated_at: string;
 }
 
 export default function HomePage() {
@@ -60,33 +54,34 @@ export default function HomePage() {
   const [loading, setLoading] = useState<boolean>(true);
 
   // States for Search and Category Filter
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [debouncedSearchTerm] = useDebouncedValue(searchTerm, 300); // Debounced search term
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedRegion, setSelectedRegion] = useState<string>('');
+
+  // Drawer handling
+  const [opened, { open, close }] = useDisclosure(false);
+
+  // Window scroll state for scroll-to-top button
+  const [scroll, scrollTo] = useWindowScroll();
 
   // Fetch Recipes and Favorites on Mount
   useEffect(() => {
     const fetchRecipes = async () => {
       try {
-        const res = await fetch("/api/recipes");
+        const res = await fetch('/api/recipes');
         if (!res.ok) {
           const errorData = await res.json();
-          throw new Error(errorData.error || "Failed to fetch recipes");
+          throw new Error(errorData.error || 'Failed to fetch recipes');
         }
         const data: Recipe[] = await res.json();
         setRecipes(data);
       } catch (error: unknown) {
         if (error instanceof Error) {
           notifications.show({
-            title: "Error",
-            message: error.message || "Failed to load recipes.",
-            color: "red",
-          });
-        } else {
-          notifications.show({
-            title: "Error",
-            message: "An unknown error occurred while fetching recipes.",
-            color: "red",
+            title: 'Error',
+            message: error.message || 'Failed to load recipes.',
+            color: 'red',
           });
         }
       }
@@ -94,25 +89,19 @@ export default function HomePage() {
 
     const fetchFavorites = async () => {
       try {
-        const res = await fetch("/api/favorites");
+        const res = await fetch('/api/favorites');
         if (!res.ok) {
           const errorData = await res.json();
-          throw new Error(errorData.error || "Failed to fetch favorites");
+          throw new Error(errorData.error || 'Failed to fetch favorites');
         }
         const data: Favorite[] = await res.json();
         setFavorites(data);
       } catch (error: unknown) {
         if (error instanceof Error) {
           notifications.show({
-            title: "Error",
-            message: error.message || "Failed to load favorites.",
-            color: "red",
-          });
-        } else {
-          notifications.show({
-            title: "Error",
-            message: "An unknown error occurred while fetching favorites.",
-            color: "red",
+            title: 'Error',
+            message: error.message || 'Failed to load favorites.',
+            color: 'red',
           });
         }
       }
@@ -128,61 +117,55 @@ export default function HomePage() {
   }, []);
 
   // Determine if a recipe is favorited
-  const isFavorited = (recipeId: number): boolean => {
-    return favorites.some((fav) => fav.recipeId === recipeId);
+  const isFavorited = (recipe_id: number): boolean => {
+    return favorites.some((fav) => fav.recipe_id === recipe_id);
   };
 
   // Toggle Favorite Status
-  const toggleFavorite = async (recipeId: number) => {
+  const toggleFavorite = async (recipe_id: number) => {
     try {
-      if (isFavorited(recipeId)) {
+      if (isFavorited(recipe_id)) {
         // DELETE => remove favorite
-        const res = await fetch("/api/favorites", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ recipeId }),
+        const res = await fetch('/api/favorites', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recipe_id }), // Use 'recipe_id'
         });
         if (!res.ok) {
           const errorData = await res.json();
-          throw new Error(errorData.error || "Failed to remove favorite");
+          throw new Error(errorData.error || 'Failed to remove favorite');
         }
-        setFavorites((prev) => prev.filter((fav) => fav.recipeId !== recipeId));
+        setFavorites((prev) => prev.filter((fav) => fav.recipe_id !== recipe_id));
         notifications.show({
-          title: "Removed from Favorites",
-          message: "The recipe has been unfavorited.",
-          color: "gray",
+          title: 'Removed from Favorites',
+          message: 'The recipe has been unfavorited.',
+          color: 'gray',
         });
       } else {
         // POST => add favorite
-        const res = await fetch("/api/favorites", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ recipeId }),
+        const res = await fetch('/api/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recipe_id }), // Use 'recipe_id'
         });
         if (!res.ok) {
           const errorData = await res.json();
-          throw new Error(errorData.error || "Failed to add favorite");
+          throw new Error(errorData.error || 'Failed to add favorite');
         }
         const newFavorite: Favorite = await res.json();
         setFavorites((prev) => [...prev, newFavorite]);
         notifications.show({
-          title: "Added to Favorites",
-          message: "The recipe has been favorited.",
-          color: "green",
+          title: 'Added to Favorites',
+          message: 'The recipe has been favorited.',
+          color: 'green',
         });
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
         notifications.show({
-          title: "Error",
-          message: error.message || "An error occurred.",
-          color: "red",
-        });
-      } else {
-        notifications.show({
-          title: "Error",
-          message: "An unknown error occurred.",
-          color: "red",
+          title: 'Error',
+          message: error.message || 'An error occurred.',
+          color: 'red',
         });
       }
     }
@@ -201,71 +184,83 @@ export default function HomePage() {
 
   // Function to get Image URL or fallback
   const getImageUrl = (image: string): string => {
-    if (image && image.trim() !== "") return image;
-    return "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg";
+    if (image && image.trim() !== '') return image;
+    return 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg';
   };
 
   // Get Unique Categories from Recipes
   const categories = Array.from(new Set(recipes.map((recipe) => recipe.category)));
+  const regions = Array.from(new Set(recipes.map((recipe) => recipe.region)));
 
-  // Filter Recipes based on Search Term and Selected Category
+  // Filter Recipes based on Search Term, Selected Category, and Region
   const filteredRecipes = recipes.filter((recipe) => {
     const matchesSearch = recipe.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
     const matchesCategory = selectedCategory ? recipe.category === selectedCategory : true;
-    return matchesSearch && matchesCategory;
+    const matchesRegion = selectedRegion ? recipe.region === selectedRegion : true;
+    return matchesSearch && matchesCategory && matchesRegion;
   });
 
   return (
     <Container size="lg" py="xl">
-      {/* Wrap Title in a Group for alignment */}
-      <Group align="center">
-        <Title>Recipe Collection</Title>
+      {/* Title */}
+      <Group align="center" mb="md">
+        <Title order={1}>Recipe Collection</Title>
       </Group>
 
-      {/* Search and Filter Section */}
-      <Group mb="xl">
-        {/* Search Bar */}
-        <TextInput
-          placeholder="Search recipes..."
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.currentTarget.value)}
-          radius="xl"
-          size="md"
-          rightSection={
-            searchTerm ? (
-              <ActionIcon
-                color="gray"
-                onClick={() => setSearchTerm("")}
-                aria-label="Clear search"
-              >
-                <IconX size={18} />
-              </ActionIcon>
-            ) : null
-          }
-          styles={{
-            root: { flex: 1 },
-          }}
-        />
+      {/* Autocomplete for Search */}
+      <Autocomplete
+        label="Search Recipes"
+        placeholder="Type recipe name..."
+        value={searchTerm}
+        onChange={setSearchTerm}
+        data={recipes.map((recipe) => recipe.title)}
+        mb="xl"
+      />
 
-        {/* Category Filter */}
-        <Select
-          data={[
-            { value: "", label: "All Categories" },
-            ...categories.map((category) => ({
-              value: category,
-              label: category.charAt(0).toUpperCase() + category.slice(1),
-            })),
-          ]}
-          placeholder="Filter by Category"
-          value={selectedCategory}
-          onChange={(value) => setSelectedCategory(value || "")}
-          radius="xl"
-          size="md"
-          styles={{
-            root: { flex: 1, maxWidth: 250 },
-          }}
-        />
-      </Group>
+      {/* Button to open Drawer for filters on mobile */}
+      <Button variant="outline" color="blue" onClick={open} mb="xl">
+        Filter Recipes
+      </Button>
+
+      {/* Drawer for filters on mobile */}
+      <Drawer
+        opened={opened}
+        onClose={close}
+        title="Filter Recipes"
+        position="right"
+        size="xs"
+        withCloseButton={false}
+      >
+        {/* Category Chips for Filtering */}
+        <Group mb="xl">
+          {categories.map((category) => (
+            <Chip
+              key={category}
+              onClick={() =>
+                setSelectedCategory((prev) => (prev === category ? '' : category))
+              }
+              variant={selectedCategory === category ? 'filled' : 'outline'}
+            >
+              {category}
+            </Chip>
+          ))}
+        </Group>
+
+        {/* Region Chips for Filtering */}
+        <Group mb="xl" >
+          {regions.map((region) => (
+            <Chip
+              key={region}
+              onClick={() =>
+                setSelectedRegion((prev) => (prev === region ? '' : region))
+              }
+              variant={selectedRegion === region ? 'filled' : 'outline'}
+            >
+              {region}
+            </Chip>
+          ))}
+        </Group>
+      </Drawer>
 
       {/* Recipes Grid */}
       {filteredRecipes.length === 0 ? (
@@ -273,28 +268,19 @@ export default function HomePage() {
           <Text color="dimmed">No recipes found.</Text>
         </Group>
       ) : (
-        <SimpleGrid cols={3} spacing="lg">
+        <SimpleGrid
+          cols={{ base: 1, sm: 2, md: 3, lg: 4 }}
+          spacing={{ base: 'sm', sm: 'md', lg: 'lg' }}
+          verticalSpacing={{ base: 'sm', sm: 'md', lg: 'lg' }}
+        >
           {filteredRecipes.map((recipe) => (
-            <Card
-              shadow="md"
-              p="lg"
-              radius="md"
-              withBorder
-              key={recipe.id}
-              sx={{
-                transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                "&:hover": {
-                  transform: "translateY(-5px)",
-                  boxShadow: "0 8px 20px rgba(0, 0, 0, 0.15)",
-                },
-              }}
-            >
+            <Card key={recipe.id}>
               <Card.Section>
                 <Image
                   src={getImageUrl(recipe.image)}
-                  height={160}
                   alt={recipe.title}
-                  fit="cover"
+                  className="recipe-image"
+                  loading="lazy"
                 />
               </Card.Section>
 
@@ -311,18 +297,22 @@ export default function HomePage() {
                   : recipe.description}
               </Text>
 
-              <Group mt="md" mb="xs">
+              <Group mt="md" mb="xs" align="center">
                 <Text size="sm" color="dimmed">
                   Portions: {recipe.portion}
                 </Text>
-                <Tooltip label={isFavorited(recipe.id) ? "Unfavorite" : "Favorite"}>
+                <Tooltip label={isFavorited(recipe.id) ? 'Unfavorite' : 'Favorite'}>
                   <ActionIcon
                     variant="transparent"
-                    color={isFavorited(recipe.id) ? "red" : "gray"}
+                    color={isFavorited(recipe.id) ? 'red' : 'gray'}
                     onClick={() => toggleFavorite(recipe.id)}
-                    aria-label={isFavorited(recipe.id) ? "Unfavorite" : "Favorite"}
+                    aria-label={isFavorited(recipe.id) ? 'Unfavorite' : 'Favorite'}
                   >
-                    {isFavorited(recipe.id) ? <IconHeartFilled size={24} /> : <IconHeart size={24} />}
+                    {isFavorited(recipe.id) ? (
+                      <IconHeartFilled size={24} />
+                    ) : (
+                      <IconHeart size={24} />
+                    )}
                   </ActionIcon>
                 </Tooltip>
               </Group>
@@ -333,13 +323,7 @@ export default function HomePage() {
                 fullWidth
                 radius="md"
                 component={Link}
-                href={`/recipes/${recipe.id}`} // Navigates to single recipe detail
-                sx={{
-                  transition: "background-color 0.2s ease",
-                  "&:hover": {
-                    backgroundColor: "#e3f2fd",
-                  },
-                }}
+                href={`/recipes/${recipe.id}`}
               >
                 View Recipe
               </Button>
@@ -347,6 +331,21 @@ export default function HomePage() {
           ))}
         </SimpleGrid>
       )}
+
+      {/* Scroll to Top Button */}
+      <Affix position={{ bottom: 20, right: 20 }}>
+        <Transition transition="slide-up" mounted={scroll.y > 0}>
+          {(transitionStyles) => (
+            <Button
+              leftSection={<IconArrowUp size={16} />}
+              style={transitionStyles}
+              onClick={() => scrollTo({ y: 0 })}
+            >
+              Scroll to top
+            </Button>
+          )}
+        </Transition>
+      </Affix>
     </Container>
   );
 }

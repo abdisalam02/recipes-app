@@ -1,3 +1,5 @@
+/* src/styles/globals.css */
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -17,6 +19,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  font-family: 'Inter', sans-serif;
 }
 
 main {
@@ -56,66 +59,74 @@ main {
   gap: 0.5rem;
 }
 
-.nav-links {
-  display: flex;
-  gap: 1.5rem;
-  align-items: center;
+/* Burger Menu (Hamburger) for mobile only */
+.burger-menu {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  /* Hide desktop navigation and show burger menu */
+  .nav-links {
+    display: none; /* Hide links by default on mobile */
+  }
+
+  .burger-menu {
+    display: block; /* Show burger menu */
+  }
+
+  /* For mobile navigation links */
+  .nav-links.open {
+    display: flex; /* Show links when burger is opened */
+    position: absolute;
+    top: var(--navbar-height);
+    left: 0;
+    right: 0;
+    background-color: var(--mantine-color-dark-7);
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .nav-logo {
+    font-size: 1.2rem;
+  }
+}
+
+/* Desktop Navigation: Show normal links, hide Burger menu */
+@media (min-width: 769px) {
+  .burger-menu {
+    display: none; /* Hide burger menu on desktop */
+  }
+
+  .nav-links {
+    display: flex; /* Show links on desktop */
+    gap: 2rem; /* Increased gap between links */
+    position: initial;
+    background-color: initial;
+    flex-direction: row; /* Display links in a row */
+    align-items: center; /* Vertically center the items */
+  }
 }
 
 .nav-link {
   text-decoration: none;
   color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
   font-weight: 500;
-  transition: color 0.2s ease;
-  position: relative;
+  padding: 0.75rem 1.5rem; /* Added padding to increase clickable area */
+  border-radius: 4px; /* Slight rounded corners for each link */
+  transition: color 0.3s ease, background-color 0.3s ease; /* Smooth transition for hover */
 }
 
 .nav-link:hover {
   color: var(--primary-color);
+  background-color: var(--mantine-color-gray-1); /* Light background color on hover */
 }
 
-.nav-link::after {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 2px;
-  bottom: -4px;
-  left: 0;
-  background-color: var(--primary-color);
-  transform: scaleX(0);
-  transition: transform 0.2s ease;
-}
-
-.nav-link:hover::after {
-  transform: scaleX(1);
-}
-
-/* Recipe Card Styles */
-.recipe-card {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.recipe-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--mantine-shadow-lg);
-}
-
-.recipe-image {
-  aspect-ratio: 16/9;
-  object-fit: cover;
-}
-
-.recipe-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.recipe-actions {
-  margin-top: auto;
+.nav-link.active {
+  color: var(--primary-color);
+  font-weight: 600; /* Bold active link */
+  background-color: var(--mantine-color-gray-0); /* Background color for active link */
+  border-radius: 4px;
 }
 
 /* Footer Styles */
@@ -134,7 +145,7 @@ main {
 
 [data-mantine-color-scheme='light'] {
   color-scheme: light;
-} 
+}
 
 .mantine-Paper-root {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -199,14 +210,120 @@ main {
 [data-mantine-color-scheme='dark'] .favorite-button {
   background-color: rgba(0, 0, 0, 0.7);
 }
+.header {
+  font-size: 1.5rem;
+}
+
+/* CSS file for custom styling */
+.icon-container {
+  display: flex;
+  gap: 8px;  /* Adds space between the icons */
+  justify-content: flex-start; /* Align icons to the left */
+  align-items: center; /* Vertically center icons */
+}
 
 /* Responsive Typography */
 @media (max-width: 768px) {
   .mantine-Title-root {
     font-size: 1.5rem;
   }
-  
+
   .mantine-Text-root {
-    font-size: 0.9rem;
+    font-size: 1.0rem;
   }
+}
+
+/* Responsive Utility Classes */
+.hidden-from-xs {
+  display: none;
+}
+
+@media (min-width: 30em) { /* xs: 480px */
+  .hidden-from-xs {
+    display: block;
+  }
+}
+
+.hidden-from-sm {
+  display: none;
+}
+
+@media (min-width: 48em) { /* sm: 768px */
+  .hidden-from-sm {
+    display: block;
+  }
+}
+
+.hidden-from-md {
+  display: none;
+}
+
+@media (min-width: 64em) { /* md: 1024px */
+  .hidden-from-md {
+    display: block;
+  }
+}
+
+.visible-from-sm {
+  display: none;
+}
+
+@media (min-width: 48em) { /* sm: 768px */
+  .visible-from-sm {
+    display: block;
+  }
+}
+
+.visible-from-md {
+  display: none;
+}
+
+@media (min-width: 64em) { /* md: 1024px */
+  .visible-from-md {
+    display: block;
+  }
+}
+
+/* Favorites Page - Cards Layout */
+.mantine-Card-root {
+  border-radius: var(--mantine-radius-lg);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mantine-Card-root:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--mantine-shadow-md);
+}
+
+.mantine-Card-section {
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+}
+
+.mantine-ActionIcon-root {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.mantine-Grid-root {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr); /* Default to 1 column */
+  gap: 1rem;
+}
+
+.mantine-Grid-root.mantine-Grid-sm {
+  grid-template-columns: repeat(2, 1fr); /* 2 columns for small screens */
+}
+
+.mantine-Grid-root.mantine-Grid-md {
+  grid-template-columns: repeat(3, 1fr); /* 3 columns for medium screens */
+}
+
+.mantine-Card-root .mantine-Card-section {
+  padding: 1rem;
+}
+
+.mantine-Card-root .mantine-Text-root {
+  line-height: 1.4;
 }
