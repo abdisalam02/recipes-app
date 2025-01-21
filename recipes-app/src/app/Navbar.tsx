@@ -3,7 +3,6 @@
 import { useDisclosure } from '@mantine/hooks';
 import { Burger, Menu, Button, Container,Title } from '@mantine/core';
 import { IconHome, IconPlus, IconHeart } from '@tabler/icons-react';
-import { useState } from 'react';
 import Link from 'next/link';
 
 export default function Navbar({ colorScheme, toggleColorScheme }: { colorScheme: string, toggleColorScheme: () => void }) {

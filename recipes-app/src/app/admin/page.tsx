@@ -21,7 +21,6 @@ import {
   Textarea,
   NumberInput,
   Drawer,
-  Flex,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconTrash, IconEdit, IconLock } from "@tabler/icons-react";

@@ -16,7 +16,7 @@ import {
   Paper,
   Stack,
 } from "@mantine/core";
-import { IconHeartFilled, IconHeartOff, IconX } from "@tabler/icons-react";
+import {  IconHeartOff } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import Link from "next/link";
 
