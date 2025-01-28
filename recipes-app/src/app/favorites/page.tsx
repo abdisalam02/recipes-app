@@ -16,7 +16,7 @@ import {
   Paper,
   Stack,
 } from "@mantine/core";
-import {  IconHeartOff } from "@tabler/icons-react";
+import { IconHeartOff } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import Link from "next/link";
 
@@ -192,7 +192,7 @@ export default function FavoritesPage() {
                     color="red"
                     size="lg"
                     style={{ position: "absolute", top: 10, right: 10 }}
-                    onClick={() => removeFavorite(fav.recipe_id)} // Use 'recipe_id'
+                    onClick={() => removeFavorite(fav.recipe_id)}
                     aria-label="Remove from favorites"
                   >
                     <IconHeartOff size={20} />
@@ -200,10 +200,14 @@ export default function FavoritesPage() {
                 </Tooltip>
               </Card.Section>
               <Group mt="md" mb="xs" align="center" gap="xs">
-                <Text  size="lg">
+                <Text size="lg">
                   {fav.recipe.title}
                 </Text>
-                <Badge color="blue" variant="light">
+                <Badge
+                  color="blue"
+                  variant="light"
+                  aria-label={`Category: ${fav.recipe.category}`}
+                >
                   {fav.recipe.category.charAt(0).toUpperCase() +
                     fav.recipe.category.slice(1)}
                 </Badge>

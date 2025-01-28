@@ -327,3 +327,41 @@ main {
 .mantine-Card-root .mantine-Text-root {
   line-height: 1.4;
 }
+/* globals.css */
+
+/* Nutritional Info Grid */
+.nutritional-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px; /* Equivalent to 'md' spacing */
+  margin-bottom: 16px; /* Equivalent to mb="md" */
+}
+
+@media (max-width: 768px) { /* 'md' breakpoint */
+  .nutritional-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) { /* 'sm' breakpoint */
+  .nutritional-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Nutritional Card */
+.nutritional-card {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 16px; /* Equivalent to 'lg' padding */
+  border: 1px solid #e0e0e0; /* Equivalent to 'withBorder' */
+  border-radius: 8px; /* Rounded corners */
+}
+
+.nutritional-card-title {
+  font-weight: 500; /* Equivalent to weight={500} */
+  margin-bottom: 8px;
+}
+
+.nutritional-card-value {
+  font-size: 1.2em;
+}

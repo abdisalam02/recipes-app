@@ -48,7 +48,6 @@ export default function AdminDashboardPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const [editModalOpen, editModalHandlers] = useDisclosure(false);
   const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(null);
 
   // C. Deletion Confirmation States
@@ -211,16 +210,13 @@ export default function AdminDashboardPage() {
   // 8. Handle Edit
   const handleEdit = (recipe: Recipe) => {
     setCurrentRecipe(recipe);
-    editModalHandlers.open();
     setEditDrawerOpen(true);
-
   };
-   
-  
 
+  // 9. Handle Edit Submit
   const handleEditSubmit = async () => {
     if (!currentRecipe) return;
-  
+
     // Validate inputs
     if (
       !currentRecipe.title ||
@@ -236,7 +232,7 @@ export default function AdminDashboardPage() {
       });
       return;
     }
-  
+
     try {
       setLoading(true);
       const res = await fetch(`/api/recipes/${currentRecipe.id}`, {
@@ -250,12 +246,12 @@ export default function AdminDashboardPage() {
           image: currentRecipe.image,
         }),
       });
-  
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to update recipe");
       }
-  
+
       const updatedRecipe: Recipe = await res.json();
       setRecipes((prev) =>
         prev.map((r) => (r.id === updatedRecipe.id ? updatedRecipe : r))
@@ -284,9 +280,8 @@ export default function AdminDashboardPage() {
       setLoading(false);
     }
   };
-  
 
-  // 9. If NOT authenticated, show the password form
+  // 10. If NOT authenticated, show the password form
   if (!isAuthenticated) {
     return (
       <Container size="xs" py="xl">
@@ -317,7 +312,7 @@ export default function AdminDashboardPage() {
     );
   }
 
-  // 10. If authenticated, show the actual Admin Dashboard
+  // 11. If authenticated, show the actual Admin Dashboard
   return (
     <Container size="lg" py="xl">
       <LoadingOverlay
@@ -326,143 +321,137 @@ export default function AdminDashboardPage() {
         zIndex={1000}
       />
       <Stack gap="xl">
-        <Group>
+        {/* Header */}
+        <Group >
           <Title order={2}>Admin Dashboard</Title>
           <Button onClick={fetchRecipes} loading={loading}>
             Refresh
           </Button>
         </Group>
+
         {/* Edit Recipe Drawer */}
-<Drawer
-  opened={editDrawerOpen}
-  onClose={() => setEditDrawerOpen(false)}
-  title="Edit Recipe"
-  padding="lg"
-  size="lg"
->
-  {currentRecipe && (
-    <Stack gap="sm">
-      <TextInput
-        label="Title"
-        value={currentRecipe.title}
-        onChange={(e) =>
-          setCurrentRecipe({ ...currentRecipe, title: e.target.value })
-        }
-        required
-      />
-      <TextInput
-        label="Category"
-        value={currentRecipe.category}
-        onChange={(e) =>
-          setCurrentRecipe({ ...currentRecipe, category: e.target.value })
-        }
-        required
-      />
-      <Textarea
-        label="Description"
-        minRows={3}
-        value={currentRecipe.description}
-        onChange={(e) =>
-          setCurrentRecipe({
-            ...currentRecipe,
-            description: e.target.value,
-          })
-        }
-        required
-      />
-      <NumberInput
-        label="Portions"
-        min={1}
-        value={currentRecipe.portion}
-        onChange={(val: number | string) => {
-          if (typeof val === "number") {
-            setCurrentRecipe({
-              ...currentRecipe,
-              portion: val,
-            });
-          }
-        }}
-        required
-      />
-      <TextInput
-        label="Image URL"
-        value={currentRecipe.image}
-        onChange={(e) =>
-          setCurrentRecipe({ ...currentRecipe, image: e.target.value })
-        }
-        required
-      />
+        <Drawer
+          opened={editDrawerOpen}
+          onClose={() => setEditDrawerOpen(false)}
+          title="Edit Recipe"
+          padding="lg"
+          size="lg"
+        >
+          {currentRecipe && (
+            <Stack gap="sm">
+              <TextInput
+                label="Title"
+                value={currentRecipe.title}
+                onChange={(e) =>
+                  setCurrentRecipe({ ...currentRecipe, title: e.target.value })
+                }
+                required
+              />
+              <TextInput
+                label="Category"
+                value={currentRecipe.category}
+                onChange={(e) =>
+                  setCurrentRecipe({
+                    ...currentRecipe,
+                    category: e.target.value,
+                  })
+                }
+                required
+              />
+              <Textarea
+                label="Description"
+                minRows={3}
+                value={currentRecipe.description}
+                onChange={(e) =>
+                  setCurrentRecipe({
+                    ...currentRecipe,
+                    description: e.target.value,
+                  })
+                }
+                required
+              />
+              <NumberInput
+                label="Portions"
+                min={1}
+                value={currentRecipe.portion}
+                onChange={(val) => {
+                  if (typeof val === "number") {
+                    setCurrentRecipe({
+                      ...currentRecipe,
+                      portion: val,
+                    });
+                  }
+                }}
+                required
+              />
+              <TextInput
+                label="Image URL"
+                value={currentRecipe.image}
+                onChange={(e) =>
+                  setCurrentRecipe({ ...currentRecipe, image: e.target.value })
+                }
+                required
+              />
 
-      <Button
-        color="green"
-        onClick={handleEditSubmit}
-        loading={loading}
-      >
-        Save Changes
-      </Button>
-    </Stack>
-  )}
-</Drawer>
+              <Button color="green" onClick={handleEditSubmit} loading={loading}>
+                Save Changes
+              </Button>
+            </Stack>
+          )}
+        </Drawer>
 
-<SimpleGrid
-  cols={{ base: 1, sm: 2, md: 3 }} // Responsive columns
-  spacing="lg"
->
-  {recipes.map((recipe) => (
-    <Card key={recipe.id} shadow="sm" p="lg" radius="md" withBorder>
-      <Card.Section>
-        <Image
-          src={recipe.image}
-          height={160}
-          alt={recipe.title}
-          fit="cover"
-        />
-      </Card.Section>
+        {/* Recipes grid */}
+        <SimpleGrid
+          cols={3}
+          spacing="lg"
+         
+        >
+          {recipes.map((recipe) => (
+            <Card key={recipe.id} shadow="sm" p="lg" radius="md" withBorder>
+              <Card.Section>
+                <Image src={recipe.image} height={160} alt={recipe.title} fit="cover" />
+              </Card.Section>
 
-      <Group mt="md" mb="xs">
-        <Text>{recipe.title}</Text>
-        <Badge color="pink" variant="light">
-          {recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)}
-        </Badge>
-      </Group>
+              <Group mt="md" mb="xs">
+                <Text >{recipe.title}</Text>
+                <Badge color="pink" variant="light">
+                  {recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)}
+                </Badge>
+              </Group>
 
-      <Text size="sm" color="dimmed">
-        {recipe.description.length > 100
-          ? `${recipe.description.substring(0, 100)}...`
-          : recipe.description}
-      </Text>
+              <Text size="sm" color="dimmed" lineClamp={3}>
+                {recipe.description}
+              </Text>
 
-      <Group mt="md"align="center">
-        <Text size="sm">Portions: {recipe.portion}</Text>
+              <Group mt="md" align="center">
+                <Text size="sm" color="dimmed">
+                  Portions: {recipe.portion}
+                </Text>
+                <Group gap="xs">
+                  <ActionIcon
+                    variant="outline"
+                    color="blue"
+                    onClick={() => handleEdit(recipe)}
+                    title="Edit Recipe"
+                    aria-label={`Edit ${recipe.title}`}
+                  >
+                    <IconEdit size={18} />
+                  </ActionIcon>
 
-        {/* Icons with Custom CSS */}
-        <div className="icon-container">
-          <ActionIcon
-            variant="outline"
-            color="blue"
-            onClick={() => handleEdit(recipe)}
-            title="Edit Recipe"
-            aria-label={`Edit ${recipe.title}`}
-          >
-            <IconEdit size={18} />
-          </ActionIcon>
-
-          <ActionIcon
-            variant="outline"
-            color="red"
-            onClick={() => handleDelete(recipe)}
-            title="Delete Recipe"
-            aria-label={`Delete ${recipe.title}`}
-          >
-            <IconTrash size={18} />
-          </ActionIcon>
-        </div>
-      </Group>
-    </Card>
-  ))}
-</SimpleGrid>
-
-
+                  <ActionIcon
+                    variant="outline"
+                    color="red"
+                    onClick={() => handleDelete(recipe)}
+                    title="Delete Recipe"
+                    aria-label={`Delete ${recipe.title}`}
+                  >
+                    <IconTrash size={18} />
+                  </ActionIcon>
+                </Group>
+              </Group>
+            </Card>
+          ))}
+        </SimpleGrid>
       </Stack>
 
       {/* Confirmation Modal for Deletion */}
@@ -473,7 +462,8 @@ export default function AdminDashboardPage() {
         centered
       >
         <Text>
-          Are you sure you want to delete the recipe &quot;{recipeToDelete?.title}&quot;?
+          Are you sure you want to delete the recipe "
+          <b>{recipeToDelete?.title}</b>"?
         </Text>
         <Group mt="md">
           <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
@@ -483,87 +473,6 @@ export default function AdminDashboardPage() {
             Delete
           </Button>
         </Group>
-      </Modal>
-
-      {/* Edit Recipe Modal */}
-      <Modal
-        opened={editModalOpen}
-        onClose={editModalHandlers.close}
-        title="Edit Recipe"
-        centered
-      >
-        {currentRecipe && (
-          <Stack gap="sm">
-            <TextInput
-              label="Title"
-              value={currentRecipe.title}
-              onChange={(e) =>
-                setCurrentRecipe({ ...currentRecipe, title: e.target.value })
-              }
-              required
-            />
-            <TextInput
-              label="Category"
-              value={currentRecipe.category}
-              onChange={(e) =>
-                setCurrentRecipe({ ...currentRecipe, category: e.target.value })
-              }
-              required
-            />
-            <Textarea
-              label="Description"
-              minRows={3}
-              value={currentRecipe.description}
-              onChange={(e) =>
-                setCurrentRecipe({
-                  ...currentRecipe,
-                  description: e.target.value,
-                })
-              }
-              required
-            />
-            <NumberInput
-              label="Portions"
-              min={1}
-              value={currentRecipe.portion}
-              onChange={(val: number | string) => {
-                if (typeof val === "number") {
-                  setCurrentRecipe({
-                    ...currentRecipe,
-                    portion: val,
-                  });
-                } else {
-                  // Handle the case where val is a string (e.g., empty input)
-                  setCurrentRecipe({
-                    ...currentRecipe,
-                    portion: 1, // Default to 1 if input is invalid or empty
-                  });
-                }
-              }}
-              required
-              radius="xl"
-              size="md"
-              aria-label="Portions"
-            />
-
-            <TextInput
-              label="Image URL"
-              value={currentRecipe.image}
-              onChange={(e) =>
-                setCurrentRecipe({ ...currentRecipe, image: e.target.value })
-              }
-              required
-            />
-
-            <Button
-              color="green"
-              onClick={handleEditSubmit}
-              loading={loading}
-            >
-              Save Changes
-            </Button>
-          </Stack>
-        )}
       </Modal>
     </Container>
   );

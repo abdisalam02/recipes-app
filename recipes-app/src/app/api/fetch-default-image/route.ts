@@ -1,3 +1,4 @@
+// app/api/fetch-default-image/route.ts
 import { NextResponse } from "next/server";
 import { fetchGoogleImages } from "../../../../lib/googleSearch";
 
