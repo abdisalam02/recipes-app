@@ -6,7 +6,6 @@ import React, {
   useRef,
   ChangeEvent,
   FormEvent,
-  useMemo,
 } from 'react';
 import { useRouter } from 'next/navigation';
 import debounce from 'lodash.debounce';
@@ -14,12 +13,9 @@ import supabase from '../../../../lib/supabaseClient';
 import {
   NutritionalInfo,
   RecipeInput,
-  RecipeInputFrontend,
-  Ingredient,
-  Step,
   Favorite,
-  JsonData,
 } from '../../../../lib/types';
+import type { IngredientInput } from '../../../../lib/types';
 import { units } from '../../../../lib/units';
 import {
   IconChefHat,
@@ -28,6 +24,9 @@ import {
   IconTrash,
   IconArrowDown,
 } from '@tabler/icons-react';
+
+// Define a local alias for JSON data
+type JsonData = any;
 
 // Define Category and Region options
 const categories = [
@@ -89,7 +88,7 @@ export default function AddRecipePage() {
     { value: number; label: string }[]
   >([]);
 
-  // Form state
+  // Form state (using RecipeInput)
   const [formData, setFormData] = useState<RecipeInput>({
     title: '',
     category: '',
@@ -131,7 +130,7 @@ export default function AddRecipePage() {
   // Debounce title for auto-fetching image
   const debouncedTitle = useDebouncedValue(formData.title, 500);
   useEffect(() => {
-    if (autoFetchImage && !formData.image.trim()) {
+    if (autoFetchImage && !formData.image?.trim()) {
       fetchDefaultImage();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -154,7 +153,7 @@ export default function AddRecipePage() {
 
   const handleIngredientChange = (
     index: number,
-    field: keyof Ingredient,
+    field: keyof IngredientInput,
     value: number | string | undefined
   ) => {
     setFormData((prev) => {
@@ -207,9 +206,9 @@ export default function AddRecipePage() {
   // Fetch default image using recipe title
   const fetchDefaultImage = async (): Promise<void> => {
     if (!formData.title.trim()) {
-      // Do nothing if the title is empty—avoid showing the alert repeatedly.
+      // Do nothing if the title is empty
       return;
-    }    
+    }
     try {
       setLoading(true);
       const res = await fetch(
@@ -237,18 +236,19 @@ export default function AddRecipePage() {
     }
     setLoading(true);
     try {
-      const payload: RecipeInputFrontend = {
+      // Use RecipeInput (instead of RecipeInputFrontend)
+      const payload: RecipeInput = {
         title: formData.title.trim(),
         category: formData.category.trim(),
         region: formData.region.trim(),
         description: formData.description.trim(),
         portion: formData.portion,
-        image: formData.image.trim() || undefined,
+        image: formData.image?.trim() || '', // fallback to empty string if undefined
         ingredients: formData.ingredients.map((ing) => ({
-          ingredient_id: ing.ingredient_id,
+          ingredient_id: (ing as any).ingredient_id, // cast as any if not defined
+          name: ing.name.trim(),
           quantity: ing.quantity,
           unit: ing.unit.trim(),
-          name: ing.name.trim(),
         })),
         steps: formData.steps.map((step, index) => ({
           order: index + 1,
@@ -273,7 +273,6 @@ export default function AddRecipePage() {
           throw new Error('Failed to fetch recipe details.');
         }
         const recipeDetails = await recipeResponse.json();
-        // (Assuming you set nutritionalInfo elsewhere)
         alert('Recipe added successfully!');
         // Reset form
         setFormData({
@@ -328,7 +327,7 @@ export default function AddRecipePage() {
       ingredientsData.forEach((ing: any) => {
         ingredientMap[ing.name.toLowerCase()] = ing.id;
       });
-      const mappedIngredients: Ingredient[] = await Promise.all(
+      const mappedIngredients = await Promise.all(
         parsedData.ingredients.map(async (ing: any) => {
           const ingredientName = ing.name.trim();
           const ingredient_id = ingredientMap[ingredientName.toLowerCase()];
@@ -357,13 +356,13 @@ export default function AddRecipePage() {
           }
         })
       );
-      const payload: RecipeInputFrontend = {
+      const payload: RecipeInput = {
         title: parsedData.title.trim(),
         category: parsedData.category.trim(),
         region: parsedData.region.trim(),
         description: parsedData.description.trim(),
         portion: parsedData.portion,
-        image: parsedData.image?.trim() || undefined,
+        image: parsedData.image?.trim() || '',
         ingredients: mappedIngredients,
         steps: parsedData.steps.map((step: any, index: number) => ({
           order: step.order || index + 1,
@@ -403,7 +402,6 @@ export default function AddRecipePage() {
     }
   };
 
-  // Update recipe image using API
   const updateRecipeImage = async (recipeId: number, title: string): Promise<void> => {
     try {
       const res = await fetch(`/api/fetch-default-image?query=${encodeURIComponent(title)}`);
@@ -435,6 +433,9 @@ export default function AddRecipePage() {
     }
   };
 
+  // For scroll-to-top
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
   return (
     <div className="container mx-auto py-8 px-2 sm:px-4">
       <div className="card shadow-lg rounded-lg p-4 sm:p-8 relative">
@@ -454,6 +455,15 @@ export default function AddRecipePage() {
           </p>
         </div>
 
+        {/* If image is provided, show Start Recipe Preview button */}
+        {formData.image && (
+          <div className="flex justify-center mb-4">
+            <button className="btn btn-secondary" onClick={() => { /* Add preview functionality if desired */ }}>
+              Start Recipe Preview
+            </button>
+          </div>
+        )}
+
         {/* Tabs for Form vs JSON Input */}
         <div className="tabs tabs-boxed mb-6">
           <a
@@ -470,7 +480,7 @@ export default function AddRecipePage() {
           </a>
         </div>
 
-        {activeTab === 'form' && (
+        {activeTab === 'form' ? (
           <form onSubmit={(e) => { e.preventDefault(); setModalOpened(true); }}>
             <div className="flex flex-col gap-4">
               {/* Title Field */}
@@ -547,7 +557,7 @@ export default function AddRecipePage() {
                   <label className="label">Image URL (optional)</label>
                   <input
                     type="text"
-                    value={formData.image}
+                    value={formData.image || ''}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
                       setFormData({ ...formData, image: e.target.value })
                     }
@@ -595,8 +605,8 @@ export default function AddRecipePage() {
                   onChange={(e) =>
                     setFormData({ ...formData, portion: Number(e.target.value) })
                   }
-                  min={1}
-                  max={20}
+                  min="1"
+                  max="20"
                   className="input input-bordered w-16"
                 />
               </div>
@@ -607,7 +617,12 @@ export default function AddRecipePage() {
                   <label className="label">Ingredients</label>
                   <button
                     type="button"
-                    onClick={handleAddIngredient}
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        ingredients: [...prev.ingredients, { quantity: 1, unit: 'g', name: '' }],
+                      }))
+                    }
                     className="btn btn-circle btn-success"
                     aria-label="Add Ingredient"
                   >
@@ -621,7 +636,13 @@ export default function AddRecipePage() {
                         type="number"
                         required
                         value={ing.quantity}
-                        onChange={(e) => handleIngredientChange(index, 'quantity', Number(e.target.value))}
+                        onChange={(e) =>
+                          setFormData((prev) => {
+                            const updated = [...prev.ingredients];
+                            updated[index] = { ...updated[index], quantity: Number(e.target.value) };
+                            return { ...prev, ingredients: updated };
+                          })
+                        }
                         min={0.1}
                         step={0.1}
                         className="input input-bordered w-24"
@@ -632,7 +653,11 @@ export default function AddRecipePage() {
                         required
                         value={ing.unit}
                         onChange={(e) =>
-                          handleIngredientChange(index, 'unit', e.target.value)
+                          setFormData((prev) => {
+                            const updated = [...prev.ingredients];
+                            updated[index] = { ...updated[index], unit: e.target.value };
+                            return { ...prev, ingredients: updated };
+                          })
                         }
                         className="select select-bordered w-24"
                         aria-label={`Ingredient ${index + 1} Unit`}
@@ -649,12 +674,17 @@ export default function AddRecipePage() {
                           type="text"
                           value={ing.name}
                           onChange={(e) =>
-                            handleIngredientChange(index, 'name', e.target.value)
+                            setFormData((prev) => {
+                              const updated = [...prev.ingredients];
+                              updated[index] = { ...updated[index], name: e.target.value };
+                              return { ...prev, ingredients: updated };
+                            })
                           }
                           className="input input-bordered w-full"
                           placeholder="Type or select ingredient"
                           list={`ingredients-list-${index}`}
                           aria-label={`Ingredient ${index + 1} Name`}
+                          required
                         />
                         <datalist id={`ingredients-list-${index}`}>
                           {availableIngredients.map((item) => (
@@ -665,7 +695,12 @@ export default function AddRecipePage() {
                       {formData.ingredients.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => handleRemoveIngredient(index)}
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              ingredients: prev.ingredients.filter((_, i) => i !== index),
+                            }))
+                          }
                           className="btn btn-circle btn-error"
                           aria-label={`Remove Ingredient ${index + 1}`}
                         >
@@ -712,7 +747,12 @@ export default function AddRecipePage() {
                       {formData.steps.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => handleRemoveStep(index)}
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              steps: prev.steps.filter((_, i) => i !== index),
+                            }))
+                          }
                           className="btn btn-circle btn-error"
                           aria-label={`Remove Step ${index + 1}`}
                         >
@@ -727,7 +767,7 @@ export default function AddRecipePage() {
               {/* Submit Button */}
               <button
                 type="button"
-                className="btn btn-primary w-full"
+                className="btn btn-primary w-full mt-4"
                 disabled={!isFormValid()}
                 onClick={() => setModalOpened(true)}
               >
@@ -735,18 +775,15 @@ export default function AddRecipePage() {
               </button>
             </div>
           </form>
-        )}
-
-        {activeTab === 'json' && (
-          <form onSubmit={handleJsonSubmit}>
-            <div className="flex flex-col gap-4">
-              <label className="label">Recipe JSON</label>
-              <textarea
-                name="jsonData"
-                className="textarea textarea-bordered w-full"
-                rows={10}
-                required
-                placeholder={`{
+        ) : (
+          <form onSubmit={handleJsonSubmit} className="flex flex-col gap-4">
+            <label className="label">Recipe JSON</label>
+            <textarea
+              name="jsonData"
+              className="textarea textarea-bordered w-full"
+              rows={10}
+              required
+              placeholder={`{
   "title": "Chocolate Cake",
   "category": "dessert",
   "region": "italian",
@@ -762,20 +799,20 @@ export default function AddRecipePage() {
     { "order": 2, "description": "Mix all dry ingredients." }
   ]
 }`}
-                value={jsonData}
-                onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setJsonData(e.target.value)}
-              ></textarea>
+              value={jsonData}
+              onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setJsonData(e.target.value)}
+            ></textarea>
 
-              <button
-                type="submit"
-                className="btn btn-primary w-full"
-                disabled={!jsonData.trim()}
-              >
-                Add Recipe via JSON
-              </button>
+            <button
+              type="submit"
+              className="btn btn-primary w-full"
+              disabled={!jsonData.trim()}
+            >
+              Add Recipe via JSON
+            </button>
 
-              <pre className="border p-2 rounded bg-gray-100 whitespace-pre-wrap">
-  {`{
+            <pre className="border p-2 rounded bg-gray-100 whitespace-pre-wrap">
+{`{
   "title": "Chocolate Cake",
   "category": "dessert",
   "region": "italian",
@@ -791,9 +828,7 @@ export default function AddRecipePage() {
     { "order": 2, "description": "Mix all dry ingredients." }
   ]
 }`}
-</pre>
-
-            </div>
+            </pre>
           </form>
         )}
 
@@ -850,6 +885,26 @@ export default function AddRecipePage() {
           </div>
         </div>
       )}
+
+      {/* Scroll-to-Top Button */}
+      {scroll.y > 100 && (
+        <button
+          onClick={scrollToTop}
+          className="btn btn-circle fixed bottom-6 right-6 transition-transform hover:scale-110"
+          aria-label="Scroll to top"
+        >
+          <IconArrowDown size={24} className="rotate-180" />
+        </button>
+      )}
     </div>
   );
+}
+
+// Dummy helper functions for favorites – replace these with your actual implementations.
+function isFavorited(recipe_id: number): boolean {
+  return false;
+}
+
+async function toggleFavorite(recipe_id: number): Promise<void> {
+  console.log(`Toggling favorite for recipe ${recipe_id}`);
 }
