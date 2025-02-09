@@ -1,27 +1,11 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import {
-  Container,
-  SimpleGrid,
-  Card,
-  Image,
-  Text,
-  Badge,
-  Button,
-  Group,
-  ActionIcon,
-  Tooltip,
-  Title,
-  Paper,
-  Stack,
-} from "@mantine/core";
-import { IconHeartOff } from "@tabler/icons-react";
-import { notifications } from "@mantine/notifications";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { IconHeartOff, IconHome } from "@tabler/icons-react";
 
 // Recipe Interface
-interface Recipe {
+export interface Recipe {
   id: number;
   title: string;
   category: string;
@@ -31,7 +15,7 @@ interface Recipe {
 }
 
 // Favorite Interface
-interface Favorite {
+export interface Favorite {
   id: number;
   recipe_id: number;
   recipe: Recipe;
@@ -40,7 +24,7 @@ interface Favorite {
 
 export default function FavoritesPage() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -56,20 +40,10 @@ export default function FavoritesPage() {
       }
       const data: Favorite[] = await response.json();
       setFavorites(data);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        notifications.show({
-          title: "Error",
-          message: error.message || "Failed to load favorites.",
-          color: "red",
-        });
-        setError(error.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
       } else {
-        notifications.show({
-          title: "Error",
-          message: "An unknown error occurred while fetching favorites.",
-          color: "red",
-        });
         setError("An unknown error occurred.");
       }
     } finally {
@@ -86,29 +60,16 @@ export default function FavoritesPage() {
       });
       if (response.ok) {
         setFavorites((prev) => prev.filter((fav) => fav.recipe_id !== recipe_id));
-        notifications.show({
-          title: "Success",
-          message: "Recipe removed from favorites",
-          color: "blue",
-        });
       } else {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to remove favorite");
       }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        notifications.show({
-          title: "Error",
-          message: error.message || "Failed to remove from favorites",
-          color: "red",
-        });
-        setError(error.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert(err.message || "Failed to remove from favorites");
+        setError(err.message);
       } else {
-        notifications.show({
-          title: "Error",
-          message: "An unknown error occurred while removing favorite.",
-          color: "red",
-        });
+        alert("An unknown error occurred while removing favorite.");
         setError("An unknown error occurred.");
       }
     }
@@ -116,117 +77,75 @@ export default function FavoritesPage() {
 
   if (loading) {
     return (
-      <Container size="lg" py="xl">
-        <Group align="center">
-          <Text>Loading your favorites...</Text>
-        </Group>
-      </Container>
+      <div className="container mx-auto py-8">
+        <div className="flex justify-center items-center">
+          <p className="text-lg">Loading your favorites...</p>
+        </div>
+      </div>
     );
   }
 
-  if (error) {
+  if (error || favorites.length === 0) {
     return (
-      <Container size="lg" py="xl">
-        <Paper p="xl" withBorder radius="md" shadow="sm">
-          <Stack align="center" gap="md">
-            <IconHeartOff size={48} stroke={1.5} />
-            <Text size="xl" >
-              No Favorite Recipes Yet
-            </Text>
-            <Text color="dimmed" >
-              Start adding recipes to your favorites by clicking the heart icon on any recipe card.
-            </Text>
-            <Button component={Link} href="/" variant="light" color="blue">
-              Browse Recipes
-            </Button>
-          </Stack>
-        </Paper>
-      </Container>
-    );
-  }
-
-  if (favorites.length === 0) {
-    return (
-      <Container size="lg" py="xl">
-        <Paper p="xl" withBorder radius="md" shadow="sm">
-          <Stack align="center" gap="md">
-            <IconHeartOff size={48} stroke={1.5} />
-            <Text size="xl" >
-              No Favorite Recipes Yet
-            </Text>
-            <Text color="dimmed" >
-              Start adding recipes to your favorites by clicking the heart icon on any recipe card.
-            </Text>
-            <Button component={Link} href="/" variant="light" color="blue">
-              Browse Recipes
-            </Button>
-          </Stack>
-        </Paper>
-      </Container>
+      <div className="container mx-auto py-8">
+        <div className="card bg-gradient-to-br from-blue-500 to-purple-500 shadow-xl rounded-lg p-8 text-center">
+          <IconHeartOff size={64} className="mx-auto text-white" />
+          <h2 className="text-2xl font-bold text-white mt-4">No Favourite Recipes Yet</h2>
+          <p className="text-white mt-2">
+            Start adding recipes to your favorites by clicking the heart icon on any recipe card.
+          </p>
+          <Link href="/" className="btn btn-primary mt-4">
+            <IconHome size={16} className="mr-2" />
+            Browse Recipes
+          </Link>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container size="lg" py="xl">
-      <Stack gap="xl">
-        <Title order={1} >Your Favorite Recipes</Title>
-
-        {/* Favorite Recipes Grid */}
-        <SimpleGrid
-          cols={{ base: 1, sm: 2, md: 3, lg: 4 }}  // Adjust the columns based on viewport
-          spacing={{ base: 'sm', sm: 'md', lg: 'lg' }}  // Adjust spacing based on viewport
-          verticalSpacing={{ base: 'sm', sm: 'md', lg: 'lg' }}  // Adjust vertical spacing based on viewport
-        >
-          {favorites.map((fav) => (
-            <Card key={fav.id} shadow="sm" p="lg" radius="md" withBorder>
-              <Card.Section style={{ position: "relative" }}>
-                <Image
+    <div className="container mx-auto py-8 px-4">
+      <h1 className="text-3xl font-bold mb-6">Favourite Recipes</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {favorites.map((fav) => (
+          <div key={fav.id} className="card bg-base-100 shadow-lg rounded-lg overflow-hidden group relative">
+            <div className="relative">
+              <figure>
+                <img
                   src={fav.recipe.image}
                   alt={fav.recipe.title}
-                  height={160}
-                  fit="cover"
+                  className="object-cover w-full h-40 transition-transform duration-300 group-hover:scale-105"
                 />
-                <Tooltip label="Remove from Favorites">
-                  <ActionIcon
-                    variant="filled"
-                    color="red"
-                    size="lg"
-                    style={{ position: "absolute", top: 10, right: 10 }}
-                    onClick={() => removeFavorite(fav.recipe_id)}
-                    aria-label="Remove from favorites"
-                  >
-                    <IconHeartOff size={20} />
-                  </ActionIcon>
-                </Tooltip>
-              </Card.Section>
-              <Group mt="md" mb="xs" align="center" gap="xs">
-                <Text size="lg">
-                  {fav.recipe.title}
-                </Text>
-                <Badge
-                  color="blue"
-                  variant="light"
-                  aria-label={`Category: ${fav.recipe.category}`}
+              </figure>
+              {/* Unfavorite Button: Always visible on mobile, and on larger screens appears on hover */}
+              <div className="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
+                <button
+                  className="btn btn-circle btn-error"
+                  onClick={() => removeFavorite(fav.recipe_id)}
+                  aria-label="Remove from favorites"
                 >
+                  <IconHeartOff size={20} />
+                </button>
+              </div>
+            </div>
+            <div className="card-body p-4">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <h2 className="card-title text-lg">{fav.recipe.title}</h2>
+                <span className="badge badge-primary">
                   {fav.recipe.category.charAt(0).toUpperCase() +
                     fav.recipe.category.slice(1)}
-                </Badge>
-              </Group>
-              <Text size="sm" color="dimmed" mb="lg" lineClamp={3}>
+                </span>
+              </div>
+              <p className="text-sm text-gray-500 line-clamp-3 mb-4">
                 {fav.recipe.description}
-              </Text>
-              <Button
-                color="blue"
-                fullWidth
-                component={Link}
-                href={`/recipes/${fav.recipe.id}`}
-              >
+              </p>
+              <Link href={`/recipes/${fav.recipe.id}`} className="btn btn-primary w-full">
                 View Recipe
-              </Button>
-            </Card>
-          ))}
-        </SimpleGrid>
-      </Stack>
-    </Container>
+              </Link>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

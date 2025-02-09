@@ -1,68 +1,149 @@
 'use client';
 
-import { useDisclosure } from '@mantine/hooks';
-import { Burger, Menu, Button, Container,Title } from '@mantine/core';
-import { IconHome, IconPlus, IconHeart } from '@tabler/icons-react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import {
+  IconHome,
+  IconPlus,
+  IconHeart,
+  IconFlame,
+  IconMenu,
+  IconX,
+} from '@tabler/icons-react';
 
-export default function Navbar({ colorScheme, toggleColorScheme }: { colorScheme: string, toggleColorScheme: () => void }) {
-  const [opened, { toggle }] = useDisclosure();
+interface NavbarProps {
+  // Extend as needed.
+}
+
+export default function Navbar({}: NavbarProps) {
+  // State for mobile menu open/close.
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // For theme toggling – we support light and dark modes.
+  const [theme, setTheme] = useState("light");
+
+  // Update the root data-theme attribute so DaisyUI applies the correct theme.
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
+
+  // Toggle theme between light and dark.
+  const toggleTheme = () => {
+    setTheme(prev => (prev === "light" ? "dark" : "light"));
+  };
 
   return (
-    <div className="navbar">
-      <Container size="lg">
-        <div className="navbar-content">
-          {/* Logo */}
-          <Link href="/" className="nav-logo">
-            <Title size="xl" >Recipes App</Title>
+    <nav className="navbar bg-base-100 shadow py-2">
+      <div className="container mx-auto px-4 flex justify-between items-center">
+        {/* Logo / Brand */}
+        <div className="flex-1">
+          <Link href="/" className="btn btn-ghost normal-case text-xl">
+            Recipes App
           </Link>
-
-          {/* Burger Menu for mobile only */}
-          <div className="burger-menu">
-            <Menu
-              opened={opened}
-              onChange={toggle}
-              position="bottom-end"
-            >
-              <Menu.Target>
-                <Burger
-                  opened={opened}
-                  onClick={toggle}
-                  aria-label="Toggle navigation"
-                  size="lg"
-                />
-              </Menu.Target>
-
-              {/* Dropdown Menu for mobile view */}
-              <Menu.Dropdown>
-                <Menu.Item component={Link} href="/" leftSection={<IconHome size={14} />}>
-                  Home
-                </Menu.Item>
-                <Menu.Item component={Link} href="/recipes/add" leftSection={<IconPlus size={14} />}>
-                  Add Recipe
-                </Menu.Item>
-                <Menu.Item component={Link} href="/favorites" leftSection={<IconHeart size={14} />}>
-                  Favorites
-                </Menu.Item>
-                <Menu.Divider />
-                <Menu.Item onClick={toggleColorScheme}>
-                  {colorScheme === 'light' ? 'Switch to Dark' : 'Switch to Light'}
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-          </div>
-
-          {/* Desktop Navigation Links */}
-          <div className="nav-links">
-            <Link href="/" className="nav-link">Home</Link>
-            <Link href="/recipes/add" className="nav-link">Add Recipe</Link>
-            <Link href="/favorites" className="nav-link">Favorites</Link>
-            <Button variant="subtle" onClick={toggleColorScheme}>
-              {colorScheme === 'light' ? 'Dark' : 'Light'}
-            </Button>
-          </div>
         </div>
-      </Container>
-    </div>
+
+        {/* Navigation Links & Theme Toggle */}
+        <div className="flex-none">
+          {/* Mobile Dropdown – Visible on small screens */}
+          <div className="dropdown dropdown-end lg:hidden">
+            <label
+              tabIndex={0}
+              className="btn btn-ghost btn-circle text-2xl"
+              onClick={() => setMobileOpen(!mobileOpen)}
+            >
+              {mobileOpen ? <IconX size={28} /> : <IconMenu size={28} />}
+            </label>
+            {mobileOpen && (
+              <ul
+                tabIndex={0}
+                className="menu menu-compact dropdown-content mt-3 p-2 shadow bg-base-100 rounded-box w-56"
+              >
+                <li>
+                  <Link
+                    href="/"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2"
+                  >
+                    <IconHome size={16} /> Home
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/recipes/add"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2"
+                  >
+                    <IconPlus size={16} /> Add Recipe
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/favorites"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2"
+                  >
+                    <IconHeart size={16} /> Favorites
+                  </Link>
+                </li>
+                {/* Tinder Link with pink styling and pulsing animation */}
+                <li>
+                  <Link
+                    href="/tinder"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 text-pink-500 animate-pulse"
+                  >
+                    <IconFlame size={16} /> Tinder
+                  </Link>
+                </li>
+                <li>
+                  <button
+                    onClick={() => {
+                      toggleTheme();
+                      setMobileOpen(false);
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    Toggle Theme
+                  </button>
+                </li>
+              </ul>
+            )}
+          </div>
+
+          {/* Desktop Menu – Visible on large screens */}
+          <ul className="menu menu-horizontal p-0 hidden lg:flex items-center gap-4">
+            <li>
+              <Link href="/" className="flex items-center gap-2">
+                <IconHome size={16} /> Home
+              </Link>
+            </li>
+            <li>
+              <Link href="/recipes/add" className="flex items-center gap-2">
+                <IconPlus size={16} /> Add Recipe
+              </Link>
+            </li>
+            <li>
+              <Link href="/favorites" className="flex items-center gap-2">
+                <IconHeart size={16} /> Favorites
+              </Link>
+            </li>
+            {/* Tinder Link with custom pink styling and hover animations */}
+            <li>
+              <Link
+                href="/tinder"
+                className="flex items-center gap-2 text-pink-500 transition-all hover:scale-110 hover:text-pink-700"
+              >
+                <IconFlame size={16} /> Tinder
+              </Link>
+            </li>
+            <li>
+              <button onClick={toggleTheme} className="btn btn-ghost">
+                Toggle Theme
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
   );
 }

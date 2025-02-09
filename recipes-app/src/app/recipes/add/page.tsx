@@ -1,37 +1,35 @@
-// src/app/api/fetch-default-image/route.ts
-// Ensure this file is correctly placed and implemented as per your project structure.
-
 'use client';
 
-import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
-import {
-  Container,
-  Title,
-  TextInput,
-  Textarea,
-  Button,
-  Paper,
-  Select,
-  Stack,
-  Text,
-  LoadingOverlay,
-  Tabs,
-  Code,
-  NumberInput,
-  Group,
-  ActionIcon,
-  Modal,
-  Autocomplete,
-  Checkbox,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
-import { IconChefHat, IconPlus, IconMinus, IconTrash } from '@tabler/icons-react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  ChangeEvent,
+  FormEvent,
+  useMemo,
+} from 'react';
+import { useRouter } from 'next/navigation';
 import debounce from 'lodash.debounce';
-import supabase from '../../../../lib/supabaseClient'; // Correctly importing Supabase
-import { NutritionalInfo, RecipeInput } from '../../../../lib/types'; // Ensure correct import
-import { units } from '../../../../lib/units'; // Import standardized units
+import supabase from '../../../../lib/supabaseClient';
+import {
+  NutritionalInfo,
+  RecipeInput,
+  RecipeInputFrontend,
+  Ingredient,
+  Step,
+  Favorite,
+  JsonData,
+} from '../../../../lib/types';
+import { units } from '../../../../lib/units';
+import {
+  IconChefHat,
+  IconPlus,
+  IconMinus,
+  IconTrash,
+  IconArrowDown,
+} from '@tabler/icons-react';
 
-// Define the Category and Region options
+// Define Category and Region options
 const categories = [
   'Breakfast',
   'Lunch',
@@ -40,7 +38,7 @@ const categories = [
   'Snack',
   'Beverage',
   'Appetizer',
-].map((category) => ({ value: category.toLowerCase(), label: category }));
+].map((cat) => ({ value: cat.toLowerCase(), label: cat }));
 
 const regions = [
   'Italian',
@@ -50,136 +48,104 @@ const regions = [
   'Asian',
   'French',
   'Indian',
-].map((region) => ({ value: region.toLowerCase(), label: region }));
+].map((reg) => ({ value: reg.toLowerCase(), label: reg }));
 
-// Define interfaces
-interface Ingredient {
-  ingredient_id?: number; // Optional, present if selected from existing ingredients
-  quantity: number;
-  unit: string;
-  name: string; // Always required
+// --- Custom Hooks ---
+
+// Debounce a value
+function useDebouncedValue<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debounced;
 }
 
-interface Step {
-  order?: number;
-  description: string;
-}
-
-// Ensure the 'image' field is required by removing the '?'
-interface FormData {
-  title: string;
-  category: string;
-  region: string;
-  description: string;
-  ingredients: Ingredient[];
-  steps: Step[];
-  image: string; // Made required
-  portion: number;
-}
-
-
-interface JsonData {
-  title: string;
-  category: string;
-  region: string; // Add region field
-  description: string;
-  image?: string;
-  portion: number;
-  ingredients: Array<{ quantity: number; unit: string; name: string }>;
-  steps: Array<{ order?: number; description: string }>;
-}
-
-interface RecipeInputFrontend {
-  title: string;
-  category: string;
-  region: string; // Add region field
-  description: string;
-  image?: string;
-  portion: number;
-  ingredients: Ingredient[];
-  steps: Step[];
+// Get window scroll position
+function useWindowScroll() {
+  const [scroll, setScroll] = useState({ y: 0 });
+  useEffect(() => {
+    const handleScroll = () => setScroll({ y: window.scrollY });
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  return scroll;
 }
 
 export default function AddRecipePage() {
-  // Initialize State Variables
-  const [activeTab, setActiveTab] = useState<string>('form');
+  const router = useRouter();
+
+  // Tab state: "form" or "json"
+  const [activeTab, setActiveTab] = useState<'form' | 'json'>('form');
   const [modalOpened, setModalOpened] = useState(false);
-  const [availableIngredients, setAvailableIngredients] = useState<{ value: number; label: string }[]>([]);
-  const [formData, setFormData] = useState<FormData>({
+  const [jsonData, setJsonData] = useState('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [nutritionalInfo, setNutritionalInfo] = useState<NutritionalInfo | null>(null);
+  const [autoFetchImage, setAutoFetchImage] = useState<boolean>(true);
+
+  // Available ingredients for autocomplete
+  const [availableIngredients, setAvailableIngredients] = useState<
+    { value: number; label: string }[]
+  >([]);
+
+  // Form state
+  const [formData, setFormData] = useState<RecipeInput>({
     title: '',
     category: '',
     region: '',
     description: '',
-    ingredients: [{ quantity: 1, unit: 'g', name: '' }], // Start with default unit as grams
+    ingredients: [{ quantity: 1, unit: 'g', name: '' }],
     steps: [{ description: '' }],
-    image: '', // Initialized as an empty string
+    image: '',
     portion: 1,
   });
-  
-  const [jsonData, setJsonData] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
-  const [nutritionalInfo, setNutritionalInfo] = useState<NutritionalInfo | null>(null); // State to hold nutritional info
-  const [autoFetchImage, setAutoFetchImage] = useState<boolean>(true); // Toggle for auto-fetching image
 
-  // Fetch ingredients on component mount
+  // Ref for nutritional info table scrolling
+  const fullNutritionalInfoRef = useRef<HTMLDivElement>(null);
+  const scroll = useWindowScroll();
+
+  // Fetch available ingredients on mount
   useEffect(() => {
-    const fetchIngredients = async () => {
+    async function fetchIngredients() {
       try {
-        console.log('Fetching ingredients from /api/ingredients');
-        const res = await fetch('/api/ingredients'); // Corrected endpoint
-        console.log('Response status:', res.status);
+        const res = await fetch('/api/ingredients');
         if (!res.ok) {
           const errorData = await res.json();
-          console.error('Failed to fetch ingredients:', errorData);
-          throw new Error('Failed to fetch ingredients.');
+          throw new Error(errorData.error || 'Failed to fetch ingredients');
         }
         const data = await res.json();
-        console.log('Fetched ingredients:', data);
-        const formattedIngredients = data.map((ing: any) => ({
+        const formatted = data.map((ing: any) => ({
           value: ing.id,
           label: ing.name,
         }));
-        setAvailableIngredients(formattedIngredients);
+        setAvailableIngredients(formatted);
       } catch (error) {
-        console.error('Error fetching ingredients:', error);
-        notifications.show({
-          title: 'Error',
-          message: 'Failed to load ingredients.',
-          color: 'red',
-        });
+        console.error(error);
+        alert('Failed to load ingredients.');
       }
-    };
-
+    }
     fetchIngredients();
   }, []);
 
-  // Debounced function to fetch default image
-  const debouncedFetchDefaultImage = debounce(() => {
+  // Debounce title for auto-fetching image
+  const debouncedTitle = useDebouncedValue(formData.title, 500);
+  useEffect(() => {
     if (autoFetchImage && !formData.image.trim()) {
       fetchDefaultImage();
     }
-  }, 500); // 500 milliseconds debounce
-  
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedTitle, autoFetchImage]);
 
-  // Update useEffect to use the debounced function
-  useEffect(() => {
-    debouncedFetchDefaultImage();
-
-    // Cleanup the debounce on unmount
-    return () => {
-      debouncedFetchDefaultImage.cancel();
-    };
-  }, [formData.title, autoFetchImage]);
-
-  // Utility Handlers for Ingredients
-  const handleAddIngredient = (): void => {
+  // Handlers for ingredients
+  const handleAddIngredient = () => {
     setFormData((prev) => ({
       ...prev,
-      ingredients: [...prev.ingredients, { quantity: 1, unit: 'g', name: '' }], // Start with default unit as grams
+      ingredients: [...prev.ingredients, { quantity: 1, unit: 'g', name: '' }],
     }));
   };
 
-  const handleRemoveIngredient = (index: number): void => {
+  const handleRemoveIngredient = (index: number) => {
     setFormData((prev) => ({
       ...prev,
       ingredients: prev.ingredients.filter((_, i) => i !== index),
@@ -190,42 +156,37 @@ export default function AddRecipePage() {
     index: number,
     field: keyof Ingredient,
     value: number | string | undefined
-  ): void => {
-    console.log(`Changing ingredient at index ${index}: setting ${field} to ${value}`);
+  ) => {
     setFormData((prev) => {
-      const updatedIngredients = [...prev.ingredients];
-      updatedIngredients[index] = {
-        ...updatedIngredients[index],
-        [field]: value,
-      };
-      return { ...prev, ingredients: updatedIngredients };
+      const updated = [...prev.ingredients];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, ingredients: updated };
     });
   };
 
-  // Utility Handlers for Steps
-  const handleAddStep = (): void => {
+  // Handlers for steps
+  const handleAddStep = () => {
     setFormData((prev) => ({
       ...prev,
       steps: [...prev.steps, { description: '' }],
     }));
   };
 
-  const handleRemoveStep = (index: number): void => {
+  const handleRemoveStep = (index: number) => {
     setFormData((prev) => ({
       ...prev,
       steps: prev.steps.filter((_, i) => i !== index),
     }));
   };
 
-  const handleStepChange = (index: number, value: string): void => {
+  const handleStepChange = (index: number, value: string) => {
     setFormData((prev) => {
-      const updatedSteps = [...prev.steps];
-      updatedSteps[index] = { ...updatedSteps[index], description: value };
-      return { ...prev, steps: updatedSteps };
+      const updated = [...prev.steps];
+      updated[index] = { ...updated[index], description: value };
+      return { ...prev, steps: updated };
     });
   };
 
-  // Basic Form Validation Check
   const isFormValid = (): boolean => {
     if (
       !formData.title.trim() ||
@@ -234,7 +195,7 @@ export default function AddRecipePage() {
       !formData.description.trim() ||
       formData.portion < 1 ||
       formData.ingredients.some(
-        (ing) => ing.quantity <= 0 || !ing.unit.trim() || !ing.name.trim() // Ensure name is present
+        (ing) => ing.quantity <= 0 || !ing.unit.trim() || !ing.name.trim()
       ) ||
       formData.steps.some((step) => !step.description.trim())
     ) {
@@ -243,77 +204,46 @@ export default function AddRecipePage() {
     return true;
   };
 
-  // Fetch Default Image Using Recipe Title
+  // Fetch default image using recipe title
   const fetchDefaultImage = async (): Promise<void> => {
     if (!formData.title.trim()) {
-      notifications.show({
-        title: 'Error',
-        message: 'Please provide a recipe title before fetching an image.',
-        color: 'red',
-      });
+      // Do nothing if the title is empty—avoid showing the alert repeatedly.
       return;
-    }
-
+    }    
     try {
       setLoading(true);
-      console.log(`Fetching default image for query: ${formData.title}`);
       const res = await fetch(
         `/api/fetch-default-image?query=${encodeURIComponent(formData.title)}`
       );
-      console.log('Image fetch response status:', res.status);
       if (!res.ok) {
         const errorData = await res.json();
-        console.error('Failed to fetch default image:', errorData);
         throw new Error(errorData.error || 'Failed to fetch default image');
       }
       const data = await res.json();
-      console.log('Fetched image URL:', data.imageUrl);
       setFormData((prev) => ({ ...prev, image: data.imageUrl }));
-      notifications.show({
-        title: 'Image Fetched',
-        message: 'A default image has been fetched via Google!',
-        color: 'green',
-      });
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        notifications.show({
-          title: 'Error',
-          message: error.message || 'Failed to fetch default image.',
-          color: 'red',
-        });
-      } else {
-        notifications.show({
-          title: 'Error',
-          message: 'An unknown error occurred.',
-          color: 'red',
-        });
-      }
+      alert('A default image has been fetched!');
+    } catch (error: any) {
+      alert(error.message || 'Failed to fetch default image.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Submitting with Manual Form
+  // Submit Form (via Form Input)
   const handleFormSubmit = async (): Promise<void> => {
     if (!isFormValid()) {
-      notifications.show({
-        title: 'Invalid Form',
-        message: 'Please fill out all required fields correctly.',
-        color: 'red',
-      });
+      alert('Please fill out all required fields correctly.');
       return;
     }
-
     setLoading(true);
-
     try {
-      // Prepare payload
       const payload: RecipeInputFrontend = {
         title: formData.title.trim(),
         category: formData.category.trim(),
         region: formData.region.trim(),
         description: formData.description.trim(),
         portion: formData.portion,
+        image: formData.image.trim() || undefined,
         ingredients: formData.ingredients.map((ing) => ({
           ingredient_id: ing.ingredient_id,
           quantity: ing.quantity,
@@ -324,10 +254,7 @@ export default function AddRecipePage() {
           order: index + 1,
           description: step.description.trim(),
         })),
-        image: formData.image?.trim() || undefined,
       };
-
-      console.log('Submitting recipe payload:', payload);
 
       const response = await fetch('/api/recipes', {
         method: 'POST',
@@ -335,89 +262,52 @@ export default function AddRecipePage() {
         body: JSON.stringify(payload),
       });
 
-      console.log('POST /api/recipes response status:', response.status);
-
       if (response.ok) {
         const responseData = await response.json();
         const recipeId = responseData.recipe.id;
-        console.log('Recipe added with ID:', recipeId);
-
-        // Fetch the complete recipe details including nutritional_info
-        console.log(`Fetching recipe details for ID: ${recipeId}`);
+        if (!payload.image) {
+          await updateRecipeImage(recipeId, payload.title);
+        }
         const recipeResponse = await fetch(`/api/recipes/${recipeId}`);
-        console.log('GET /api/recipes/[id] response status:', recipeResponse.status);
         if (!recipeResponse.ok) {
-          const errorData = await recipeResponse.json();
-          console.error('Failed to fetch recipe details:', errorData);
           throw new Error('Failed to fetch recipe details.');
         }
         const recipeDetails = await recipeResponse.json();
-        console.log('Fetched recipe details:', recipeDetails);
-
-        // Set the nutritional info state
-        setNutritionalInfo(recipeDetails.nutritional_info || null);
-
-        notifications.show({
-          title: 'Success',
-          message: 'Recipe added successfully!',
-          color: 'green',
-        });
+        // (Assuming you set nutritionalInfo elsewhere)
+        alert('Recipe added successfully!');
         // Reset form
         setFormData({
           title: '',
           category: '',
           region: '',
           description: '',
-          ingredients: [{ quantity: 1, unit: 'g', name: '' }], // Reset to default unit
+          ingredients: [{ quantity: 1, unit: 'g', name: '' }],
           steps: [{ description: '' }],
           image: '',
           portion: 1,
         });
-        setAutoFetchImage(true); // Re-enable auto-fetching
+        setAutoFetchImage(true);
       } else {
         const errorData = await response.json();
-        console.error('Failed to add recipe:', errorData);
         throw new Error(errorData.error || 'Failed to add recipe');
       }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        notifications.show({
-          title: 'Error',
-          message: error.message || 'Failed to add recipe. Please try again.',
-          color: 'red',
-        });
-      } else {
-        notifications.show({
-          title: 'Error',
-          message: 'An unknown error occurred.',
-          color: 'red',
-        });
-      }
+    } catch (error: any) {
+      alert(error.message || 'Failed to add recipe.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Submitting with JSON
+  // Submit JSON Form
   const handleJsonSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-
     if (!jsonData.trim()) {
-      notifications.show({
-        title: 'Invalid JSON',
-        message: 'Please provide valid JSON data.',
-        color: 'red',
-      });
+      alert('Please provide valid JSON data.');
       return;
     }
-
     setLoading(true);
-
     try {
       const parsedData: JsonData = JSON.parse(jsonData);
-      console.log('Parsed JSON data:', parsedData);
-
-      // Basic validation for parsed JSON
       if (
         !parsedData.title?.trim() ||
         !parsedData.category?.trim() ||
@@ -429,32 +319,19 @@ export default function AddRecipePage() {
       ) {
         throw new Error('JSON data is missing required fields or has invalid formats.');
       }
-
-      // Fetch all ingredients to map names to IDs
-      console.log('Fetching ingredients for JSON mapping...');
-      const res = await fetch('/api/ingredients'); // Corrected endpoint
-      console.log('GET /api/ingredients response status:', res.status);
+      const res = await fetch('/api/ingredients');
       if (!res.ok) {
-        const errorData = await res.json();
-        console.error('Failed to fetch ingredients for mapping:', errorData);
         throw new Error('Failed to fetch ingredients for mapping.');
       }
       const ingredientsData = await res.json();
-      console.log('Fetched ingredients for mapping:', ingredientsData);
-
-      // Create a map of ingredient names to IDs (case-insensitive)
       const ingredientMap: { [key: string]: number } = {};
       ingredientsData.forEach((ing: any) => {
         ingredientMap[ing.name.toLowerCase()] = ing.id;
       });
-      console.log('Ingredient map:', ingredientMap);
-
-      // Map JSON ingredients to include `ingredient_id` and `name`
       const mappedIngredients: Ingredient[] = await Promise.all(
-        parsedData.ingredients.map(async (ing) => {
+        parsedData.ingredients.map(async (ing: any) => {
           const ingredientName = ing.name.trim();
           const ingredient_id = ingredientMap[ingredientName.toLowerCase()];
-
           if (ingredient_id) {
             return {
               ingredient_id,
@@ -463,26 +340,14 @@ export default function AddRecipePage() {
               name: ingredientName,
             };
           } else {
-            // Ingredient not found, attempt to create it
-            console.log(`Ingredient "${ingredientName}" not found. Creating new ingredient.`);
             const { data: newIngredient, error: createError } = await supabase
               .from('ingredients')
               .insert({ name: ingredientName })
               .select('id')
               .single();
-
             if (createError) {
-              console.error(`Failed to add ingredient "${ingredientName}":`, createError);
-              notifications.show({
-                title: 'Error',
-                message: `Failed to add ingredient "${ingredientName}".`,
-                color: 'red',
-              });
               throw new Error(`Failed to add ingredient "${ingredientName}".`);
             }
-
-            console.log(`Created new ingredient "${ingredientName}" with ID:`, newIngredient.id);
-
             return {
               ingredient_id: newIngredient.id,
               quantity: ing.quantity,
@@ -492,10 +357,6 @@ export default function AddRecipePage() {
           }
         })
       );
-
-      console.log('Mapped ingredients:', mappedIngredients);
-
-      // Prepare the payload
       const payload: RecipeInputFrontend = {
         title: parsedData.title.trim(),
         category: parsedData.category.trim(),
@@ -504,495 +365,388 @@ export default function AddRecipePage() {
         portion: parsedData.portion,
         image: parsedData.image?.trim() || undefined,
         ingredients: mappedIngredients,
-        steps: parsedData.steps.map((step, index) => ({
+        steps: parsedData.steps.map((step: any, index: number) => ({
           order: step.order || index + 1,
           description: step.description.trim(),
         })),
       };
-
-      console.log('Submitting recipe via JSON payload:', payload);
-
-      // Submit the payload
       const response = await fetch('/api/recipes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
-      console.log('POST /api/recipes (JSON) response status:', response.status);
-
       if (response.ok) {
         const responseData = await response.json();
         const recipeId = responseData.recipe.id;
-        console.log('Recipe added via JSON with ID:', recipeId);
-
-        // If image is missing, fetch and update it
         if (!payload.image) {
-          console.log('Image is missing. Fetching default image.');
-          await updateRecipeImage(recipeId, payload.title); // Fetch and update image based on title
+          await updateRecipeImage(recipeId, payload.title);
         }
-
-        // Fetch the complete recipe details including nutritional_info
-        console.log(`Fetching recipe details for ID: ${recipeId}`);
         const recipeResponse = await fetch(`/api/recipes/${recipeId}`);
-        console.log('GET /api/recipes/[id] response status:', recipeResponse.status);
         if (!recipeResponse.ok) {
-          const errorData = await recipeResponse.json();
-          console.error('Failed to fetch recipe details:', errorData);
           throw new Error('Failed to fetch recipe details.');
         }
         const recipeDetails = await recipeResponse.json();
-        console.log('Fetched recipe details:', recipeDetails);
-
-        // Set the nutritional info state
-        setNutritionalInfo(recipeDetails.nutritional_info || null);
-
-        notifications.show({
-          title: 'Success',
-          message: 'Recipe added successfully via JSON!',
-          color: 'green',
-        });
+        alert('Recipe added successfully via JSON!');
         setJsonData('');
       } else {
         const errorData = await response.json();
-        console.error('Failed to add recipe via JSON:', errorData);
         throw new Error(errorData.error || 'Failed to add recipe via JSON');
       }
-    } catch (error: unknown) {
+    } catch (error: any) {
       if (error instanceof SyntaxError) {
-        notifications.show({
-          title: 'JSON Syntax Error',
-          message: 'Please ensure the JSON is correctly formatted.',
-          color: 'red',
-        });
-      } else if (error instanceof Error) {
-        notifications.show({
-          title: 'Error',
-          message:
-            error.message ||
-            'Failed to add recipe via JSON. Please check the format.',
-          color: 'red',
-        });
+        alert('Please ensure the JSON is correctly formatted.');
       } else {
-        notifications.show({
-          title: 'Error',
-          message: 'An unknown error occurred.',
-          color: 'red',
-        });
+        alert(error.message || 'Failed to add recipe via JSON.');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // Function to fetch and update recipe image based on title
+  // Update recipe image using API
   const updateRecipeImage = async (recipeId: number, title: string): Promise<void> => {
     try {
-      console.log(`Fetching default image for recipe ID: ${recipeId} with title: ${title}`);
       const res = await fetch(`/api/fetch-default-image?query=${encodeURIComponent(title)}`);
-      console.log('Image fetch response status:', res.status);
       if (!res.ok) {
         const errorData = await res.json();
-        console.error('Failed to fetch default image:', errorData);
         throw new Error(errorData.error || 'Failed to fetch default image');
       }
       const data = await res.json();
-      console.log('Fetched image URL:', data.imageUrl);
-
-      // Update the recipe with the fetched image
       await updateRecipeImageAPI(recipeId, data.imageUrl);
     } catch (error: any) {
-      console.error('Error updating recipe image:', error.message);
-      notifications.show({
-        title: 'Error',
-        message: error.message || 'Failed to fetch and update recipe image.',
-        color: 'red',
-      });
-      // Decide whether to throw the error or not based on your application flow
+      alert(error.message || 'Failed to fetch and update recipe image.');
     }
   };
 
-  // Helper function to call the update image API
   const updateRecipeImageAPI = async (recipeId: number, imageUrl: string): Promise<void> => {
     try {
       const res = await fetch(`/api/recipes/${recipeId}/update-image`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageUrl }),
       });
-
       if (!res.ok) {
         const errorData = await res.json();
-        console.error('Failed to update recipe image:', errorData);
         throw new Error(errorData.error || 'Failed to update recipe image.');
       }
-
-      const updatedRecipe = await res.json();
-      console.log('Recipe image updated:', updatedRecipe);
     } catch (error: any) {
-      console.error('Error in updateRecipeImageAPI:', error.message);
-      notifications.show({
-        title: 'Error',
-        message: error.message || 'Failed to update recipe image.',
-        color: 'red',
-      });
-      throw error; // Re-throw to handle upstream if needed
+      alert(error.message || 'Failed to update recipe image.');
+      throw error;
     }
   };
 
   return (
-    <Container size="sm" py="xl">
-      <Paper withBorder shadow="md" p={30} radius="md" className="relative">
-        <LoadingOverlay
-          visible={loading}
-          zIndex={1000}
-          overlayProps={{ radius: 'sm', blur: 2 }}
-        />
-        <Stack align="center" mb="md" gap="md">
-          <IconChefHat size={48} stroke={1.5} />
-          <Title order={2}>Add New Recipe</Title>
-          <Text color="dimmed" size="sm">
+    <div className="container mx-auto py-8 px-2 sm:px-4">
+      <div className="card shadow-lg rounded-lg p-4 sm:p-8 relative">
+        {/* Loading Overlay */}
+        {loading && (
+          <div className="absolute inset-0 flex justify-center items-center bg-base-200/70 z-10">
+            <button className="btn btn-square btn-lg loading">Loading</button>
+          </div>
+        )}
+
+        {/* Header Section */}
+        <div className="flex flex-col items-center mb-6 gap-4">
+          <IconChefHat size={48} className="stroke-current" />
+          <h1 className="text-2xl sm:text-3xl font-bold">Add New Recipe</h1>
+          <p className="text-xs sm:text-sm text-gray-500 text-center">
             Share your culinary masterpiece with the world
-          </Text>
-        </Stack>
+          </p>
+        </div>
 
-        <Tabs
-          value={activeTab}
-          onChange={(value: string | null) => setActiveTab(value || 'form')}
-          variant="outline"
-          color="blue"
-        >
-          <Tabs.List grow>
-            <Tabs.Tab value="form">Form Input</Tabs.Tab>
-            <Tabs.Tab value="json">JSON Input</Tabs.Tab>
-          </Tabs.List>
+        {/* Tabs for Form vs JSON Input */}
+        <div className="tabs tabs-boxed mb-6">
+          <a
+            className={`tab ${activeTab === 'form' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('form')}
+          >
+            Form Input
+          </a>
+          <a
+            className={`tab ${activeTab === 'json' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('json')}
+          >
+            JSON Input
+          </a>
+        </div>
 
-          {/* Form Input Panel */}
-          <Tabs.Panel value="form" pt="md">
-            <form onSubmit={(e) => { e.preventDefault(); setModalOpened(true); }}>
-              <Stack gap="md">
-                {/* Title Field */}
-                <TextInput
-                  label="Recipe Title"
+        {activeTab === 'form' && (
+          <form onSubmit={(e) => { e.preventDefault(); setModalOpened(true); }}>
+            <div className="flex flex-col gap-4">
+              {/* Title Field */}
+              <div>
+                <label className="label">Recipe Title</label>
+                <input
+                  type="text"
                   required
                   value={formData.title}
                   onChange={(e: ChangeEvent<HTMLInputElement>) =>
                     setFormData({ ...formData, title: e.target.value })
                   }
-                  radius="xl"
-                  size="md"
+                  className="input input-bordered w-full"
                 />
+              </div>
 
-                {/* Category Field */}
-                <Select
-                  label="Category"
-                  data={categories}
+              {/* Category Field */}
+              <div>
+                <label className="label">Category</label>
+                <select
                   required
                   value={formData.category}
-                  onChange={(value: string | null) =>
-                    setFormData({ ...formData, category: value || '' })
-                  }
-                  radius="xl"
-                  size="md"
-                />
-                {/* Region Field */}
-                <Select
-                  label="Region"
-                  data={regions}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="select select-bordered w-full"
+                >
+                  <option disabled value="">
+                    Select Category
+                  </option>
+                  {categories.map((cat) => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Region Field */}
+              <div>
+                <label className="label">Region</label>
+                <select
                   required
                   value={formData.region}
-                  onChange={(value: string | null) =>
-                    setFormData({ ...formData, region: value || '' })
-                  }
-                  radius="xl"
-                  size="md"
-                />
+                  onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+                  className="select select-bordered w-full"
+                >
+                  <option disabled value="">
+                    Select Region
+                  </option>
+                  {regions.map((reg) => (
+                    <option key={reg.value} value={reg.value}>
+                      {reg.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                {/* Description Field */}
-                <Textarea
-                  label="Description"
+              {/* Description Field */}
+              <div>
+                <label className="label">Description</label>
+                <textarea
                   required
-                  minRows={3}
                   value={formData.description}
                   onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  radius="xl"
-                  size="md"
-                />
+                  className="textarea textarea-bordered w-full"
+                  rows={3}
+                ></textarea>
+              </div>
 
-                {/* Image Field */}
-                <Group grow align="flex-end">
-                  <TextInput
-                    label="Image URL (optional)"
+              {/* Image Field */}
+              <div className="flex gap-4 items-end">
+                <div className="flex-grow">
+                  <label className="label">Image URL (optional)</label>
+                  <input
+                    type="text"
                     value={formData.image}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
                       setFormData({ ...formData, image: e.target.value })
                     }
-                    radius="xl"
-                    size="md"
+                    className="input input-bordered w-full"
+                    placeholder="https://example.com/image.jpg"
                     aria-label="Image URL"
                   />
-                  {/* Clear Image Button */}
-                  {formData.image && (
-                    <ActionIcon
-                      color="red"
-                      onClick={() => setFormData({ ...formData, image: '' })}
-                      radius="xl"
-                      size="lg"
-                      variant="filled"
-                      aria-label="Clear Image URL"
-                    >
-                      <IconTrash size={16} />
-                    </ActionIcon>
-                  )}
-                </Group>
+                </div>
+                {formData.image && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, image: '' })}
+                    className="btn btn-square btn-error"
+                    aria-label="Clear Image URL"
+                  >
+                    <IconTrash size={16} />
+                  </button>
+                )}
+              </div>
 
-                {/* Checkbox to Toggle Auto Fetch Image */}
-                <Checkbox
-                  label="Automatically fetch default image if none provided"
-                  checked={autoFetchImage}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    setAutoFetchImage(e.currentTarget.checked)
-                  }
-                  mb="sm"
-                  aria-label="Toggle Automatic Image Fetching"
-                />
-
-                {/* Portions Field */}
-                <Group align="center">
-                  <Text size="sm">Portions:</Text>
-                  <NumberInput
-                    label="Portions"
-                    min={1}
-                    required
-                    value={formData.portion}
-                    onChange={(value: number | string) => {
-                      const numberValue =
-                        typeof value === 'number' && value >= 1 ? value : 1;
-                      setFormData({
-                        ...formData,
-                        portion: numberValue,
-                      });
-                    }}
-                    radius="xl"
-                    size="md"
-                    aria-label="Portions"
+              {/* Auto-Fetch Image Toggle */}
+              <div className="form-control">
+                <label className="cursor-pointer label">
+                  <span className="label-text">
+                    Automatically fetch default image if none provided
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={autoFetchImage}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      setAutoFetchImage(e.currentTarget.checked)
+                    }
+                    className="checkbox checkbox-primary"
                   />
-                </Group>
+                </label>
+              </div>
 
-                {/* Ingredients Section */}
-                <Stack gap="sm">
-                  <Group align="flex-end">
-                    <Text size="sm">Ingredients</Text>
-                    <ActionIcon
-                      color="green"
-                      onClick={handleAddIngredient}
-                      radius="xl"
-                      size="lg"
-                      variant="filled"
-                      aria-label="Add Ingredient"
-                    >
-                      <IconPlus size={16} />
-                    </ActionIcon>
-                  </Group>
+              {/* Portions Field */}
+              <div className="flex items-center gap-4">
+                <label className="label">Portions:</label>
+                <input
+                  type="number"
+                  required
+                  value={formData.portion}
+                  onChange={(e) =>
+                    setFormData({ ...formData, portion: Number(e.target.value) })
+                  }
+                  min={1}
+                  max={20}
+                  className="input input-bordered w-16"
+                />
+              </div>
 
+              {/* Ingredients Section */}
+              <div>
+                <div className="flex items-end gap-2 mb-2">
+                  <label className="label">Ingredients</label>
+                  <button
+                    type="button"
+                    onClick={handleAddIngredient}
+                    className="btn btn-circle btn-success"
+                    aria-label="Add Ingredient"
+                  >
+                    <IconPlus size={16} />
+                  </button>
+                </div>
+                <div className="flex flex-col gap-4">
                   {formData.ingredients.map((ing, index) => (
-                    <Group key={index} grow>
-                      <NumberInput
-                        label="Quantity"
+                    <div key={index} className="flex flex-wrap gap-2 items-end">
+                      <input
+                        type="number"
+                        required
                         value={ing.quantity}
+                        onChange={(e) => handleIngredientChange(index, 'quantity', Number(e.target.value))}
                         min={0.1}
                         step={0.1}
-                        required
-                        onChange={(value: number | string) => {
-                          const quantity = typeof value === 'number' ? value : 0;
-                          handleIngredientChange(index, 'quantity', quantity);
-                        }}
-                        radius="xl"
-                        size="md"
+                        className="input input-bordered w-24"
+                        placeholder="Quantity"
                         aria-label={`Ingredient ${index + 1} Quantity`}
                       />
-
-                      <Select
-                        label="Unit"
-                        data={units.map((unit) => ({ label: unit.label, value: unit.value }))}
+                      <select
                         required
                         value={ing.unit}
-                        onChange={(value: string | null) =>
-                          handleIngredientChange(index, 'unit', value || '')
+                        onChange={(e) =>
+                          handleIngredientChange(index, 'unit', e.target.value)
                         }
-                        radius="xl"
-                        size="md"
+                        className="select select-bordered w-24"
                         aria-label={`Ingredient ${index + 1} Unit`}
-                      />
-
-                      <Autocomplete
-                        label="Ingredient"
-                        placeholder="Type or select ingredient"
-                        data={availableIngredients.map((ing) => ing.label)}
-                        value={
-                          ing.ingredient_id
-                            ? availableIngredients.find((item) => item.value === ing.ingredient_id)?.label || ing.name
-                            : ing.name
-                        }
-                        onChange={(value: string) => {
-                          const selectedIngredient = availableIngredients.find(
-                            (item) => item.label.toLowerCase() === value.toLowerCase()
-                          );
-                          if (selectedIngredient) {
-                            console.log(
-                              `Selected existing ingredient: ${selectedIngredient.label} (ID: ${selectedIngredient.value})`
-                            );
-                            handleIngredientChange(index, 'ingredient_id', selectedIngredient.value);
-                            handleIngredientChange(index, 'name', selectedIngredient.label);
-                          } else {
-                            console.log(`Typed new ingredient: ${value}`);
-                            handleIngredientChange(index, 'ingredient_id', undefined);
-                            handleIngredientChange(index, 'name', value);
+                      >
+                        {units.map((unit) => (
+                          <option key={unit.value} value={unit.value}>
+                            {unit.label}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="flex-grow relative">
+                        <label className="label">Ingredient</label>
+                        <input
+                          type="text"
+                          value={ing.name}
+                          onChange={(e) =>
+                            handleIngredientChange(index, 'name', e.target.value)
                           }
-                        }}
-                        radius="xl"
-                        size="md"
-                        aria-label={`Ingredient ${index + 1} Name`}
-                      />
-
+                          className="input input-bordered w-full"
+                          placeholder="Type or select ingredient"
+                          list={`ingredients-list-${index}`}
+                          aria-label={`Ingredient ${index + 1} Name`}
+                        />
+                        <datalist id={`ingredients-list-${index}`}>
+                          {availableIngredients.map((item) => (
+                            <option key={item.value} value={item.label} />
+                          ))}
+                        </datalist>
+                      </div>
                       {formData.ingredients.length > 1 && (
-                        <ActionIcon
-                          color="red"
+                        <button
+                          type="button"
                           onClick={() => handleRemoveIngredient(index)}
-                          radius="xl"
-                          size="lg"
-                          variant="filled"
+                          className="btn btn-circle btn-error"
                           aria-label={`Remove Ingredient ${index + 1}`}
                         >
                           <IconMinus size={16} />
-                        </ActionIcon>
+                        </button>
                       )}
-                    </Group>
+                    </div>
                   ))}
-                </Stack>
+                </div>
+              </div>
 
-                {/* Steps Section */}
-                <Stack gap="sm">
-                  <Group align="flex-end">
-                    <Text size="sm">Steps</Text>
-                    <ActionIcon
-                      color="green"
-                      onClick={handleAddStep}
-                      radius="xl"
-                      size="lg"
-                      variant="filled"
-                      aria-label="Add Step"
-                    >
-                      <IconPlus size={16} />
-                    </ActionIcon>
-                  </Group>
-
+              {/* Steps Section */}
+              <div>
+                <div className="flex items-end gap-2 mb-2">
+                  <label className="label">Steps</label>
+                  <button
+                    type="button"
+                    onClick={handleAddStep}
+                    className="btn btn-circle btn-success"
+                    aria-label="Add Step"
+                  >
+                    <IconPlus size={16} />
+                  </button>
+                </div>
+                <div className="flex flex-col gap-4">
                   {formData.steps.map((step, index) => (
-                    <Group key={index} grow align="flex-end">
-                      <NumberInput
-                        label="Order"
+                    <div key={index} className="flex flex-wrap gap-2 items-end">
+                      <input
+                        type="number"
                         value={step.order || index + 1}
                         readOnly
-                        radius="xl"
-                        size="md"
+                        className="input input-bordered w-16"
                         aria-label={`Step ${index + 1} Order`}
                       />
-
-                      <Textarea
-                        label="Description"
-                        minRows={2}
+                      <textarea
                         required
                         value={step.description}
-                        onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-                          handleStepChange(index, e.target.value)
-                        }
-                        radius="xl"
-                        size="md"
+                        onChange={(e) => handleStepChange(index, e.target.value)}
+                        className="textarea textarea-bordered w-full"
+                        rows={2}
+                        placeholder="Step description"
                         aria-label={`Step ${index + 1} Description`}
-                      />
-
+                      ></textarea>
                       {formData.steps.length > 1 && (
-                        <ActionIcon
-                          color="red"
+                        <button
+                          type="button"
                           onClick={() => handleRemoveStep(index)}
-                          radius="xl"
-                          size="lg"
-                          variant="filled"
+                          className="btn btn-circle btn-error"
                           aria-label={`Remove Step ${index + 1}`}
                         >
                           <IconMinus size={16} />
-                        </ActionIcon>
+                        </button>
                       )}
-                    </Group>
+                    </div>
                   ))}
-                </Stack>
+                </div>
+              </div>
 
-                {/* Submit Button */}
-                <Button
-                  type="button" // Open modal to confirm submission
-                  fullWidth
-                  size="md"
-                  disabled={!isFormValid()}
-                  radius="xl"
-                  color="blue"
-                  onClick={() => setModalOpened(true)} // Open the modal for confirmation
-                >
-                  Add Recipe
-                </Button>
-              </Stack>
-            </form>
-          </Tabs.Panel>
+              {/* Submit Button */}
+              <button
+                type="button"
+                className="btn btn-primary w-full"
+                disabled={!isFormValid()}
+                onClick={() => setModalOpened(true)}
+              >
+                Add Recipe
+              </button>
+            </div>
+          </form>
+        )}
 
-          {/* JSON Panel */}
-          <Tabs.Panel value="json" pt="md">
-            <form onSubmit={handleJsonSubmit}>
-              <Stack gap="md">
-                <Textarea
-                  name="jsonData"
-                  label="Recipe JSON"
-                  placeholder={`{
-    "title": "Chocolate Cake",
-    "category": "dessert",
-    "region": "italian",
-    "description": "A rich and moist chocolate cake.",
-    "image": "https://example.com/chocolate-cake.jpg",
-    "portion": 8,
-    "ingredients": [
-      { "quantity": 2, "unit": "cups", "name": "flour" },
-      { "quantity": 1.5, "unit": "cups", "name": "sugar" }
-    ],
-    "steps": [
-      { "order": 1, "description": "Preheat oven to 350°F (175°C)." },
-      { "order": 2, "description": "Mix all dry ingredients." }
-    ]
-  }`}
-                  minRows={10}
-                  required
-                  value={jsonData}
-                  onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-                    setJsonData(e.target.value)
-                  }
-                  radius="xl"
-                  size="md"
-                />
-
-                <Button
-                  type="submit"
-                  fullWidth
-                  size="md"
-                  disabled={!jsonData.trim()}
-                  radius="xl"
-                  color="blue"
-                >
-                  Add Recipe via JSON
-                </Button>
-
-                <Code block>
-{`{
+        {activeTab === 'json' && (
+          <form onSubmit={handleJsonSubmit}>
+            <div className="flex flex-col gap-4">
+              <label className="label">Recipe JSON</label>
+              <textarea
+                name="jsonData"
+                className="textarea textarea-bordered w-full"
+                rows={10}
+                required
+                placeholder={`{
   "title": "Chocolate Cake",
   "category": "dessert",
   "region": "italian",
@@ -1008,63 +762,94 @@ export default function AddRecipePage() {
     { "order": 2, "description": "Mix all dry ingredients." }
   ]
 }`}
-                </Code>
-              </Stack>
-            </form>
-          </Tabs.Panel>
-        </Tabs>
+                value={jsonData}
+                onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setJsonData(e.target.value)}
+              ></textarea>
+
+              <button
+                type="submit"
+                className="btn btn-primary w-full"
+                disabled={!jsonData.trim()}
+              >
+                Add Recipe via JSON
+              </button>
+
+              <pre className="border p-2 rounded bg-gray-100 whitespace-pre-wrap">
+  {`{
+  "title": "Chocolate Cake",
+  "category": "dessert",
+  "region": "italian",
+  "description": "A rich and moist chocolate cake.",
+  "image": "https://example.com/chocolate-cake.jpg",
+  "portion": 8,
+  "ingredients": [
+    { "quantity": 2, "unit": "cups", "name": "flour" },
+    { "quantity": 1.5, "unit": "cups", "name": "sugar" }
+  ],
+  "steps": [
+    { "order": 1, "description": "Preheat oven to 350°F (175°C)." },
+    { "order": 2, "description": "Mix all dry ingredients." }
+  ]
+}`}
+</pre>
+
+            </div>
+          </form>
+        )}
 
         {/* Confirmation Modal */}
-        <Modal
-          opened={modalOpened}
-          onClose={() => setModalOpened(false)}
-          title="Confirm Submission"
-          centered
-          aria-labelledby="confirmation-modal"
-        >
-          <Text>Are you sure you want to submit this recipe?</Text>
-          <Group mt="md">
-            <Button color="red" onClick={() => setModalOpened(false)}>
-              Cancel
-            </Button>
-            <Button
-              color="green"
-              onClick={async () => {
-                if (activeTab === 'form') {
-                  await handleFormSubmit(); // Submit via form
-                } else if (activeTab === 'json') {
-                  // Manually trigger form submission for JSON
-                  const jsonForm = document.querySelector('form[onSubmit*="handleJsonSubmit"]') as HTMLFormElement;
-                  if (jsonForm) {
-                    jsonForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-                  }
-                }
-                setModalOpened(false); // Close the modal after submission
-              }}
-            >
-              Yes, Submit
-            </Button>
-          </Group>
-        </Modal>
+        {modalOpened && (
+          <>
+            <div className="modal modal-open">
+              <div className="modal-box max-w-md">
+                <h3 className="font-bold text-xl mb-4">Confirm Submission</h3>
+                <p className="py-4">Are you sure you want to submit this recipe?</p>
+                <div className="modal-action">
+                  <button className="btn btn-error" onClick={() => setModalOpened(false)}>
+                    Cancel
+                  </button>
+                  <button
+                    className="btn btn-success"
+                    onClick={async () => {
+                      if (activeTab === 'form') {
+                        await handleFormSubmit();
+                      } else {
+                        const jsonForm = document.querySelector(
+                          'form[onSubmit*="handleJsonSubmit"]'
+                        ) as HTMLFormElement;
+                        if (jsonForm) {
+                          jsonForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                        }
+                      }
+                      setModalOpened(false);
+                    }}
+                  >
+                    Yes, Submit
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="modal-backdrop bg-black opacity-50"></div>
+          </>
+        )}
+      </div>
 
-       {/* Nutritional Information Display */}
-{nutritionalInfo && (
-  <Paper withBorder shadow="sm" p="md" radius="md" mt="xl">
-    <Title order={3}>Total Nutritional Information (Per Portion)</Title>
-    <Group gap="xs" mt="sm">
-      <Text>Calories: {nutritionalInfo.calories.toFixed(2)} kcal</Text>
-      <Text>Protein: {nutritionalInfo.protein.toFixed(2)} g</Text>
-      <Text>Fat: {nutritionalInfo.fat.toFixed(2)} g</Text>
-      <Text>Carbohydrates: {nutritionalInfo.carbohydrates.toFixed(2)} g</Text>
-      <Text>Fiber: {nutritionalInfo.fiber.toFixed(2)} g</Text>
-      <Text>Sugar: {nutritionalInfo.sugar.toFixed(2)} g</Text>
-      <Text>Sodium: {nutritionalInfo.sodium.toFixed(2)} mg</Text>
-      <Text>Cholesterol: {nutritionalInfo.cholesterol.toFixed(2)} mg</Text>
-    </Group>
-  </Paper>
-)}
-
-      </Paper>
-    </Container>
+      {/* Nutritional Information Display */}
+      {nutritionalInfo && (
+        <div className="card bg-base-100 shadow-sm rounded-lg p-4 mt-8">
+          <h3 className="text-xl sm:text-2xl font-semibold">Total Nutritional Information (Per Portion)</h3>
+          <div className="flex flex-wrap gap-2 sm:gap-4 mt-2">
+            <p className="text-xs sm:text-sm">Calories: {nutritionalInfo.calories.toFixed(2)} kcal</p>
+            <p className="text-xs sm:text-sm">Protein: {nutritionalInfo.protein.toFixed(2)} g</p>
+            <p className="text-xs sm:text-sm">Fat: {nutritionalInfo.fat.toFixed(2)} g</p>
+            <p className="text-xs sm:text-sm">Carbohydrates: {nutritionalInfo.carbohydrates.toFixed(2)} g</p>
+            <p className="text-xs sm:text-sm">Fiber: {nutritionalInfo.fiber.toFixed(2)} g</p>
+            <p className="text-xs sm:text-sm">Sugar: {nutritionalInfo.sugar.toFixed(2)} g</p>
+            <p className="text-xs sm:text-sm">Sodium: {nutritionalInfo.sodium.toFixed(2)} mg</p>
+            <p className="text-xs sm:text-sm">Cholesterol: {nutritionalInfo.cholesterol.toFixed(2)} mg</p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

@@ -1,72 +1,51 @@
 'use client';
 
-import { MantineProvider, createTheme } from "@mantine/core";
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { IconSun, IconMoon } from "@tabler/icons-react";
-import '@mantine/core/styles.css';
+import { useState, useEffect } from 'react';
+import Navbar from './Navbar';  // Your DaisyUI-based Navbar component
 import './globals.css';
-import Navbar from "./Navbar";  // Import Navbar Component
-
-const theme = createTheme({
-  fontFamily: 'Inter, sans-serif',
-  primaryColor: 'blue',
-  components: {
-    Button: {
-      defaultProps: {
-        size: 'sm',
-      },
-    },
-    Card: {
-      defaultProps: {
-        shadow: 'sm',
-        radius: 'md',
-        withBorder: true,
-      },
-    },
-  },
-});
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const [colorScheme, setColorScheme] = useState<'light' | 'dark'>('light');
+  // State for theme; we support "light" and "dark" (DaisyUI will use these)
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
+  // On mount, check if a theme was saved in localStorage and set it.
   useEffect(() => {
-    const savedScheme = localStorage.getItem('color-scheme');
-    if (savedScheme === 'dark' || savedScheme === 'light') {
-      setColorScheme(savedScheme);
-      document.documentElement.setAttribute('data-mantine-color-scheme', savedScheme);
+    const savedTheme = localStorage.getItem('color-scheme');
+    if (savedTheme === 'dark' || savedTheme === 'light') {
+      setTheme(savedTheme);
+      document.documentElement.setAttribute('data-theme', savedTheme);
     }
   }, []);
 
-  const toggleColorScheme = () => {
-    const newScheme = colorScheme === 'light' ? 'dark' : 'light';
-    setColorScheme(newScheme);
-    localStorage.setItem('color-scheme', newScheme);
-    document.documentElement.setAttribute('data-mantine-color-scheme', newScheme);
+  // Toggle between light and dark themes.
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('color-scheme', newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
   };
 
   return (
     <html lang="en">
       <head>
         <meta name="color-scheme" content="light dark" />
+        <title>Recipes App</title>
       </head>
-      <body>
-        <MantineProvider 
-          theme={theme} 
-          defaultColorScheme={colorScheme}  // Use defaultColorScheme instead of colorScheme
-        >
-          <Navbar colorScheme={colorScheme} toggleColorScheme={toggleColorScheme} /> {/* Navbar added here */}
-          
-          {/* Main Content */}
-          <main>
-            {children}
-          </main>
-          
-          {/* Footer */}
-          <footer className="footer">
+      <body className="bg-base-200">
+        {/* Navbar using our DaisyUI-based Navbar component */}
+        <Navbar colorScheme={theme} toggleColorScheme={toggleTheme} />
+
+        {/* Main content */}
+        <main className="min-h-screen container mx-auto px-4 py-8">
+          {children}
+        </main>
+
+        {/* Footer */}
+        <footer className="footer p-4 bg-base-300 text-base-content">
+          <div className="items-center grid-flow-col">
             <p>&copy; {new Date().getFullYear()} Recipes App. All rights reserved.</p>
-          </footer>
-        </MantineProvider>
+          </div>
+        </footer>
       </body>
     </html>
   );

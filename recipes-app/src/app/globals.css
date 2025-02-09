@@ -1,6 +1,10 @@
 /* src/styles/globals.css */
 
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --navbar-height: 4rem;
@@ -364,4 +368,20 @@ main {
 
 .nutritional-card-value {
   font-size: 1.2em;
+}
+
+@keyframes gradientAnimation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.bg-animated-gradient {
+  background: linear-gradient(-45deg, #8e2de2, #4a00e0, #ff416c, #ff4b2b);
+  background-size: 400% 400%;
+  animation: gradientAnimation 15s ease infinite;
+}
+
+.badge{
+  height: auto;
 }

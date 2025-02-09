@@ -1,32 +1,12 @@
-// components/AdminDashboardPage.tsx
-
-"use client";
+'use client';
 
 import { useEffect, useState } from "react";
-import {
-  Container,
-  Title,
-  SimpleGrid,
-  Card,
-  Image,
-  Text,
-  Badge,
-  Button,
-  Group,
-  Stack,
-  LoadingOverlay,
-  ActionIcon,
-  Modal,
-  TextInput,
-  Textarea,
-  NumberInput,
-  Drawer,
-} from "@mantine/core";
-import { notifications } from "@mantine/notifications";
+import Link from "next/link";
 import { IconTrash, IconEdit, IconLock } from "@tabler/icons-react";
-import { useDisclosure } from "@mantine/hooks";
+// We'll use useState and useEffect for logic
+// DaisyUI provides CSS classes so we don't need component imports
 
-// 1. Define the Recipe Interface
+// Define the Recipe Interface
 interface Recipe {
   id: number;
   title: string;
@@ -36,8 +16,9 @@ interface Recipe {
   portion: number;
 }
 
-// 2. Define the AdminDashboard Page
+// AdminDashboardPage Component
 export default function AdminDashboardPage() {
+  // State for controlling the Edit Drawer
   const [editDrawerOpen, setEditDrawerOpen] = useState<boolean>(false);
 
   // A. Authentication States
@@ -47,7 +28,6 @@ export default function AdminDashboardPage() {
   // B. Admin Logic States
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-
   const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(null);
 
   // C. Deletion Confirmation States
@@ -63,30 +43,20 @@ export default function AdminDashboardPage() {
           setIsAuthenticated(true);
         }
       } catch (error: unknown) {
-        if (error instanceof Error) {
-          console.error("Error checking authentication:", error.message);
-        } else {
-          console.error("Unknown error checking authentication.");
-        }
+        console.error("Error checking authentication:", error);
       } finally {
-        setLoading(false); // Ensure loading is turned off after auth check
+        setLoading(false);
       }
     };
-
     checkAuth();
   }, []);
 
   // 4. Handler: Submit Password
   const handleLogin = async () => {
     if (!passwordInput) {
-      notifications.show({
-        title: "Error",
-        message: "Password cannot be empty.",
-        color: "red",
-      });
+      alert("Password cannot be empty.");
       return;
     }
-
     try {
       setLoading(true);
       const res = await fetch("/api/auth", {
@@ -94,33 +64,18 @@ export default function AdminDashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: passwordInput }),
       });
-
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Invalid password");
       }
-
-      // If success
       setIsAuthenticated(true);
       localStorage.setItem("admin-auth", "true");
-      notifications.show({
-        title: "Access Granted",
-        message: "You are now logged in as Admin",
-        color: "green",
-      });
+      alert("Access Granted: You are now logged in as Admin");
     } catch (err: unknown) {
       if (err instanceof Error) {
-        notifications.show({
-          title: "Error",
-          message: err.message || "Invalid password",
-          color: "red",
-        });
+        alert(err.message || "Invalid password");
       } else {
-        notifications.show({
-          title: "Error",
-          message: "An unknown error occurred.",
-          color: "red",
-        });
+        alert("An unknown error occurred.");
       }
     } finally {
       setLoading(false);
@@ -139,17 +94,9 @@ export default function AdminDashboardPage() {
       setRecipes(data);
     } catch (err: unknown) {
       if (err instanceof Error) {
-        notifications.show({
-          title: "Error",
-          message: err.message || "Failed to fetch recipes",
-          color: "red",
-        });
+        alert(err.message || "Failed to fetch recipes");
       } else {
-        notifications.show({
-          title: "Error",
-          message: "An unknown error occurred while fetching recipes.",
-          color: "red",
-        });
+        alert("An unknown error occurred while fetching recipes.");
       }
     } finally {
       setLoading(false);
@@ -172,7 +119,6 @@ export default function AdminDashboardPage() {
   // 7. Confirm Delete (Performs Deletion)
   const confirmDelete = async () => {
     if (!recipeToDelete) return;
-
     try {
       setLoading(true);
       const res = await fetch(`/api/recipes/${recipeToDelete.id}`, { method: "DELETE" });
@@ -181,24 +127,12 @@ export default function AdminDashboardPage() {
         throw new Error(errorData.error || "Failed to delete recipe");
       }
       setRecipes((prev) => prev.filter((r) => r.id !== recipeToDelete.id));
-      notifications.show({
-        title: "Success",
-        message: "Recipe deleted",
-        color: "green",
-      });
+      alert("Recipe deleted");
     } catch (err: unknown) {
       if (err instanceof Error) {
-        notifications.show({
-          title: "Error",
-          message: err.message || "Failed to delete recipe",
-          color: "red",
-        });
+        alert(err.message || "Failed to delete recipe");
       } else {
-        notifications.show({
-          title: "Error",
-          message: "An unknown error occurred while deleting the recipe.",
-          color: "red",
-        });
+        alert("An unknown error occurred while deleting the recipe.");
       }
     } finally {
       setLoading(false);
@@ -207,17 +141,15 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // 8. Handle Edit
+  // 8. Handle Edit: Open the Edit Drawer with the current recipe
   const handleEdit = (recipe: Recipe) => {
     setCurrentRecipe(recipe);
     setEditDrawerOpen(true);
   };
 
-  // 9. Handle Edit Submit
+  // 9. Handle Edit Submit: Save changes
   const handleEditSubmit = async () => {
     if (!currentRecipe) return;
-
-    // Validate inputs
     if (
       !currentRecipe.title ||
       !currentRecipe.category ||
@@ -225,14 +157,9 @@ export default function AdminDashboardPage() {
       !currentRecipe.image ||
       currentRecipe.portion < 1
     ) {
-      notifications.show({
-        title: "Error",
-        message: "Please fill out all fields correctly.",
-        color: "red",
-      });
+      alert("Please fill out all fields correctly.");
       return;
     }
-
     try {
       setLoading(true);
       const res = await fetch(`/api/recipes/${currentRecipe.id}`, {
@@ -246,35 +173,21 @@ export default function AdminDashboardPage() {
           image: currentRecipe.image,
         }),
       });
-
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to update recipe");
       }
-
       const updatedRecipe: Recipe = await res.json();
       setRecipes((prev) =>
         prev.map((r) => (r.id === updatedRecipe.id ? updatedRecipe : r))
       );
-      notifications.show({
-        title: "Success",
-        message: "Recipe updated",
-        color: "green",
-      });
+      alert("Recipe updated");
       setEditDrawerOpen(false);
     } catch (err: unknown) {
       if (err instanceof Error) {
-        notifications.show({
-          title: "Error",
-          message: err.message || "Failed to update recipe",
-          color: "red",
-        });
+        alert(err.message || "Failed to update recipe");
       } else {
-        notifications.show({
-          title: "Error",
-          message: "An unknown error occurred while updating the recipe.",
-          color: "red",
-        });
+        alert("An unknown error occurred while updating the recipe.");
       }
     } finally {
       setLoading(false);
@@ -284,196 +197,187 @@ export default function AdminDashboardPage() {
   // 10. If NOT authenticated, show the password form
   if (!isAuthenticated) {
     return (
-      <Container size="xs" py="xl">
-        {/* Ensure the Container has relative positioning for the LoadingOverlay */}
-        <div style={{ position: "relative" }}>
-          <LoadingOverlay
-            visible={loading}
-            overlayProps={{ blur: 2 }}
-            zIndex={1000}
-          />
-          <Stack gap="md" align="center">
+      <div className="container mx-auto py-8">
+        <div className="relative">
+          <div className="flex flex-col items-center gap-4">
             <IconLock size={48} />
-            <Title order={3}>Admin Access</Title>
-            <Text>Please enter the admin password to continue.</Text>
-            <TextInput
+            <h3 className="text-3xl">Admin Access</h3>
+            <p>Please enter the admin password to continue.</p>
+            <input
               type="password"
               placeholder="Enter password"
               value={passwordInput}
               onChange={(e) => setPasswordInput(e.target.value)}
+              className="input input-bordered w-full max-w-xs"
               required
             />
-            <Button onClick={handleLogin} color="blue" fullWidth>
+            <button onClick={handleLogin} className="btn btn-primary w-full max-w-xs">
               Submit
-            </Button>
-          </Stack>
+            </button>
+          </div>
+          {loading && (
+            <div className="absolute inset-0 flex justify-center items-center">
+              <button className="btn btn-square btn-lg loading">Loading</button>
+            </div>
+          )}
         </div>
-      </Container>
+      </div>
     );
   }
 
-  // 11. If authenticated, show the actual Admin Dashboard
+  // 11. If authenticated, show the Admin Dashboard
   return (
-    <Container size="lg" py="xl">
-      <LoadingOverlay
-        visible={loading}
-        overlayProps={{ blur: 2 }}
-        zIndex={1000}
-      />
-      <Stack gap="xl">
+    <div className="container mx-auto py-8">
+      {loading && (
+        <div className="absolute inset-0 flex justify-center items-center">
+          <button className="btn btn-square btn-lg loading">Loading</button>
+        </div>
+      )}
+      <div className="flex flex-col gap-8">
         {/* Header */}
-        <Group >
-          <Title order={2}>Admin Dashboard</Title>
-          <Button onClick={fetchRecipes} loading={loading}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Admin Dashboard</h2>
+          <button onClick={fetchRecipes} className="btn btn-primary">
             Refresh
-          </Button>
-        </Group>
+          </button>
+        </div>
 
         {/* Edit Recipe Drawer */}
-        <Drawer
-          opened={editDrawerOpen}
-          onClose={() => setEditDrawerOpen(false)}
-          title="Edit Recipe"
-          padding="lg"
-          size="lg"
-        >
-          {currentRecipe && (
-            <Stack gap="sm">
-              <TextInput
-                label="Title"
-                value={currentRecipe.title}
-                onChange={(e) =>
-                  setCurrentRecipe({ ...currentRecipe, title: e.target.value })
-                }
-                required
-              />
-              <TextInput
-                label="Category"
-                value={currentRecipe.category}
-                onChange={(e) =>
-                  setCurrentRecipe({
-                    ...currentRecipe,
-                    category: e.target.value,
-                  })
-                }
-                required
-              />
-              <Textarea
-                label="Description"
-                minRows={3}
-                value={currentRecipe.description}
-                onChange={(e) =>
-                  setCurrentRecipe({
-                    ...currentRecipe,
-                    description: e.target.value,
-                  })
-                }
-                required
-              />
-              <NumberInput
-                label="Portions"
-                min={1}
-                value={currentRecipe.portion}
-                onChange={(val) => {
-                  if (typeof val === "number") {
-                    setCurrentRecipe({
-                      ...currentRecipe,
-                      portion: val,
-                    });
-                  }
-                }}
-                required
-              />
-              <TextInput
-                label="Image URL"
-                value={currentRecipe.image}
-                onChange={(e) =>
-                  setCurrentRecipe({ ...currentRecipe, image: e.target.value })
-                }
-                required
-              />
+        <input id="edit-drawer" type="checkbox" className="drawer-toggle" checked={editDrawerOpen} readOnly />
+        <div className="drawer drawer-end">
+          <div className="drawer-content"></div>
+          <div className="drawer-side">
+            <label
+              htmlFor="edit-drawer"
+              className="drawer-overlay"
+              onClick={() => setEditDrawerOpen(false)}
+            ></label>
+            <div className="menu p-4 w-80 bg-base-200 text-base-content">
+              {currentRecipe && (
+                <div className="flex flex-col gap-4">
+                  <input
+                    type="text"
+                    placeholder="Title"
+                    value={currentRecipe.title}
+                    onChange={(e) =>
+                      setCurrentRecipe({ ...currentRecipe, title: e.target.value })
+                    }
+                    className="input input-bordered"
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="Category"
+                    value={currentRecipe.category}
+                    onChange={(e) =>
+                      setCurrentRecipe({ ...currentRecipe, category: e.target.value })
+                    }
+                    className="input input-bordered"
+                    required
+                  />
+                  <textarea
+                    placeholder="Description"
+                    value={currentRecipe.description}
+                    onChange={(e) =>
+                      setCurrentRecipe({ ...currentRecipe, description: e.target.value })
+                    }
+                    className="textarea textarea-bordered"
+                    required
+                  ></textarea>
+                  <input
+                    type="number"
+                    placeholder="Portions"
+                    value={currentRecipe.portion}
+                    onChange={(e) =>
+                      setCurrentRecipe({ ...currentRecipe, portion: Number(e.target.value) })
+                    }
+                    className="input input-bordered"
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="Image URL"
+                    value={currentRecipe.image}
+                    onChange={(e) =>
+                      setCurrentRecipe({ ...currentRecipe, image: e.target.value })
+                    }
+                    className="input input-bordered"
+                    required
+                  />
+                  <button onClick={handleEditSubmit} className="btn btn-success">
+                    Save Changes
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-              <Button color="green" onClick={handleEditSubmit} loading={loading}>
-                Save Changes
-              </Button>
-            </Stack>
-          )}
-        </Drawer>
-
-        {/* Recipes grid */}
-        <SimpleGrid
-          cols={3}
-          spacing="lg"
-         
-        >
+        {/* Recipes Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {recipes.map((recipe) => (
-            <Card key={recipe.id} shadow="sm" p="lg" radius="md" withBorder>
-              <Card.Section>
-                <Image src={recipe.image} height={160} alt={recipe.title} fit="cover" />
-              </Card.Section>
-
-              <Group mt="md" mb="xs">
-                <Text >{recipe.title}</Text>
-                <Badge color="pink" variant="light">
+            <div key={recipe.id} className="card bg-base-100 shadow-md rounded-lg p-4">
+              <figure>
+                <img
+                  src={recipe.image}
+                  alt={recipe.title}
+                  className="w-full h-40 object-cover rounded-md"
+                />
+              </figure>
+              <div className="mt-4">
+                <h3 className="text-xl font-bold">{recipe.title}</h3>
+                <span className="badge badge-secondary">
                   {recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)}
-                </Badge>
-              </Group>
-
-              <Text size="sm" color="dimmed" lineClamp={3}>
-                {recipe.description}
-              </Text>
-
-              <Group mt="md" align="center">
-                <Text size="sm" color="dimmed">
-                  Portions: {recipe.portion}
-                </Text>
-                <Group gap="xs">
-                  <ActionIcon
-                    variant="outline"
-                    color="blue"
+                </span>
+              </div>
+              <p className="text-sm text-gray-500 mt-2 line-clamp-3">{recipe.description}</p>
+              <div className="flex items-center justify-between mt-4">
+                <span className="text-sm">Portions: {recipe.portion}</span>
+                <div className="flex gap-2">
+                  <button
                     onClick={() => handleEdit(recipe)}
+                    className="btn btn-outline btn-sm"
                     title="Edit Recipe"
                     aria-label={`Edit ${recipe.title}`}
                   >
                     <IconEdit size={18} />
-                  </ActionIcon>
-
-                  <ActionIcon
-                    variant="outline"
-                    color="red"
+                  </button>
+                  <button
                     onClick={() => handleDelete(recipe)}
+                    className="btn btn-outline btn-sm"
                     title="Delete Recipe"
                     aria-label={`Delete ${recipe.title}`}
                   >
                     <IconTrash size={18} />
-                  </ActionIcon>
-                </Group>
-              </Group>
-            </Card>
+                  </button>
+                </div>
+              </div>
+            </div>
           ))}
-        </SimpleGrid>
-      </Stack>
+        </div>
+      </div>
 
       {/* Confirmation Modal for Deletion */}
-      <Modal
-        opened={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        title="Confirm Deletion"
-        centered
-      >
-        <Text>
-          Are you sure you want to delete the recipe "
-          <b>{recipeToDelete?.title}</b>"?
-        </Text>
-        <Group mt="md">
-          <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
-            Cancel
-          </Button>
-          <Button color="red" onClick={confirmDelete}>
-            Delete
-          </Button>
-        </Group>
-      </Modal>
-    </Container>
+      {deleteModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-md">
+            <h3 className="font-bold text-xl mb-4">
+              Confirm Deletion
+            </h3>
+            <p>
+              Are you sure you want to delete the recipe "<b>{recipeToDelete?.title}</b>"?
+            </p>
+            <div className="modal-action">
+              <button className="btn btn-outline" onClick={() => setDeleteModalOpen(false)}>
+                Cancel
+              </button>
+              <button className="btn btn-error" onClick={confirmDelete}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

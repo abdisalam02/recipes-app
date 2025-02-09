@@ -1,196 +1,164 @@
 'use client';
+
 import { useRouter } from 'next/navigation';
-import {
-  Container,
-  SimpleGrid,
-  Card,
-  Image,
-  Text,
-  Badge,
-  Button,
-  Group,
-  ActionIcon,
-  Tooltip,
-  Title,
-  Autocomplete,
-  Drawer,
-  Chip,
-  Affix,
-  Transition,
-  Loader,
-} from '@mantine/core';
-import { IconHeart, IconHeartFilled, IconArrowUp } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
-import { notifications } from '@mantine/notifications';
 import Link from 'next/link';
-import { useDebouncedValue, useWindowScroll, useDisclosure } from '@mantine/hooks';
-import { Recipe, Favorite } from '../../lib/types'; // Ensure these interfaces are correctly defined
+import { useState, useEffect, ChangeEvent } from 'react';
+import { IconHeart, IconHeartFilled, IconArrowUp } from '@tabler/icons-react';
+import { Recipe, Favorite } from '../../lib/types';
+
+/**
+ * A simple debounce hook.
+ */
+function useDebouncedValue<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
+
+/**
+ * A simple hook to track the vertical scroll position.
+ */
+function useWindowScroll() {
+  const [scroll, setScroll] = useState({ y: 0 });
+  useEffect(() => {
+    const handleScroll = () => setScroll({ y: window.scrollY });
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  return scroll;
+}
 
 export default function FindRecipesPage() {
   const router = useRouter();
+
+  // State declarations
   const [allIngredients, setAllIngredients] = useState<{ id: number; name: string }[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // States for Search and Filters
+  // Search & filter state
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [debouncedSearchTerm] = useDebouncedValue(searchTerm, 300); // Debounced search term
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedRegion, setSelectedRegion] = useState<string>('');
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
-  const [inputValue, setInputValue] = useState<string>(''); // Declare inputValue only once
+  const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
 
-  // Drawer handling
-  const [opened, { open, close }] = useDisclosure(false);
+  // Drawer state (for mobile filters)
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Window scroll state for scroll-to-top button
-  const [scroll, scrollTo] = useWindowScroll();
+  // Scroll state
+  const scroll = useWindowScroll();
 
-  // Fetch Recipes, Ingredients, and Favorites on Mount
+  // Secret link trigger (to show admin page link)
+  const [secretVisible, setSecretVisible] = useState<boolean>(false);
+
+  // Fetch data on mount
   useEffect(() => {
-/*************  ✨ Codeium Command ⭐  *************/
-/**
- * Asynchronously fetches and updates the state for ingredients, recipes, and favorites data from their respective APIs.
- * Sets a loading state while fetching data.
- * On success, updates the component state with the fetched data.
- * Handles errors by logging them and displaying notification messages.
- * Ensures the loading state is reset upon completion.
- * 
- * @throws Will throw an error if any API request fails.
- */
-
-/******  5da2e1a6-32f8-4208-b5c9-7ec4dc9682bf  *******/
-
     const fetchData = async () => {
       try {
         setLoading(true);
-
-        // Fetch ingredients via API
-        const ingredientsRes = await fetch('/api/ingredients'); // Corrected endpoint
+        // Fetch ingredients
+        const ingredientsRes = await fetch('/api/ingredients');
         if (!ingredientsRes.ok) {
           const errorData = await ingredientsRes.json();
           throw new Error(errorData.error || 'Failed to fetch ingredients');
         }
         const ingredientsData = await ingredientsRes.json();
-
         setAllIngredients(ingredientsData || []);
         console.log('Fetched Ingredients:', ingredientsData);
 
-        // Fetch recipes via API
+        // Fetch recipes
         const recipesRes = await fetch('/api/recipes');
         if (!recipesRes.ok) {
           const errorData = await recipesRes.json();
           throw new Error(errorData.error || 'Failed to fetch recipes');
         }
         const recipesData = await recipesRes.json();
-
         setRecipes(recipesData || []);
         setFilteredRecipes(recipesData || []);
         console.log('Fetched Recipes:', recipesData);
 
-        // Fetch favorites via API
+        // Fetch favorites
         const favoritesRes = await fetch('/api/favorites');
         if (!favoritesRes.ok) {
           const errorData = await favoritesRes.json();
           throw new Error(errorData.error || 'Failed to fetch favorites');
         }
         const favoritesData = await favoritesRes.json();
-
         setFavorites(favoritesData || []);
         console.log('Fetched Favorites:', favoritesData);
       } catch (error: any) {
         console.error('Error fetching data:', error.message);
-        notifications.show({
-          title: 'Error',
-          message: error.message || 'Failed to fetch data. Please try again later.',
-          color: 'red',
-        });
+        alert(`Error: ${error.message || 'Failed to fetch data.'}`);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
-  // Derived State: Categories and Regions
+  // Derived state for filtering
   const categories = Array.from(new Set(recipes.map((recipe) => recipe.category)));
   const regions = Array.from(new Set(recipes.map((recipe) => recipe.region)));
-
-  // Deduplicate ingredient names
   const uniqueIngredientNames = Array.from(new Set(allIngredients.map((ing) => ing.name)));
   console.log('Unique Ingredient Names:', uniqueIngredientNames);
 
-  // Handle filtering recipes based on search, category, region, and selected ingredients
-  const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
-
+  // Filter recipes when dependencies change
   useEffect(() => {
     let filtered = recipes;
-
-    // Filter by search term
     if (debouncedSearchTerm) {
       filtered = filtered.filter((recipe) =>
         recipe.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
       );
     }
-
-    // Filter by selected category
     if (selectedCategory) {
       filtered = filtered.filter((recipe) => recipe.category === selectedCategory);
     }
-
-    // Filter by selected region
     if (selectedRegion) {
       filtered = filtered.filter((recipe) => recipe.region === selectedRegion);
     }
-
-    // Filter by selected ingredients
     if (selectedIngredients.length > 0) {
       filtered = filtered.filter((recipe) =>
         selectedIngredients.every((ing) =>
           recipe.recipe_ingredients
-            .map((ri) => ri.ingredient.name.toLowerCase()) // Corrected 'ingredients' to 'ingredient'
+            .map((ri) => ri.ingredient.name.toLowerCase())
             .includes(ing.toLowerCase())
         )
       );
     }
-
     setFilteredRecipes(filtered);
     console.log('Filtered Recipes:', filtered);
   }, [selectedIngredients, recipes, debouncedSearchTerm, selectedCategory, selectedRegion]);
 
-  // Determine if a recipe is favorited
+  // Helpers for favorites
   const isFavorited = (recipe_id: number): boolean => {
     return favorites.some((fav) => fav.recipe_id === recipe_id);
   };
 
-  // Toggle Favorite Status
   const toggleFavorite = async (recipe_id: number) => {
     try {
       if (isFavorited(recipe_id)) {
-        // DELETE => remove favorite
         const res = await fetch('/api/favorites', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ recipe_id }), // Use 'recipe_id'
+          body: JSON.stringify({ recipe_id }),
         });
         if (!res.ok) {
           const errorData = await res.json();
           throw new Error(errorData.error || 'Failed to remove favorite');
         }
         setFavorites((prev) => prev.filter((fav) => fav.recipe_id !== recipe_id));
-        notifications.show({
-          title: 'Removed from Favorites',
-          message: 'The recipe has been unfavorited.',
-          color: 'gray',
-        });
+        alert('Removed from Favorites');
       } else {
-        // POST => add favorite
         const res = await fetch('/api/favorites', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ recipe_id }), // Use 'recipe_id'
+          body: JSON.stringify({ recipe_id }),
         });
         if (!res.ok) {
           const errorData = await res.json();
@@ -198,234 +166,210 @@ export default function FindRecipesPage() {
         }
         const newFavorite: Favorite = await res.json();
         setFavorites((prev) => [...prev, newFavorite]);
-        notifications.show({
-          title: 'Added to Favorites',
-          message: 'The recipe has been favorited.',
-          color: 'green',
-        });
+        alert('Added to Favorites');
       }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        notifications.show({
-          title: 'Error',
-          message: error.message || 'An error occurred.',
-          color: 'red',
-        });
-      }
+    } catch (error: any) {
+      alert(`Error: ${error.message || 'An error occurred.'}`);
     }
   };
 
-  // Loading State
+  // Helper for image URL fallback
+  const getImageUrl = (image: string): string => {
+    return image && image.trim() !== ''
+      ? image
+      : 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg';
+  };
+
+  // If loading, display a spinner
   if (loading) {
     return (
-      <Container size="md" py="xl">
-        <Group align="center">
-          <Loader size="xl" color="blue" variant="dots" />
-        </Group>
-      </Container>
+      <div className="flex justify-center items-center h-screen">
+        <button className="btn btn-square btn-lg loading">Loading...</button>
+      </div>
     );
   }
 
-  // Function to get Image URL or fallback
-  const getImageUrl = (image: string): string => {
-    if (image && image.trim() !== '') return image;
-    return 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg';
-  };
-
-  // Get Unique Categories and Regions from Recipes
-  const uniqueCategories = Array.from(new Set(recipes.map((recipe) => recipe.category)));
-  const uniqueRegions = Array.from(new Set(recipes.map((recipe) => recipe.region)));
-
-  // Filter Recipes based on Search Term, Selected Category, and Region
-  const filteredRecipeList = recipes.filter((recipe) => {
-    const matchesSearch = recipe.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
-    const matchesCategory = selectedCategory ? recipe.category === selectedCategory : true;
-    const matchesRegion = selectedRegion ? recipe.region === selectedRegion : true;
-    return matchesSearch && matchesCategory && matchesRegion;
-  });
+  // Scroll-to-top helper
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
   return (
-    <Container size="lg" py="xl">
-      {/* Title */}
-      <Group align="center" mb="md">
-        <Title order={1}>Recipe Collection</Title>
-      </Group>
-
-      {/* Autocomplete for Search */}
-      <Autocomplete
-        label="Search Recipes"
-        placeholder="Type recipe name..."
-        value={searchTerm}
-        onChange={setSearchTerm}
-        data={recipes.map((recipe) => recipe.title)}
-        mb="xl"
-        aria-label="Search Recipes"
-      />
-
-      {/* Button to open Drawer for filters on mobile */}
-      <Button variant="outline" color="blue" onClick={open} mb="xl" aria-label="Open Filters">
-        Filter Recipes
-      </Button>
-
-      {/* Drawer for filters on mobile */}
-      <Drawer
-        opened={opened}
-        onClose={close}
-        title="Filter Recipes"
-        position="right"
-        size="xs"
-        withCloseButton={false}
+    <div className="container mx-auto px-4 py-8 relative">
+      {/* Secret Link Trigger (small ? button in top-right corner) */}
+      <button
+        className="absolute top-4 right-4 btn btn-xs btn-ghost opacity-50 hover:opacity-100 transition-opacity"
+        title="Secret Admin Page"
+        onClick={() => router.push('/admin')}
       >
-        {/* Category Chips for Filtering */}
-        <Group mb="xl">
-          {uniqueCategories.map((category) => (
-            <Chip
-              key={category}
-              onClick={() =>
-                setSelectedCategory((prev) => (prev === category ? '' : category))
-              }
-              variant={selectedCategory === category ? 'filled' : 'outline'}
-              aria-label={`Filter by ${category}`}
-            >
-              {category}
-            </Chip>
-          ))}
-        </Group>
+        ?
+      </button>
 
-        {/* Region Chips for Filtering */}
-        <Group mb="xl">
-          {uniqueRegions.map((region) => (
-            <Chip
-              key={region}
-              onClick={() =>
-                setSelectedRegion((prev) => (prev === region ? '' : region))
-              }
-              variant={selectedRegion === region ? 'filled' : 'outline'}
-              aria-label={`Filter by ${region}`}
-            >
-              {region}
-            </Chip>
-          ))}
-        </Group>
-      </Drawer>
+      {/* Title */}
+      <div className="flex items-center justify-center mb-6">
+        <h1 className="text-4xl font-bold">Recipe Collection</h1>
+      </div>
 
-      {/* Recipes Grid */}
-      {filteredRecipeList.length === 0 ? (
-        <Group align="center">
-          <Text color="dimmed">No recipes found.</Text>
-        </Group>
-      ) : (
-        <SimpleGrid
-          cols={{ base: 1, sm: 2, md: 3, lg: 4 }}
-          spacing={{ base: 'sm', sm: 'md', lg: 'lg' }}
-          verticalSpacing={{ base: 'sm', sm: 'md', lg: 'lg' }}
+      {/* Search Input */}
+      <div className="mb-6">
+        <label className="label">
+          <span className="label-text">Search Recipes</span>
+        </label>
+        <input
+          type="text"
+          placeholder="Type recipe name..."
+          className="input input-bordered w-full"
+          value={searchTerm}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+          aria-label="Search Recipes"
+        />
+      </div>
+
+      {/* Filter Drawer Button */}
+      <div className="mb-6">
+        <button
+          className="btn btn-outline"
+          onClick={() => setDrawerOpen(true)}
+          aria-label="Open Filters"
         >
-          {filteredRecipeList.map((recipe) => (
-            <Card
-              key={recipe.id}
-              shadow="sm"
-              padding="lg"
-              radius="md"
-              withBorder
-              component={Link}
-              href={`/recipes/${recipe.id}`}
-              style={{
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                textDecoration: 'none', // Remove underline from link
-                color: 'inherit', // Inherit text color
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)';
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-              }}
-            >
-              <Card.Section>
-                <Image
-                  src={getImageUrl(recipe.image)}
-                  alt={recipe.title}
-                  height={160}
-                  fit="cover"
-                  loading="lazy"
-                />
-              </Card.Section>
+          Filter Recipes
+        </button>
+      </div>
 
-              <Group mt="md" mb="xs">
-                <Text> {recipe.title}</Text>
-                <Badge
-                  color="pink"
-                  variant="light"
-                  aria-label={`Category: ${recipe.category}`}
-                >
-                  {recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)}
-                </Badge>
-              </Group>
-
-              <Text size="sm" color="dimmed" lineClamp={3}>
-                {recipe.description.length > 100
-                  ? `${recipe.description.substring(0, 100)}...`
-                  : recipe.description}
-              </Text>
-
-              <Group mt="md" mb="xs" align="center">
-                <Text size="sm" color="dimmed">
-                  Portions: {recipe.portion}
-                </Text>
-                <Tooltip label={isFavorited(recipe.id) ? 'Unfavorite' : 'Favorite'}>
-                  <ActionIcon
-                    variant="transparent"
-                    color={isFavorited(recipe.id) ? 'red' : 'gray'}
-                    onClick={(e) => {
-                      e.preventDefault(); // Prevent navigation
-                      toggleFavorite(recipe.id);
-                    }}
-                    aria-label={isFavorited(recipe.id) ? 'Unfavorite' : 'Favorite'}
+      {/* Drawer for Filters */}
+      {drawerOpen && (
+        <>
+          <div className="fixed inset-0 bg-black opacity-50" onClick={() => setDrawerOpen(false)}></div>
+          <div className="fixed top-0 right-0 w-64 h-full bg-base-200 shadow-lg p-4 z-50 transform transition-transform duration-300">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Filters</h2>
+              <button className="btn btn-sm btn-square" onClick={() => setDrawerOpen(false)}>
+                ✕
+              </button>
+            </div>
+            {/* Categories */}
+            <div className="mb-4">
+              <h3 className="font-semibold mb-2">Categories</h3>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() =>
+                      setSelectedCategory((prev) => (prev === category ? '' : category))
+                    }
+                    className={`btn btn-xs ${selectedCategory === category ? 'btn-primary' : 'btn-outline'}`}
                   >
-                    {isFavorited(recipe.id) ? (
-                      <IconHeartFilled size={24} />
-                    ) : (
-                      <IconHeart size={24} />
-                    )}
-                  </ActionIcon>
-                </Tooltip>
-              </Group>
-
-                        <Button
-            variant="light"
-            color="blue"
-            fullWidth
-            radius="md"
-            onClick={(e) => {
-              e.preventDefault(); // Prevent default link behavior
-              router.push(`/recipes/${recipe.id}`); // Navigate programmatically
-            }}
-            aria-label={`View details of ${recipe.title}`}
-          >
-            View Recipe
-          </Button>
-
-            </Card>
-          ))}
-        </SimpleGrid>
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Regions */}
+            <div className="mb-4">
+              <h3 className="font-semibold mb-2">Regions</h3>
+              <div className="flex flex-wrap gap-2">
+                {regions.map((region) => (
+                  <button
+                    key={region}
+                    onClick={() =>
+                      setSelectedRegion((prev) => (prev === region ? '' : region))
+                    }
+                    className={`btn btn-xs ${selectedRegion === region ? 'btn-primary' : 'btn-outline'}`}
+                  >
+                    {region}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
-      {/* Scroll to Top Button */}
-      <Affix position={{ bottom: 20, right: 20 }}>
-        <Transition transition="slide-up" mounted={scroll.y > 0}>
-          {(transitionStyles) => (
-            <Button
-              style={transitionStyles}
-              onClick={() => scrollTo({ y: 0 })}
-              aria-label="Scroll to top"
+      {/* Recipes Grid */}
+      {filteredRecipes.length === 0 ? (
+        <div className="flex justify-center">
+          <p className="text-gray-500">No recipes found.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {filteredRecipes.map((recipe) => (
+            <Link
+              key={recipe.id}
+              href={`/recipes/${recipe.id}`}
+              className="card bg-base-100 shadow-lg hover:shadow-2xl transition transform hover:scale-105 cursor-pointer"
             >
-              Scroll to top
-            </Button>
-          )}
-        </Transition>
-      </Affix>
-    </Container>
+              <figure>
+                <img
+                  src={getImageUrl(recipe.image)}
+                  alt={recipe.title}
+                  className="object-cover w-full h-40"
+                  loading="lazy"
+                />
+              </figure>
+              <div className="card-body p-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="card-title">{recipe.title}</h2>
+                  <div className="badge badge-secondary font-semibold">
+                    {recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)}
+                  </div>
+                </div>
+                <p className="text-sm text-gray-500 line-clamp-3">
+                  {recipe.description.length > 100
+                    ? `${recipe.description.substring(0, 100)}...`
+                    : recipe.description}
+                </p>
+                <div className="flex items-center justify-between mt-4">
+                  <span className="text-sm text-gray-500">Portions: {recipe.portion}</span>
+                  <div className="tooltip" data-tip={isFavorited(recipe.id) ? 'Unfavorite' : 'Favorite'}>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleFavorite(recipe.id);
+                      }}
+                      className="btn btn-ghost btn-sm"
+                      aria-label={isFavorited(recipe.id) ? 'Unfavorite' : 'Favorite'}
+                    >
+                      {isFavorited(recipe.id) ? (
+                        <IconHeartFilled size={24} className="text-red-500" />
+                      ) : (
+                        <IconHeart size={24} className="text-gray-500" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    router.push(`/recipes/${recipe.id}`);
+                  }}
+                  className="btn btn-primary btn-sm mt-4"
+                  aria-label={`View details of ${recipe.title}`}
+                >
+                  View Recipe
+                </button>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Scroll-to-Top Button */}
+      {scroll.y > 100 && (
+        <button
+          onClick={scrollToTop}
+          className="btn btn-circle fixed bottom-6 right-6 transition-transform hover:scale-110"
+          aria-label="Scroll to top"
+        >
+          <IconArrowUp size={24} />
+        </button>
+      )}
+    </div>
   );
+}
+
+// Dummy helpers for favorites
+function isFavorited(recipe_id: number): boolean {
+  return false;
+}
+
+async function toggleFavorite(recipe_id: number): Promise<void> {
+  console.log(`Toggling favorite for recipe ${recipe_id}`);
 }
