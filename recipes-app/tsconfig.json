@@ -1,44 +1,31 @@
 {
   "compilerOptions": {
-    "types": ["node", "react"],
-    "skipLibCheck": true,  // Change to true to skip checking node_modules
-    "strict": true,
-    "target": "es5",      // Change to es5 for better compatibility
-    "module": "esnext",   // Keep this as esnext for Next.js
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "baseUrl": "./",
-    "paths": {
-      // "@prisma/client": ["node_modules/@prisma/client"],
-      "@/*": ["./*"]
-    },
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "target": "es5",
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "incremental": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "module": "esnext",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ]
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "types": ["node", "react"]
   },
   "include": [
+    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "next-env.d.ts",
-    ".next/types/**/*.ts",
-    "emotion.d.ts"
-, "prismaTest.ts"  ],
-  "exclude": [
-    "node_modules"
-  ]
+    ".next/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
 }
