@@ -11,26 +11,19 @@ import {
   IconX,
 } from '@tabler/icons-react';
 
+// Update the props interface to include colorScheme and toggleColorScheme.
 interface NavbarProps {
-  // Extend as needed.
+  colorScheme: 'light' | 'dark';
+  toggleColorScheme: () => void;
 }
 
-export default function Navbar({}: NavbarProps) {
-  // State for mobile menu open/close.
+export default function Navbar({ colorScheme, toggleColorScheme }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // For theme toggling – we support light and dark modes.
-  const [theme, setTheme] = useState("light");
-
-  // Update the root data-theme attribute so DaisyUI applies the correct theme.
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
-
-  // Toggle theme between light and dark.
-  const toggleTheme = () => {
-    setTheme(prev => (prev === "light" ? "dark" : "light"));
-  };
+    // Ensure the document element reflects the current theme
+    document.documentElement.setAttribute('data-theme', colorScheme);
+  }, [colorScheme]);
 
   return (
     <nav className="navbar bg-base-100 shadow py-2">
@@ -41,8 +34,6 @@ export default function Navbar({}: NavbarProps) {
             Recipes App
           </Link>
         </div>
-
-        {/* Navigation Links & Theme Toggle */}
         <div className="flex-none">
           {/* Mobile Dropdown – Visible on small screens */}
           <div className="dropdown dropdown-end lg:hidden">
@@ -85,7 +76,6 @@ export default function Navbar({}: NavbarProps) {
                     <IconHeart size={16} /> Favorites
                   </Link>
                 </li>
-                {/* Tinder Link with pink styling and pulsing animation */}
                 <li>
                   <Link
                     href="/tinder"
@@ -98,7 +88,7 @@ export default function Navbar({}: NavbarProps) {
                 <li>
                   <button
                     onClick={() => {
-                      toggleTheme();
+                      toggleColorScheme();
                       setMobileOpen(false);
                     }}
                     className="flex items-center gap-2"
@@ -127,7 +117,6 @@ export default function Navbar({}: NavbarProps) {
                 <IconHeart size={16} /> Favorites
               </Link>
             </li>
-            {/* Tinder Link with custom pink styling and hover animations */}
             <li>
               <Link
                 href="/tinder"
@@ -137,7 +126,7 @@ export default function Navbar({}: NavbarProps) {
               </Link>
             </li>
             <li>
-              <button onClick={toggleTheme} className="btn btn-ghost">
+              <button onClick={toggleColorScheme} className="btn btn-ghost">
                 Toggle Theme
               </button>
             </li>
