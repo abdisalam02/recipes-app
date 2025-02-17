@@ -323,66 +323,78 @@ export default function FindRecipesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-         {filteredRecipes.map((recipe) => (
-  <Link
-    key={recipe.id}
-    href={selectedTab === 'ai-recipes' ? `/ai-recipes/${recipe.id}` : `/recipes/${recipe.id}`}
-    className="card bg-base-100 shadow-lg hover:shadow-2xl transition transform hover:scale-105 cursor-pointer"
-  >
-    <figure>
-      <img
-        src={getImageUrl(recipe.image)}
-        alt={recipe.title}
-        className="object-cover w-full h-40"
-        loading="lazy"
-      />
-    </figure>
-    <div className="card-body p-4">
-      <div className="flex items-center justify-between">
-        <h2 className="card-title">{recipe.title}</h2>
-        <div className="badge badge-secondary font-semibold">
-          {recipe.category ? recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1) : 'Uncategorized'}
-        </div>
-      </div>
-      <p className="text-sm text-gray-500 line-clamp-3">
-        {recipe.description.length > 100
-          ? `${recipe.description.substring(0, 100)}...`
-          : recipe.description}
-      </p>
-      <div className="flex items-center justify-between mt-4">
-        <span className="text-sm text-gray-500">Portions: {recipe.portion}</span>
-        <div className="tooltip" data-tip={isFavorited(recipe.id) ? 'Unfavorite' : 'Favorite'}>
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              toggleFavorite(recipe.id);
-            }}
-            className="btn btn-ghost btn-sm"
-            aria-label={isFavorited(recipe.id) ? 'Unfavorite' : 'Favorite'}
+        {filteredRecipes.map((recipe) => (
+          <div
+            key={recipe.id}
+            onClick={() =>
+              router.push(
+                selectedTab === 'ai-recipes'
+                  ? `/ai-recipes/${recipe.id}`
+                  : `/recipes/${recipe.id}`
+              )
+            }
+            className="card bg-base-100 shadow-lg hover:shadow-2xl transition transform hover:scale-105 cursor-pointer"
           >
-            {isFavorited(recipe.id) ? (
-              <IconHeartFilled size={24} className="text-red-500" />
-            ) : (
-              <IconHeart size={24} className="text-gray-500" />
-            )}
-          </button>
-        </div>
+            <figure>
+              <img
+                src={getImageUrl(recipe.image)}
+                alt={recipe.title}
+                className="object-cover w-full h-40"
+                loading="lazy"
+              />
+            </figure>
+            <div className="card-body p-4">
+              <div className="flex items-center justify-between">
+                <h2 className="card-title">{recipe.title}</h2>
+                <div className="badge badge-secondary font-semibold">
+                  {recipe.category
+                    ? recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)
+                    : 'Uncategorized'}
+                </div>
+              </div>
+              <p className="text-sm text-gray-500 line-clamp-3">
+                {recipe.description.length > 100
+                  ? `${recipe.description.substring(0, 100)}...`
+                  : recipe.description}
+              </p>
+              <div className="flex items-center justify-between mt-4">
+                <span className="text-sm text-gray-500">Portions: {recipe.portion}</span>
+                <div className="tooltip" data-tip={isFavorited(recipe.id) ? 'Unfavorite' : 'Favorite'}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(recipe.id);
+                    }}
+                    className="btn btn-ghost btn-sm"
+                    aria-label={isFavorited(recipe.id) ? 'Unfavorite' : 'Favorite'}
+                  >
+                    {isFavorited(recipe.id) ? (
+                      <IconHeartFilled size={24} className="text-red-500" />
+                    ) : (
+                      <IconHeart size={24} className="text-gray-500" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(
+                    selectedTab === 'ai-recipes'
+                      ? `/ai-recipes/${recipe.id}`
+                      : `/recipes/${recipe.id}`
+                  );
+                }}
+                className="btn btn-primary btn-sm mt-4"
+                aria-label={`View details of ${recipe.title}`}
+              >
+                View Recipe
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          router.push(selectedTab === 'ai-recipes' ? `/ai-recipes/${recipe.id}` : `/recipes/${recipe.id}`);
-        }}
-        className="btn btn-primary btn-sm mt-4"
-        aria-label={`View details of ${recipe.title}`}
-      >
-        View Recipe
-      </button>
-    </div>
-  </Link>
-))}
-
-        </div>
+      
       )}
 
       {/* Scroll-to-Top Button */}
