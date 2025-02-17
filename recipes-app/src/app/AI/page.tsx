@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { IconArrowUp, IconArrowDown, IconX } from '@tabler/icons-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// AnimatedInstructions: one definition only.
 const AnimatedInstructions: React.FC = () => {
   return (
     <motion.div
@@ -22,11 +21,52 @@ const AnimatedInstructions: React.FC = () => {
   );
 };
 
-// ImageSlider: cycles through AI recipe images.
 const ImageSlider: React.FC = () => {
   const [images, setImages] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [validImages, setValidImages] = useState<string[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Function to validate image URL
+  const isValidImageUrl = async (url: string): Promise<boolean> => {
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      // Check if response is ok and content-type is image
+      if (!response.ok) return false;
+      const contentType = response.headers.get('content-type');
+      return contentType ? contentType.startsWith('image/') : false;
+    } catch (error) {
+      console.error(`Error validating image URL ${url}:`, error);
+      return false;
+    }
+  };
+
+  // Function to filter and validate image URLs using stricter domain matching
+  const filterAndValidateImages = async (urls: string[]): Promise<string[]> => {
+    const excludedDomains = [
+      "nutrisystem.com",
+      "leaf.nutrisystem.com",
+      "edgesuite.net",
+      "errors.edgesuite.net"
+    ];
+
+    const filteredUrls = urls.filter((url) => {
+      if (!url || url.trim() === '') return false;
+      try {
+        const urlObj = new URL(url);
+        return !excludedDomains.some(domain =>
+          urlObj.hostname === domain || urlObj.hostname.endsWith(`.${domain}`)
+        );
+      } catch {
+        return false;
+      }
+    });
+
+    // Then validate each remaining URL
+    const validationPromises = filteredUrls.map(url => isValidImageUrl(url));
+    const validationResults = await Promise.all(validationPromises);
+    return filteredUrls.filter((_, index) => validationResults[index]);
+  };
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -36,49 +76,57 @@ const ImageSlider: React.FC = () => {
           throw new Error('Failed to fetch AI recipes for slider');
         }
         const data = await res.json();
-        const urls = data
-          .map((r: any) => r.image)
-          .filter((url: string) => url && url.trim() !== '');
+        // Extract image URLs
+        const urls = data.map((r: any) => r.image).filter(Boolean);
+        // Filter and validate images
+        const validatedImages = await filterAndValidateImages(urls);
+        // Set both raw and validated images
         setImages(urls);
+        setValidImages(validatedImages);
       } catch (error: any) {
-        console.error(error.message);
+        console.error('Error fetching images:', error.message);
       }
     };
+
     fetchImages();
   }, []);
 
   useEffect(() => {
-    if (images.length > 0) {
+    if (validImages.length > 0) {
       intervalRef.current = setInterval(() => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % validImages.length);
       }, 3000);
     }
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [images]);
+  }, [validImages]);
 
-  if (images.length === 0) return null;
+  // Only render if we have valid images
+  if (validImages.length === 0) return null;
 
   return (
     <div className="w-full h-48 mb-8 relative overflow-hidden rounded-lg shadow-lg">
       <AnimatePresence>
         <motion.img
-          key={images[currentIndex]}
-          src={images[currentIndex]}
+          key={validImages[currentIndex]}
+          src={validImages[currentIndex]}
           alt="AI Recipe Slide"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 1 }}
           className="w-full h-48 object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = '/default-recipe-image.jpg'; // Fallback image
+          }}
         />
       </AnimatePresence>
     </div>
   );
 };
 
-// StepsModal: for the "Start Recipe" feature.
 const StepsModal: React.FC<{ steps: { id: number; order: number; description: string }[]; onClose: () => void }> = ({ steps, onClose }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const stepIcons = [IconArrowDown, IconX];
@@ -170,10 +218,6 @@ export default function AiRecipePage() {
     setScrollY(scroll.y);
   }, [scroll.y]);
 
-  const openModal = (step: { id: number; order: number; description: string }) => {
-    setStepsModalOpen(true);
-  };
-
   const generateRecipe = async () => {
     setLoading(true);
     setError("");
@@ -233,11 +277,11 @@ Format the answer as JSON with the following structure:
     if (!scaledNutritionalInfo) return null;
     return (
       <div className="grid grid-cols-2 gap-4 mb-8">
-        <div className="p-4 border rounded-lg shadow-sm bg-white">
+        <div className="p-4 border rounded-lg shadow-sm">
           <p className="text-sm font-semibold">Calories</p>
           <p className="text-lg">{scaledNutritionalInfo.calories.toFixed(2)} kcal</p>
         </div>
-        <div className="p-4 border rounded-lg shadow-sm bg-white">
+        <div className="p-4 border rounded-lg shadow-sm">
           <p className="text-sm font-semibold">Protein</p>
           <p className="text-lg">{scaledNutritionalInfo.protein.toFixed(2)} g</p>
         </div>
@@ -254,12 +298,10 @@ Format the answer as JSON with the following structure:
       )}
 
       <AnimatedInstructions />
-
       <ImageSlider />
 
       <h1 className="text-4xl font-bold mb-6 text-center">Generate Your Custom Recipe</h1>
 
-      {/* Browse AI Recipes Button */}
       <div className="flex justify-center mb-6">
         <button
           className="btn btn-outline"
@@ -279,6 +321,7 @@ Format the answer as JSON with the following structure:
           onChange={(e: ChangeEvent<HTMLInputElement>) => setIngredientsInput(e.target.value)}
         />
       </div>
+
       <div className="mb-4">
         <label className="label">Any dietary or flavor preferences?</label>
         <input
@@ -289,17 +332,27 @@ Format the answer as JSON with the following structure:
           onChange={(e: ChangeEvent<HTMLInputElement>) => setPreferences(e.target.value)}
         />
       </div>
-      <button className="btn btn-primary mb-8" onClick={generateRecipe} disabled={loading || !ingredientsInput.trim()}>
+
+      <button 
+        className="btn btn-primary mb-8" 
+        onClick={generateRecipe} 
+        disabled={loading || !ingredientsInput.trim()}
+      >
         {loading ? "Generating Recipe..." : "Generate Recipe"}
       </button>
+
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       {generatedRecipe && (
         <div className="card bg-base-100 shadow-md rounded-lg p-8">
           <img
-            src={generatedRecipe.image || "/default-image.png"}
+            src={generatedRecipe.image || "/default-recipe-image.jpg"}
             alt={generatedRecipe.title}
             className="w-full h-72 object-cover rounded-md mb-6"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = '/default-recipe-image.jpg';
+            }}
           />
 
           {generatedRecipe.steps && generatedRecipe.steps.length > 0 && (
