@@ -14,8 +14,8 @@ import {
   NutritionalInfo,
   RecipeInput,
   Favorite,
+  IngredientInput,
 } from '../../../../lib/types';
-import type { IngredientInput } from '../../../../lib/types';
 import { units } from '../../../../lib/units';
 import {
   IconChefHat,
@@ -82,6 +82,9 @@ export default function AddRecipePage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [nutritionalInfo, setNutritionalInfo] = useState<NutritionalInfo | null>(null);
   const [autoFetchImage, setAutoFetchImage] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState("");
 
   // Available ingredients for autocomplete
   const [availableIngredients, setAvailableIngredients] = useState<
@@ -120,8 +123,7 @@ export default function AddRecipePage() {
         }));
         setAvailableIngredients(formatted);
       } catch (error) {
-        console.error(error);
-        alert('Failed to load ingredients.');
+        console.error('Failed to load ingredients:', error);
       }
     }
     fetchIngredients();
@@ -206,7 +208,6 @@ export default function AddRecipePage() {
   // Fetch default image using recipe title
   const fetchDefaultImage = async (): Promise<void> => {
     if (!formData.title.trim()) {
-      // Do nothing if the title is empty
       return;
     }
     try {
@@ -220,32 +221,52 @@ export default function AddRecipePage() {
       }
       const data = await res.json();
       setFormData((prev) => ({ ...prev, image: data.imageUrl }));
-      alert('A default image has been fetched!');
     } catch (error: any) {
-      alert(error.message || 'Failed to fetch default image.');
+      console.error('Failed to fetch default image:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // NEW: Fetch nutritional info by calling the API route.
+  const handleFetchNutritionalInfo = async () => {
+    try {
+      const response = await fetch('/api/nutrition', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ingredients: formData.ingredients,
+          portion: formData.portion,
+        }),
+      });
+      if (response.ok) {
+        const perPortion = await response.json();
+        setNutritionalInfo(perPortion);
+      } else {
+        console.error('Failed to fetch nutritional info.');
+      }
+    } catch (error) {
+      console.error('Error fetching nutritional info:', error);
     }
   };
 
   // Submit Form (via Form Input)
   const handleFormSubmit = async (): Promise<void> => {
     if (!isFormValid()) {
-      alert('Please fill out all required fields correctly.');
+      console.error('Form validation failed.');
       return;
     }
     setLoading(true);
     try {
-      // Use RecipeInput (instead of RecipeInputFrontend)
       const payload: RecipeInput = {
         title: formData.title.trim(),
         category: formData.category.trim(),
         region: formData.region.trim(),
         description: formData.description.trim(),
         portion: formData.portion,
-        image: formData.image?.trim() || '', // fallback to empty string if undefined
+        image: formData.image?.trim() || '',
         ingredients: formData.ingredients.map((ing) => ({
-          ingredient_id: (ing as any).ingredient_id, // cast as any if not defined
+          ingredient_id: (ing as any).ingredient_id,
           name: ing.name.trim(),
           quantity: ing.quantity,
           unit: ing.unit.trim(),
@@ -268,13 +289,6 @@ export default function AddRecipePage() {
         if (!payload.image) {
           await updateRecipeImage(recipeId, payload.title);
         }
-        const recipeResponse = await fetch(`/api/recipes/${recipeId}`);
-        if (!recipeResponse.ok) {
-          throw new Error('Failed to fetch recipe details.');
-        }
-        const recipeDetails = await recipeResponse.json();
-        alert('Recipe added successfully!');
-        // Reset form
         setFormData({
           title: '',
           category: '',
@@ -286,22 +300,24 @@ export default function AddRecipePage() {
           portion: 1,
         });
         setAutoFetchImage(true);
+        // Fetch and display nutritional info after submission
+        await handleFetchNutritionalInfo();
       } else {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to add recipe');
       }
     } catch (error: any) {
-      alert(error.message || 'Failed to add recipe.');
+      console.error('Submission error:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  // Submit JSON Form
-  const handleJsonSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault();
+  // Submit JSON Form (refactored to not require an event parameter)
+  const handleJsonSubmitInternal = async (): Promise<void> => {
     if (!jsonData.trim()) {
-      alert('Please provide valid JSON data.');
+      console.error('JSON data is empty.');
       return;
     }
     setLoading(true);
@@ -316,7 +332,9 @@ export default function AddRecipePage() {
         !Array.isArray(parsedData.ingredients) ||
         !Array.isArray(parsedData.steps)
       ) {
-        throw new Error('JSON data is missing required fields or has invalid formats.');
+        throw new Error(
+          'JSON data is missing required fields or has invalid formats.'
+        );
       }
       const res = await fetch('/api/ingredients');
       if (!res.ok) {
@@ -345,7 +363,9 @@ export default function AddRecipePage() {
               .select('id')
               .single();
             if (createError) {
-              throw new Error(`Failed to add ingredient "${ingredientName}".`);
+              throw new Error(
+                `Failed to add ingredient "${ingredientName}".`
+              );
             }
             return {
               ingredient_id: newIngredient.id,
@@ -380,43 +400,47 @@ export default function AddRecipePage() {
         if (!payload.image) {
           await updateRecipeImage(recipeId, payload.title);
         }
-        const recipeResponse = await fetch(`/api/recipes/${recipeId}`);
-        if (!recipeResponse.ok) {
-          throw new Error('Failed to fetch recipe details.');
-        }
-        const recipeDetails = await recipeResponse.json();
-        alert('Recipe added successfully via JSON!');
         setJsonData('');
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to add recipe via JSON');
+        throw new Error(
+          errorData.error || 'Failed to add recipe via JSON'
+        );
       }
     } catch (error: any) {
-      if (error instanceof SyntaxError) {
-        alert('Please ensure the JSON is correctly formatted.');
-      } else {
-        alert(error.message || 'Failed to add recipe via JSON.');
-      }
+      console.error('JSON submission error:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const updateRecipeImage = async (recipeId: number, title: string): Promise<void> => {
+  const updateRecipeImage = async (
+    recipeId: number,
+    title: string
+  ): Promise<void> => {
     try {
-      const res = await fetch(`/api/fetch-default-image?query=${encodeURIComponent(title)}`);
+      const res = await fetch(
+        `/api/fetch-default-image?query=${encodeURIComponent(title)}`
+      );
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to fetch default image');
+        throw new Error(
+          errorData.error || 'Failed to fetch default image'
+        );
       }
       const data = await res.json();
       await updateRecipeImageAPI(recipeId, data.imageUrl);
     } catch (error: any) {
-      alert(error.message || 'Failed to fetch and update recipe image.');
+      console.error('Update recipe image error:', error);
+      throw error;
     }
   };
 
-  const updateRecipeImageAPI = async (recipeId: number, imageUrl: string): Promise<void> => {
+  const updateRecipeImageAPI = async (
+    recipeId: number,
+    imageUrl: string
+  ): Promise<void> => {
     try {
       const res = await fetch(`/api/recipes/${recipeId}/update-image`, {
         method: 'PATCH',
@@ -425,16 +449,19 @@ export default function AddRecipePage() {
       });
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to update recipe image.');
+        throw new Error(
+          errorData.error || 'Failed to update recipe image.'
+        );
       }
     } catch (error: any) {
-      alert(error.message || 'Failed to update recipe image.');
+      console.error('Update recipe image API error:', error);
       throw error;
     }
   };
 
   // For scroll-to-top
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  const scrollToTop = () =>
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
   return (
     <div className="container mx-auto py-8 px-2 sm:px-4">
@@ -442,14 +469,18 @@ export default function AddRecipePage() {
         {/* Loading Overlay */}
         {loading && (
           <div className="absolute inset-0 flex justify-center items-center bg-base-200/70 z-10">
-            <button className="btn btn-square btn-lg loading">Loading</button>
+            <button className="btn btn-square btn-lg loading">
+              Loading
+            </button>
           </div>
         )}
 
         {/* Header Section */}
         <div className="flex flex-col items-center mb-6 gap-4">
           <IconChefHat size={48} className="stroke-current" />
-          <h1 className="text-2xl sm:text-3xl font-bold">Add New Recipe</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">
+            Add New Recipe
+          </h1>
           <p className="text-xs sm:text-sm text-gray-500 text-center">
             Share your culinary masterpiece with the world
           </p>
@@ -458,7 +489,12 @@ export default function AddRecipePage() {
         {/* If image is provided, show Start Recipe Preview button */}
         {formData.image && (
           <div className="flex justify-center mb-4">
-            <button className="btn btn-secondary" onClick={() => { /* Add preview functionality if desired */ }}>
+            <button
+              className="btn btn-secondary"
+              onClick={() => {
+                /* Add preview functionality if desired */
+              }}
+            >
               Start Recipe Preview
             </button>
           </div>
@@ -481,7 +517,12 @@ export default function AddRecipePage() {
         </div>
 
         {activeTab === 'form' ? (
-          <form onSubmit={(e) => { e.preventDefault(); setModalOpened(true); }}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setModalOpened(true);
+            }}
+          >
             <div className="flex flex-col gap-4">
               {/* Title Field */}
               <div>
@@ -491,7 +532,10 @@ export default function AddRecipePage() {
                   required
                   value={formData.title}
                   onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    setFormData({ ...formData, title: e.target.value })
+                    setFormData({
+                      ...formData,
+                      title: e.target.value,
+                    })
                   }
                   className="input input-bordered w-full"
                 />
@@ -503,7 +547,12 @@ export default function AddRecipePage() {
                 <select
                   required
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      category: e.target.value,
+                    })
+                  }
                   className="select select-bordered w-full"
                 >
                   <option disabled value="">
@@ -523,7 +572,12 @@ export default function AddRecipePage() {
                 <select
                   required
                   value={formData.region}
-                  onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      region: e.target.value,
+                    })
+                  }
                   className="select select-bordered w-full"
                 >
                   <option disabled value="">
@@ -544,7 +598,10 @@ export default function AddRecipePage() {
                   required
                   value={formData.description}
                   onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-                    setFormData({ ...formData, description: e.target.value })
+                    setFormData({
+                      ...formData,
+                      description: e.target.value,
+                    })
                   }
                   className="textarea textarea-bordered w-full"
                   rows={3}
@@ -559,7 +616,10 @@ export default function AddRecipePage() {
                     type="text"
                     value={formData.image || ''}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                      setFormData({ ...formData, image: e.target.value })
+                      setFormData({
+                        ...formData,
+                        image: e.target.value,
+                      })
                     }
                     className="input input-bordered w-full"
                     placeholder="https://example.com/image.jpg"
@@ -569,7 +629,9 @@ export default function AddRecipePage() {
                 {formData.image && (
                   <button
                     type="button"
-                    onClick={() => setFormData({ ...formData, image: '' })}
+                    onClick={() =>
+                      setFormData({ ...formData, image: '' })
+                    }
                     className="btn btn-square btn-error"
                     aria-label="Clear Image URL"
                   >
@@ -603,7 +665,10 @@ export default function AddRecipePage() {
                   required
                   value={formData.portion}
                   onChange={(e) =>
-                    setFormData({ ...formData, portion: Number(e.target.value) })
+                    setFormData({
+                      ...formData,
+                      portion: Number(e.target.value),
+                    })
                   }
                   min="1"
                   max="20"
@@ -617,12 +682,7 @@ export default function AddRecipePage() {
                   <label className="label">Ingredients</label>
                   <button
                     type="button"
-                    onClick={() =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        ingredients: [...prev.ingredients, { quantity: 1, unit: 'g', name: '' }],
-                      }))
-                    }
+                    onClick={handleAddIngredient}
                     className="btn btn-circle btn-success"
                     aria-label="Add Ingredient"
                   >
@@ -631,7 +691,10 @@ export default function AddRecipePage() {
                 </div>
                 <div className="flex flex-col gap-4">
                   {formData.ingredients.map((ing, index) => (
-                    <div key={index} className="flex flex-wrap gap-2 items-end">
+                    <div
+                      key={index}
+                      className="flex flex-wrap gap-2 items-end"
+                    >
                       <input
                         type="number"
                         required
@@ -639,7 +702,10 @@ export default function AddRecipePage() {
                         onChange={(e) =>
                           setFormData((prev) => {
                             const updated = [...prev.ingredients];
-                            updated[index] = { ...updated[index], quantity: Number(e.target.value) };
+                            updated[index] = {
+                              ...updated[index],
+                              quantity: Number(e.target.value),
+                            };
                             return { ...prev, ingredients: updated };
                           })
                         }
@@ -655,7 +721,10 @@ export default function AddRecipePage() {
                         onChange={(e) =>
                           setFormData((prev) => {
                             const updated = [...prev.ingredients];
-                            updated[index] = { ...updated[index], unit: e.target.value };
+                            updated[index] = {
+                              ...updated[index],
+                              unit: e.target.value,
+                            };
                             return { ...prev, ingredients: updated };
                           })
                         }
@@ -676,7 +745,10 @@ export default function AddRecipePage() {
                           onChange={(e) =>
                             setFormData((prev) => {
                               const updated = [...prev.ingredients];
-                              updated[index] = { ...updated[index], name: e.target.value };
+                              updated[index] = {
+                                ...updated[index],
+                                name: e.target.value,
+                              };
                               return { ...prev, ingredients: updated };
                             })
                           }
@@ -698,7 +770,9 @@ export default function AddRecipePage() {
                           onClick={() =>
                             setFormData((prev) => ({
                               ...prev,
-                              ingredients: prev.ingredients.filter((_, i) => i !== index),
+                              ingredients: prev.ingredients.filter(
+                                (_, i) => i !== index
+                              ),
                             }))
                           }
                           className="btn btn-circle btn-error"
@@ -727,7 +801,10 @@ export default function AddRecipePage() {
                 </div>
                 <div className="flex flex-col gap-4">
                   {formData.steps.map((step, index) => (
-                    <div key={index} className="flex flex-wrap gap-2 items-end">
+                    <div
+                      key={index}
+                      className="flex flex-wrap gap-2 items-end"
+                    >
                       <input
                         type="number"
                         value={step.order || index + 1}
@@ -738,7 +815,9 @@ export default function AddRecipePage() {
                       <textarea
                         required
                         value={step.description}
-                        onChange={(e) => handleStepChange(index, e.target.value)}
+                        onChange={(e) =>
+                          handleStepChange(index, e.target.value)
+                        }
                         className="textarea textarea-bordered w-full"
                         rows={2}
                         placeholder="Step description"
@@ -750,7 +829,9 @@ export default function AddRecipePage() {
                           onClick={() =>
                             setFormData((prev) => ({
                               ...prev,
-                              steps: prev.steps.filter((_, i) => i !== index),
+                              steps: prev.steps.filter(
+                                (_, i) => i !== index
+                              ),
                             }))
                           }
                           className="btn btn-circle btn-error"
@@ -776,7 +857,13 @@ export default function AddRecipePage() {
             </div>
           </form>
         ) : (
-          <form onSubmit={handleJsonSubmit} className="flex flex-col gap-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setModalOpened(true);
+            }}
+            className="flex flex-col gap-4"
+          >
             <label className="label">Recipe JSON</label>
             <textarea
               name="jsonData"
@@ -800,7 +887,9 @@ export default function AddRecipePage() {
   ]
 }`}
               value={jsonData}
-              onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setJsonData(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+                setJsonData(e.target.value)
+              }
             ></textarea>
 
             <button
@@ -837,26 +926,45 @@ export default function AddRecipePage() {
           <>
             <div className="modal modal-open">
               <div className="modal-box max-w-md">
-                <h3 className="font-bold text-xl mb-4">Confirm Submission</h3>
-                <p className="py-4">Are you sure you want to submit this recipe?</p>
+                <h3 className="font-bold text-xl mb-4">
+                  Confirm Submission
+                </h3>
+                <p className="py-4">
+                  Are you sure you want to submit this recipe?
+                </p>
                 <div className="modal-action">
-                  <button className="btn btn-error" onClick={() => setModalOpened(false)}>
+                  <button
+                    className="btn btn-error"
+                    onClick={() => setModalOpened(false)}
+                  >
                     Cancel
                   </button>
                   <button
                     className="btn btn-success"
+                    disabled={isSubmitting}
                     onClick={async () => {
-                      if (activeTab === 'form') {
-                        await handleFormSubmit();
-                      } else {
-                        const jsonForm = document.querySelector(
-                          'form[onSubmit*="handleJsonSubmit"]'
-                        ) as HTMLFormElement;
-                        if (jsonForm) {
-                          jsonForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                      if (isSubmitting) return;
+                      setIsSubmitting(true);
+                      setModalOpened(false); // Immediately hide the modal
+                      try {
+                        if (activeTab === 'form') {
+                          await handleFormSubmit();
+                        } else {
+                          await handleJsonSubmitInternal();
                         }
+                        setPopupMessage("Recipe added successfully!");
+                        setShowPopup(true);
+                      } catch (error) {
+                        setPopupMessage("Failed to add recipe. Please try again.");
+                        setShowPopup(true);
+                      } finally {
+                        setIsSubmitting(false);
+                        // Auto-hide popup after 3 seconds
+                        setTimeout(() => {
+                          setShowPopup(false);
+                          setPopupMessage("");
+                        }, 3000);
                       }
-                      setModalOpened(false);
                     }}
                   >
                     Yes, Submit
@@ -869,19 +977,54 @@ export default function AddRecipePage() {
         )}
       </div>
 
+      {/* Popup Message */}
+      {showPopup && (
+        <div className="fixed top-4 right-4 z-50 transition-opacity duration-300">
+          <div
+            className={`alert shadow-lg ${
+              popupMessage.includes("Failed")
+                ? "alert-error"
+                : "alert-success"
+            }`}
+          >
+            <div>
+              <span className="font-bold">{popupMessage}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Nutritional Information Display */}
       {nutritionalInfo && (
         <div className="card bg-base-100 shadow-sm rounded-lg p-4 mt-8">
-          <h3 className="text-xl sm:text-2xl font-semibold">Total Nutritional Information (Per Portion)</h3>
+          <h3 className="text-xl sm:text-2xl font-semibold">
+            Total Nutritional Information (Per Portion)
+          </h3>
           <div className="flex flex-wrap gap-2 sm:gap-4 mt-2">
-            <p className="text-xs sm:text-sm">Calories: {nutritionalInfo.calories.toFixed(2)} kcal</p>
-            <p className="text-xs sm:text-sm">Protein: {nutritionalInfo.protein.toFixed(2)} g</p>
-            <p className="text-xs sm:text-sm">Fat: {nutritionalInfo.fat.toFixed(2)} g</p>
-            <p className="text-xs sm:text-sm">Carbohydrates: {nutritionalInfo.carbohydrates.toFixed(2)} g</p>
-            <p className="text-xs sm:text-sm">Fiber: {nutritionalInfo.fiber.toFixed(2)} g</p>
-            <p className="text-xs sm:text-sm">Sugar: {nutritionalInfo.sugar.toFixed(2)} g</p>
-            <p className="text-xs sm:text-sm">Sodium: {nutritionalInfo.sodium.toFixed(2)} mg</p>
-            <p className="text-xs sm:text-sm">Cholesterol: {nutritionalInfo.cholesterol.toFixed(2)} mg</p>
+            <p className="text-xs sm:text-sm">
+              Calories: {nutritionalInfo.calories.toFixed(2)} kcal
+            </p>
+            <p className="text-xs sm:text-sm">
+              Protein: {nutritionalInfo.protein.toFixed(2)} g
+            </p>
+            <p className="text-xs sm:text-sm">
+              Fat: {nutritionalInfo.fat.toFixed(2)} g
+            </p>
+            <p className="text-xs sm:text-sm">
+              Carbohydrates: {nutritionalInfo.carbohydrates.toFixed(2)} g
+            </p>
+            <p className="text-xs sm:text-sm">
+              Fiber: {nutritionalInfo.fiber.toFixed(2)} g
+            </p>
+            <p className="text-xs sm:text-sm">
+              Sugar: {nutritionalInfo.sugar.toFixed(2)} g
+            </p>
+            <p className="text-xs sm:text-sm">
+              Sodium: {nutritionalInfo.sodium.toFixed(2)} mg
+            </p>
+            <p className="text-xs sm:text-sm">
+              Cholesterol: {nutritionalInfo.cholesterol.toFixed(2)} mg
+            </p>
           </div>
         </div>
       )}

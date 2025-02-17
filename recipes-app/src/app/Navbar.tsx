@@ -9,9 +9,9 @@ import {
   IconFlame,
   IconMenu,
   IconX,
+  IconRobot,
 } from '@tabler/icons-react';
 
-// Update the props interface to include colorScheme and toggleColorScheme.
 interface NavbarProps {
   colorScheme: 'light' | 'dark';
   toggleColorScheme: () => void;
@@ -21,7 +21,7 @@ export default function Navbar({ colorScheme, toggleColorScheme }: NavbarProps) 
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    // Ensure the document element reflects the current theme
+    // Update the HTML element with the current theme.
     document.documentElement.setAttribute('data-theme', colorScheme);
   }, [colorScheme]);
 
@@ -47,42 +47,51 @@ export default function Navbar({ colorScheme, toggleColorScheme }: NavbarProps) 
             {mobileOpen && (
               <ul
                 tabIndex={0}
-                className="menu menu-compact dropdown-content mt-3 p-2 shadow bg-base-100 rounded-box w-56"
+                className="menu menu-compact dropdown-content mt-3 p-2 shadow bg-base-100 rounded-box w-72"
               >
                 <li>
                   <Link
                     href="/"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-3 text-lg py-2"
                   >
-                    <IconHome size={16} /> Home
+                    <IconHome size={18} /> Home
                   </Link>
                 </li>
                 <li>
                   <Link
                     href="/recipes/add"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-3 text-lg py-2"
                   >
-                    <IconPlus size={16} /> Add Recipe
+                    <IconPlus size={18} /> Add Recipe
                   </Link>
                 </li>
                 <li>
                   <Link
                     href="/favorites"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-3 text-lg py-2"
                   >
-                    <IconHeart size={16} /> Favorites
+                    <IconHeart size={18} /> Favorites
                   </Link>
                 </li>
                 <li>
                   <Link
                     href="/tinder"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 text-pink-500 animate-pulse"
+                    className="flex items-center gap-3 text-lg py-2 text-pink-500 animate-pulse"
                   >
-                    <IconFlame size={16} /> Tinder
+                    <IconFlame size={18} /> Tinder
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/ai-recipes"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 text-lg py-2"
+                  >
+                    <IconRobot size={18} /> AI Recipes
                   </Link>
                 </li>
                 <li>
@@ -91,7 +100,7 @@ export default function Navbar({ colorScheme, toggleColorScheme }: NavbarProps) 
                       toggleColorScheme();
                       setMobileOpen(false);
                     }}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-3 text-lg py-2"
                   >
                     Toggle Theme
                   </button>
@@ -123,6 +132,11 @@ export default function Navbar({ colorScheme, toggleColorScheme }: NavbarProps) 
                 className="flex items-center gap-2 text-pink-500 transition-all hover:scale-110 hover:text-pink-700"
               >
                 <IconFlame size={16} /> Tinder
+              </Link>
+            </li>
+            <li>
+              <Link href="/AI" className="flex items-center gap-2">
+                <IconRobot size={16} /> AI Recipes
               </Link>
             </li>
             <li>

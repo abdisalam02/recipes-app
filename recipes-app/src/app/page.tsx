@@ -34,7 +34,10 @@ function useWindowScroll() {
 export default function FindRecipesPage() {
   const router = useRouter();
 
-  // State declarations
+  // Tab state: "recipes" or "ai-recipes"
+  const [selectedTab, setSelectedTab] = useState<'recipes' | 'ai-recipes'>("recipes");
+
+  // Data state
   const [allIngredients, setAllIngredients] = useState<{ id: number; name: string }[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [favorites, setFavorites] = useState<Favorite[]>([]);
@@ -54,14 +57,15 @@ export default function FindRecipesPage() {
   // Scroll state
   const scroll = useWindowScroll();
 
-  // Secret link trigger (to show admin page link)
+  // Secret link trigger (for admin page)
   const [secretVisible, setSecretVisible] = useState<boolean>(false);
 
-  // Fetch data on mount
+  // Fetch data on mount and whenever selectedTab changes
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+
         // Fetch ingredients
         const ingredientsRes = await fetch('/api/ingredients');
         if (!ingredientsRes.ok) {
@@ -72,16 +76,18 @@ export default function FindRecipesPage() {
         setAllIngredients(ingredientsData || []);
         console.log('Fetched Ingredients:', ingredientsData);
 
-        // Fetch recipes
-        const recipesRes = await fetch('/api/recipes');
-        if (!recipesRes.ok) {
-          const errorData = await recipesRes.json();
-          throw new Error(errorData.error || 'Failed to fetch recipes');
+        // Determine endpoint based on selected tab
+        const endpoint = selectedTab === "recipes" ? "/api/recipes" : "/api/ai-recipes";
+        const recipesRes = await fetch(endpoint);
+        // Read the response text first
+        const resText = await recipesRes.text();
+        if (!resText) {
+          throw new Error(`Empty response from ${endpoint}`);
         }
-        const recipesData = await recipesRes.json();
+        const recipesData = JSON.parse(resText);
         setRecipes(recipesData || []);
         setFilteredRecipes(recipesData || []);
-        console.log('Fetched Recipes:', recipesData);
+        console.log(`Fetched ${selectedTab}:`, recipesData);
 
         // Fetch favorites
         const favoritesRes = await fetch('/api/favorites');
@@ -100,7 +106,7 @@ export default function FindRecipesPage() {
       }
     };
     fetchData();
-  }, []);
+  }, [selectedTab]);
 
   // Derived state for filtering
   const categories = Array.from(new Set(recipes.map((recipe) => recipe.category)));
@@ -135,7 +141,7 @@ export default function FindRecipesPage() {
     console.log('Filtered Recipes:', filtered);
   }, [selectedIngredients, recipes, debouncedSearchTerm, selectedCategory, selectedRegion]);
 
-  // Helpers for favorites
+  // Favorites helpers
   const isFavorited = (recipe_id: number): boolean => {
     return favorites.some((fav) => fav.recipe_id === recipe_id);
   };
@@ -180,7 +186,9 @@ export default function FindRecipesPage() {
       : 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg';
   };
 
-  // If loading, display a spinner
+  // Scroll-to-top helper
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -189,12 +197,9 @@ export default function FindRecipesPage() {
     );
   }
 
-  // Scroll-to-top helper
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-
   return (
     <div className="container mx-auto px-4 py-8 relative">
-      {/* Secret Link Trigger (small ? button in top-right corner) */}
+      {/* Secret Link Trigger (for admin page) */}
       <button
         className="absolute top-4 right-4 btn btn-xs btn-ghost opacity-50 hover:opacity-100 transition-opacity"
         title="Secret Admin Page"
@@ -203,10 +208,38 @@ export default function FindRecipesPage() {
         ?
       </button>
 
-      {/* Title */}
+      {/* Page Title */}
       <div className="flex items-center justify-center mb-6">
         <h1 className="text-4xl font-bold">Recipe Collection</h1>
       </div>
+
+      {/* Tab Slider */}
+      <div className="flex justify-center mb-6">
+        <button
+          className={`btn ${selectedTab === 'recipes' ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setSelectedTab('recipes')}
+        >
+          Recipes
+        </button>
+        <button
+          className={`btn ml-2 ${selectedTab === 'ai-recipes' ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setSelectedTab('ai-recipes')}
+        >
+          AI Recipes
+        </button>
+      </div>
+
+      {selectedTab === 'ai-recipes' && (
+  <div className="flex justify-center mb-6">
+    <button
+      className="btn btn-primary"
+      onClick={() => router.push('/AI')}
+    >
+      Generate Recipe with AI
+    </button>
+  </div>
+)}
+
 
       {/* Search Input */}
       <div className="mb-6">
@@ -257,7 +290,7 @@ export default function FindRecipesPage() {
                     }
                     className={`btn btn-xs ${selectedCategory === category ? 'btn-primary' : 'btn-outline'}`}
                   >
-                    {category}
+                    {category ? category.charAt(0).toUpperCase() + category.slice(1) : 'Uncategorized'}
                   </button>
                 ))}
               </div>
@@ -274,7 +307,7 @@ export default function FindRecipesPage() {
                     }
                     className={`btn btn-xs ${selectedRegion === region ? 'btn-primary' : 'btn-outline'}`}
                   >
-                    {region}
+                    {region ? region.charAt(0).toUpperCase() + region.slice(1) : 'Unknown'}
                   </button>
                 ))}
               </div>
@@ -308,7 +341,7 @@ export default function FindRecipesPage() {
                 <div className="flex items-center justify-between">
                   <h2 className="card-title">{recipe.title}</h2>
                   <div className="badge badge-secondary font-semibold">
-                    {recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)}
+                    {recipe.category ? recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1) : 'Uncategorized'}
                   </div>
                 </div>
                 <p className="text-sm text-gray-500 line-clamp-3">
@@ -338,7 +371,7 @@ export default function FindRecipesPage() {
                 <button
                   onClick={(e) => {
                     e.preventDefault();
-                    router.push(`/recipes/${recipe.id}`);
+                    router.push(`/ai-recipes/${recipe.id}`);
                   }}
                   className="btn btn-primary btn-sm mt-4"
                   aria-label={`View details of ${recipe.title}`}
