@@ -371,7 +371,7 @@ export default function RecipeDetailPage() {
           className="btn btn-circle fixed bottom-6 right-6 transition-transform hover:scale-110"
           aria-label="Scroll to top"
         >
-          <IconArrowUp size={24} className="rotate-180" />
+          <IconArrowDown size={24} className="rotate-180" />
         </button>
       )}
 
