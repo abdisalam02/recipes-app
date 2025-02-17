@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
+    IconArrowUp,
   IconArrowDown,
   IconX,
   IconClipboardList,
@@ -13,7 +14,7 @@ import {
   IconRocket
 } from '@tabler/icons-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RecipeDetail, Step } from '../../../../lib/types';
+import { RecipeDetail, Step, RecipeIngredient, PerIngredientNutritionalInfo } from '../../../../lib/types';
 
 // Custom hook to track vertical scroll position.
 function useWindowScroll() {
@@ -26,15 +27,8 @@ function useWindowScroll() {
   return scroll;
 }
 
-//
-// StepsModal Component: For "Start Recipe" – shows steps sequentially.
-//
-interface StepsModalProps {
-  steps: Step[];
-  onClose: () => void;
-}
-
-const StepsModal: React.FC<StepsModalProps> = ({ steps, onClose }) => {
+// StepsModal component (for "Start Recipe" feature)
+const StepsModal: React.FC<{ steps: Step[]; onClose: () => void }> = ({ steps, onClose }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const stepIcons = [IconClipboardList, IconChecklist, IconHelpCircle, IconBulb, IconStars, IconRocket];
   const StepIcon = stepIcons[currentStep % stepIcons.length];
@@ -61,14 +55,9 @@ const StepsModal: React.FC<StepsModalProps> = ({ steps, onClose }) => {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
-        {/* Backdrop */}
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-md"></div>
         <div className="modal-box max-w-md bg-gradient-to-br from-green-200 to-cyan-200 border-4 border-green-300 shadow-2xl rounded-lg p-6 relative">
-          <button
-            className="btn btn-sm btn-circle absolute top-2 right-2"
-            onClick={onClose}
-            aria-label="Close Steps"
-          >
+          <button className="btn btn-sm btn-circle absolute top-2 right-2" onClick={onClose} aria-label="Close Steps">
             <IconX size={16} />
           </button>
           <motion.div
@@ -103,9 +92,6 @@ const StepsModal: React.FC<StepsModalProps> = ({ steps, onClose }) => {
   );
 };
 
-//
-// RecipeDetailPage Component for AI Recipes
-//
 export default function RecipeDetailPage() {
   const params = useParams();
   const id = params?.id;
@@ -117,9 +103,9 @@ export default function RecipeDetailPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPortions, setCurrentPortions] = useState<number>(1);
-  // For ingredient checkboxes.
+  // For ingredient checkboxes, using recipe_ingredients array.
   const [availableIngredients, setAvailableIngredients] = useState<{ [key: number]: boolean }>({});
-  // Two modal states: one for "Start Recipe" and one for viewing a single step.
+  // Modal states for steps.
   const [stepsModalOpen, setStepsModalOpen] = useState<boolean>(false);
   const [viewStepModalOpen, setViewStepModalOpen] = useState<boolean>(false);
   const [selectedStep, setSelectedStep] = useState<Step | null>(null);
@@ -139,12 +125,12 @@ export default function RecipeDetailPage() {
         .then((data: RecipeDetail) => {
           setRecipe(data);
           setCurrentPortions(Number(data.portion));
-          // Use recipe_ingredients if available; otherwise, fallback to ingredients.
-          const ingredientsList = data.recipe_ingredients || data.ingredients || [];
+          // Use recipe_ingredients for AI recipes.
+          const ingredientsList = data.recipe_ingredients || [];
           const initialAvailability: { [key: number]: boolean } = {};
-          ingredientsList.forEach((ri: any, index: number) => {
-            // Use ingredient_id if available; fallback to index.
-            const ingId = ri.ingredient_id || ri.id || index;
+          ingredientsList.forEach((ri: RecipeIngredient, index: number) => {
+            // Use ingredient_id as unique identifier.
+            const ingId = ri.ingredient_id || index;
             initialAvailability[ingId] = false;
           });
           setAvailableIngredients(initialAvailability);
@@ -202,7 +188,7 @@ export default function RecipeDetailPage() {
     );
   }
 
-  // Calculate scaling factor.
+  // Calculate scaling factor for portions.
   const scalingFactor = currentPortions / recipe.portion;
 
   // Destructure nutritional info.
@@ -250,9 +236,9 @@ export default function RecipeDetailPage() {
           </span>
         </div>
 
-        {/* Portion Control */}
+        {/* Portion Control Section */}
         <div className="flex flex-wrap items-center gap-4 mb-6">
-          <span className="text-sm">Portions:</span>
+          <span className="text-sm">Portions: {currentPortions}</span>
           <input
             type="range"
             min="1"
@@ -275,18 +261,15 @@ export default function RecipeDetailPage() {
           />
         </div>
 
-        {/* Full Nutritional Info (Per Portion) */}
+        {/* Full Nutritional Info (Per Recipe) */}
         {scaledNutritionalInfo && (
           <>
-            <h3 className="text-2xl font-semibold mb-4">
-              Full Nutritional Information (Per Portion)
-            </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="p-4 border rounded-lg shadow-sm">
+              <div className="p-4 border rounded-lg shadow-sm bg-white">
                 <p className="text-sm font-semibold">Calories</p>
                 <p className="text-lg">{scaledNutritionalInfo.calories} kcal</p>
               </div>
-              <div className="p-4 border rounded-lg shadow-sm">
+              <div className="p-4 border rounded-lg shadow-sm bg-white">
                 <p className="text-sm font-semibold">Protein</p>
                 <p className="text-lg">{scaledNutritionalInfo.protein} g</p>
               </div>
@@ -302,39 +285,24 @@ export default function RecipeDetailPage() {
           </>
         )}
 
-        {/* Description */}
+        {/* Description Section */}
         <p className="text-lg mb-6">{recipe.description}</p>
 
-        {/* Ingredients */}
+        {/* Ingredients Section */}
         <h3 className="text-2xl font-semibold mb-4">Ingredients</h3>
-        <div className="space-y-2 mb-6">
-          {(recipe.recipe_ingredients || recipe.ingredients || []).map((ingredient, index) => {
-            const id = ingredient.ingredient_id || ingredient.id || index;
-            const scaledQuantity = (ingredient.quantity * scalingFactor).toFixed(2);
-            const name = ingredient.ingredient ? ingredient.ingredient.name : ingredient.name;
-            return (
-              <div key={`${id}-${index}`} className="flex items-center gap-2">
-                <label className="cursor-pointer flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={availableIngredients[id] || false}
-                    onChange={() => handleIngredientToggle(id)}
-                    className="checkbox checkbox-primary"
-                  />
-                  <span>
-                    {scaledQuantity} {ingredient.unit} of {name}
-                  </span>
-                </label>
-              </div>
-            );
-          })}
-        </div>
+        <ul className="list-disc list-inside mb-6">
+          {(recipe.recipe_ingredients || []).map((ing: RecipeIngredient, idx: number) => (
+            <li key={ing.ingredient_id ?? idx}>
+              {(ing.quantity * scalingFactor).toFixed(2)} {ing.unit} {ing.ingredient?.name || 'Unknown'}
+            </li>
+          ))}
+        </ul>
 
-        {/* Steps */}
+        {/* Steps Section */}
         <h3 className="text-2xl font-semibold mb-4">Steps</h3>
         <div className="space-y-4 mb-6">
-          {recipe.steps.map((step, idx) => (
-            <div key={`${step.id}-${idx}`} className="collapse collapse-arrow border border-base-300 bg-base-100 rounded-box">
+          {recipe.steps.map((step: Step, idx: number) => (
+            <div key={step.id ?? idx} className="collapse collapse-arrow border border-base-300 bg-base-100 rounded-box">
               <input type="checkbox" />
               <div className="collapse-title text-xl font-medium">
                 Step {step.order}: {step.description}
@@ -358,7 +326,7 @@ export default function RecipeDetailPage() {
           ))}
         </div>
 
-        {/* Render Per-Ingredient Nutritional Information Table */}
+        {/* Per-Ingredient Nutritional Information Table */}
         {recipe.per_ingredient_nutritional_info && recipe.per_ingredient_nutritional_info.length > 0 && (
           <>
             <div ref={fullNutritionalInfoRef}></div>
@@ -379,28 +347,19 @@ export default function RecipeDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recipe.per_ingredient_nutritional_info.map((info, index) => {
-                    // Try to find matching ingredient from recipe ingredients.
-                    const ingredient =
-                      (recipe.recipe_ingredients || recipe.ingredients || []).find(
-                        (ri: any) =>
-                          (ri.ingredient_id || ri.id) === info.ingredient_id ||
-                          ri.name === info.ingredient
-                      )?.ingredient || { name: info.ingredient };
-                    return (
-                      <tr key={`${info.id || index}`}>
-                        <td>{ingredient.name || 'Unknown'}</td>
-                        <td>{info.calories || 0}</td>
-                        <td>{info.protein || 0}</td>
-                        <td>{info.fat || 0}</td>
-                        <td>{info.carbohydrates || 0}</td>
-                        <td>{info.fiber || 0}</td>
-                        <td>{info.sugar || 0}</td>
-                        <td>{info.sodium || 0}</td>
-                        <td>{info.cholesterol || 0}</td>
-                      </tr>
-                    );
-                  })}
+                  {recipe.per_ingredient_nutritional_info.map((info: PerIngredientNutritionalInfo, idx: number) => (
+                    <tr key={info.ingredient_id ?? idx}>
+                      <td>{info.ingredient_id}</td>
+                      <td>{(info.calories * scalingFactor).toFixed(2)}</td>
+                      <td>{(info.protein * scalingFactor).toFixed(2)}</td>
+                      <td>{(info.fat * scalingFactor).toFixed(2)}</td>
+                      <td>{(info.carbohydrates * scalingFactor).toFixed(2)}</td>
+                      <td>{(info.fiber * scalingFactor).toFixed(2)}</td>
+                      <td>{(info.sugar * scalingFactor).toFixed(2)}</td>
+                      <td>{(info.sodium * scalingFactor).toFixed(2)}</td>
+                      <td>{(info.cholesterol * scalingFactor).toFixed(2)}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -408,7 +367,6 @@ export default function RecipeDetailPage() {
         )}
       </div>
 
-      {/* Scroll-to-Top Button */}
       {scroll.y > 100 && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -419,12 +377,10 @@ export default function RecipeDetailPage() {
         </button>
       )}
 
-      {/* Steps Modal for "Start Recipe" */}
       {stepsModalOpen && recipe.steps && (
         <StepsModal steps={recipe.steps} onClose={() => setStepsModalOpen(false)} />
       )}
 
-      {/* Modal for "View More" on individual steps */}
       {viewStepModalOpen && selectedStep && (
         <div className="modal modal-open">
           <div className="modal-box max-w-md">
