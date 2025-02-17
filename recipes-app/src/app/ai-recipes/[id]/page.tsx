@@ -102,14 +102,11 @@ export default function RecipeDetailPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPortions, setCurrentPortions] = useState<number>(1);
-  // For ingredient checkboxes.
   const [availableIngredients, setAvailableIngredients] = useState<{ [key: number]: boolean }>({});
-  // Modal states for steps.
   const [stepsModalOpen, setStepsModalOpen] = useState<boolean>(false);
   const [viewStepModalOpen, setViewStepModalOpen] = useState<boolean>(false);
   const [selectedStep, setSelectedStep] = useState<Step | null>(null);
 
-  // Fetch recipe details on mount.
   useEffect(() => {
     if (id) {
       fetch(`/api/ai-recipes/${id}`)
@@ -124,7 +121,6 @@ export default function RecipeDetailPage() {
         .then((data: RecipeDetail) => {
           setRecipe(data);
           setCurrentPortions(Number(data.portion));
-          // Use recipe_ingredients for AI recipes.
           const ingredientsList = data.recipe_ingredients || [];
           const initialAvailability: { [key: number]: boolean } = {};
           ingredientsList.forEach((ri: RecipeIngredient, index: number) => {
@@ -186,10 +182,7 @@ export default function RecipeDetailPage() {
     );
   }
 
-  // Calculate scaling factor.
   const scalingFactor = currentPortions / recipe.portion;
-
-  // Destructure nutritional info.
   const { nutritional_info, per_ingredient_nutritional_info } = recipe;
   const scaledNutritionalInfo = nutritional_info
     ? {
@@ -215,10 +208,7 @@ export default function RecipeDetailPage() {
         {/* Start Recipe Button */}
         {recipe.steps && recipe.steps.length > 0 && (
           <div className="flex justify-center mb-6">
-            <button
-              onClick={() => setStepsModalOpen(true)}
-              className="btn btn-accent animate-pulse transition-all hover:scale-110"
-            >
+            <button onClick={() => setStepsModalOpen(true)} className="btn btn-accent animate-pulse transition-all hover:scale-110">
               Start Recipe
             </button>
           </div>
@@ -345,19 +335,26 @@ export default function RecipeDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recipe.per_ingredient_nutritional_info.map((info: PerIngredientNutritionalInfo, idx: number) => (
-                    <tr key={info.ingredient_id ?? idx}>
-                      <td>{info.ingredient || info.ingredient_id}</td>
-                      <td>{((info.calories ?? 0) * scalingFactor).toFixed(2)}</td>
-                      <td>{((info.protein ?? 0) * scalingFactor).toFixed(2)}</td>
-                      <td>{((info.fat ?? 0) * scalingFactor).toFixed(2)}</td>
-                      <td>{((info.carbohydrates ?? 0) * scalingFactor).toFixed(2)}</td>
-                      <td>{((info.fiber ?? 0) * scalingFactor).toFixed(2)}</td>
-                      <td>{((info.sugar ?? 0) * scalingFactor).toFixed(2)}</td>
-                      <td>{((info.sodium ?? 0) * scalingFactor).toFixed(2)}</td>
-                      <td>{((info.cholesterol ?? 0) * scalingFactor).toFixed(2)}</td>
-                    </tr>
-                  ))}
+                  {recipe.per_ingredient_nutritional_info.map((info: PerIngredientNutritionalInfo, idx: number) => {
+                    // Try to match ingredient by ingredient_id from recipe.recipe_ingredients.
+                    const matchedIngredient = (recipe.recipe_ingredients || []).find(
+                      (ri: RecipeIngredient) => ri.ingredient_id === info.ingredient_id
+                    );
+                    return (
+                        <tr key={info.ingredient_id ?? idx}>
+                          <td>{matchedIngredient ? matchedIngredient.ingredient?.name : info.ingredient_id}</td>
+                          <td>{((info.calories ?? 0) * scalingFactor).toFixed(2)}</td>
+                          <td>{((info.protein ?? 0) * scalingFactor).toFixed(2)}</td>
+                          <td>{((info.fat ?? 0) * scalingFactor).toFixed(2)}</td>
+                          <td>{((info.carbohydrates ?? 0) * scalingFactor).toFixed(2)}</td>
+                          <td>{((info.fiber ?? 0) * scalingFactor).toFixed(2)}</td>
+                          <td>{((info.sugar ?? 0) * scalingFactor).toFixed(2)}</td>
+                          <td>{((info.sodium ?? 0) * scalingFactor).toFixed(2)}</td>
+                          <td>{((info.cholesterol ?? 0) * scalingFactor).toFixed(2)}</td>
+                        </tr>
+                      );
+                      
+                  })}
                 </tbody>
               </table>
             </div>
@@ -398,5 +395,5 @@ export default function RecipeDetailPage() {
 }
 
 function closeViewStepModal() {
-  // Helper to close view step modal
+  // Closes the view step modal
 }
