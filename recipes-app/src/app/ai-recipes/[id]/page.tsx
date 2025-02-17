@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-    IconArrowUp,
   IconArrowDown,
   IconX,
   IconClipboardList,
@@ -103,7 +102,7 @@ export default function RecipeDetailPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPortions, setCurrentPortions] = useState<number>(1);
-  // For ingredient checkboxes, using recipe_ingredients array.
+  // For ingredient checkboxes.
   const [availableIngredients, setAvailableIngredients] = useState<{ [key: number]: boolean }>({});
   // Modal states for steps.
   const [stepsModalOpen, setStepsModalOpen] = useState<boolean>(false);
@@ -129,7 +128,6 @@ export default function RecipeDetailPage() {
           const ingredientsList = data.recipe_ingredients || [];
           const initialAvailability: { [key: number]: boolean } = {};
           ingredientsList.forEach((ri: RecipeIngredient, index: number) => {
-            // Use ingredient_id as unique identifier.
             const ingId = ri.ingredient_id || index;
             initialAvailability[ingId] = false;
           });
@@ -188,21 +186,21 @@ export default function RecipeDetailPage() {
     );
   }
 
-  // Calculate scaling factor for portions.
+  // Calculate scaling factor.
   const scalingFactor = currentPortions / recipe.portion;
 
   // Destructure nutritional info.
   const { nutritional_info, per_ingredient_nutritional_info } = recipe;
   const scaledNutritionalInfo = nutritional_info
     ? {
-        calories: (parseFloat(nutritional_info.calories.toString()) * scalingFactor).toFixed(2),
-        protein: (parseFloat(nutritional_info.protein.toString()) * scalingFactor).toFixed(2),
-        fat: (parseFloat(nutritional_info.fat.toString()) * scalingFactor).toFixed(2),
-        carbohydrates: (parseFloat(nutritional_info.carbohydrates.toString()) * scalingFactor).toFixed(2),
-        fiber: (parseFloat(nutritional_info.fiber.toString()) * scalingFactor).toFixed(2),
-        sugar: (parseFloat(nutritional_info.sugar.toString()) * scalingFactor).toFixed(2),
-        sodium: (parseFloat(nutritional_info.sodium.toString()) * scalingFactor).toFixed(2),
-        cholesterol: (parseFloat(nutritional_info.cholesterol.toString()) * scalingFactor).toFixed(2),
+        calories: (parseFloat(nutritional_info.calories?.toString() ?? "0") * scalingFactor).toFixed(2),
+        protein: (parseFloat(nutritional_info.protein?.toString() ?? "0") * scalingFactor).toFixed(2),
+        fat: (parseFloat(nutritional_info.fat?.toString() ?? "0") * scalingFactor).toFixed(2),
+        carbohydrates: (parseFloat(nutritional_info.carbohydrates?.toString() ?? "0") * scalingFactor).toFixed(2),
+        fiber: (parseFloat(nutritional_info.fiber?.toString() ?? "0") * scalingFactor).toFixed(2),
+        sugar: (parseFloat(nutritional_info.sugar?.toString() ?? "0") * scalingFactor).toFixed(2),
+        sodium: (parseFloat(nutritional_info.sodium?.toString() ?? "0") * scalingFactor).toFixed(2),
+        cholesterol: (parseFloat(nutritional_info.cholesterol?.toString() ?? "0") * scalingFactor).toFixed(2),
       }
     : null;
 
@@ -236,7 +234,7 @@ export default function RecipeDetailPage() {
           </span>
         </div>
 
-        {/* Portion Control Section */}
+        {/* Portion Control */}
         <div className="flex flex-wrap items-center gap-4 mb-6">
           <span className="text-sm">Portions: {currentPortions}</span>
           <input
@@ -285,10 +283,10 @@ export default function RecipeDetailPage() {
           </>
         )}
 
-        {/* Description Section */}
+        {/* Description */}
         <p className="text-lg mb-6">{recipe.description}</p>
 
-        {/* Ingredients Section */}
+        {/* Ingredients */}
         <h3 className="text-2xl font-semibold mb-4">Ingredients</h3>
         <ul className="list-disc list-inside mb-6">
           {(recipe.recipe_ingredients || []).map((ing: RecipeIngredient, idx: number) => (
@@ -298,7 +296,7 @@ export default function RecipeDetailPage() {
           ))}
         </ul>
 
-        {/* Steps Section */}
+        {/* Steps */}
         <h3 className="text-2xl font-semibold mb-4">Steps</h3>
         <div className="space-y-4 mb-6">
           {recipe.steps.map((step: Step, idx: number) => (
@@ -326,7 +324,7 @@ export default function RecipeDetailPage() {
           ))}
         </div>
 
-        {/* Per-Ingredient Nutritional Information Table */}
+        {/* Per-Ingredient Nutritional Info Table */}
         {recipe.per_ingredient_nutritional_info && recipe.per_ingredient_nutritional_info.length > 0 && (
           <>
             <div ref={fullNutritionalInfoRef}></div>
@@ -349,15 +347,15 @@ export default function RecipeDetailPage() {
                 <tbody>
                   {recipe.per_ingredient_nutritional_info.map((info: PerIngredientNutritionalInfo, idx: number) => (
                     <tr key={info.ingredient_id ?? idx}>
-                      <td>{info.ingredient_id}</td>
-                      <td>{(info.calories * scalingFactor).toFixed(2)}</td>
-                      <td>{(info.protein * scalingFactor).toFixed(2)}</td>
-                      <td>{(info.fat * scalingFactor).toFixed(2)}</td>
-                      <td>{(info.carbohydrates * scalingFactor).toFixed(2)}</td>
-                      <td>{(info.fiber * scalingFactor).toFixed(2)}</td>
-                      <td>{(info.sugar * scalingFactor).toFixed(2)}</td>
-                      <td>{(info.sodium * scalingFactor).toFixed(2)}</td>
-                      <td>{(info.cholesterol * scalingFactor).toFixed(2)}</td>
+                      <td>{info.ingredient || info.ingredient_id}</td>
+                      <td>{((info.calories ?? 0) * scalingFactor).toFixed(2)}</td>
+                      <td>{((info.protein ?? 0) * scalingFactor).toFixed(2)}</td>
+                      <td>{((info.fat ?? 0) * scalingFactor).toFixed(2)}</td>
+                      <td>{((info.carbohydrates ?? 0) * scalingFactor).toFixed(2)}</td>
+                      <td>{((info.fiber ?? 0) * scalingFactor).toFixed(2)}</td>
+                      <td>{((info.sugar ?? 0) * scalingFactor).toFixed(2)}</td>
+                      <td>{((info.sodium ?? 0) * scalingFactor).toFixed(2)}</td>
+                      <td>{((info.cholesterol ?? 0) * scalingFactor).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -373,7 +371,7 @@ export default function RecipeDetailPage() {
           className="btn btn-circle fixed bottom-6 right-6 transition-transform hover:scale-110"
           aria-label="Scroll to top"
         >
-          <IconArrowDown size={24} className="rotate-180" />
+          <IconArrowUp size={24} className="rotate-180" />
         </button>
       )}
 
@@ -397,4 +395,8 @@ export default function RecipeDetailPage() {
       )}
     </div>
   );
+}
+
+function closeViewStepModal() {
+  // Helper to close view step modal
 }
