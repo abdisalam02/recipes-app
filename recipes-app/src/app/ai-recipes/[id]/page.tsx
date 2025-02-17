@@ -253,11 +253,11 @@ export default function RecipeDetailPage() {
         {scaledNutritionalInfo && (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="p-4 border rounded-lg shadow-sm bg-white">
+              <div className="p-4 border rounded-lg shadow-sm ">
                 <p className="text-sm font-semibold">Calories</p>
                 <p className="text-lg">{scaledNutritionalInfo.calories} kcal</p>
               </div>
-              <div className="p-4 border rounded-lg shadow-sm bg-white">
+              <div className="p-4 border rounded-lg shadow-sm">
                 <p className="text-sm font-semibold">Protein</p>
                 <p className="text-lg">{scaledNutritionalInfo.protein} g</p>
               </div>
