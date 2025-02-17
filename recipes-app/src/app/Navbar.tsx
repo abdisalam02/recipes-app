@@ -87,7 +87,7 @@ export default function Navbar({ colorScheme, toggleColorScheme }: NavbarProps) 
                 </li>
                 <li>
                   <Link
-                    href="/ai-recipes"
+                    href="/AI"
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-3 text-lg py-2"
                   >
