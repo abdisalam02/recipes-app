@@ -1,7 +1,5 @@
-// src/lib/nutrition.ts
-
-import fetch from 'node-fetch'; // Ensure node-fetch is installed
-import { EdamamNutritionResponse, NutritionalInfo } from './types'; // Correct import path
+import fetch from 'node-fetch';
+import { NutritionalInfo } from './types';
 
 export async function getNutritionalInfo(
   name: string,
@@ -22,47 +20,67 @@ export async function getNutritionalInfo(
     }
   }
 
-  const appId = process.env.EDAMAM_APP_ID;
-  const appKey = process.env.EDAMAM_APP_KEY;
-
-  if (!appId || !appKey) {
-    console.error('Edamam API credentials are missing.');
+  const apiKey = process.env.SPOONACULAR_API_KEY;
+  if (!apiKey) {
+    console.error('Spoonacular API key is missing.');
     return null;
   }
 
+  // Construct the ingredient string (e.g., "100 g apple")
   const ingr = `${quantity} ${unit} ${name}`;
-  const url = `https://api.edamam.com/api/nutrition-data?app_id=${appId}&app_key=${appKey}&ingr=${encodeURIComponent(
-    ingr
-  )}`;
+  const url = `https://api.spoonacular.com/recipes/parseIngredients?apiKey=${apiKey}&includeNutrition=true`;
 
   try {
-    const response = await fetch(url);
+    // Use URL-encoded form data instead of JSON
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        ingredientList: ingr,
+        servings: "1"
+      }).toString()
+    });
+
     if (!response.ok) {
-      console.error(`Edamam API error: ${response.statusText}`);
+      console.error(`Spoonacular API error: ${response.statusText}`);
       return null;
     }
-    const data: EdamamNutritionResponse = (await response.json()) as EdamamNutritionResponse; // Type assertion
 
-    if (data.calories === undefined) {
+    const data = await response.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
       console.error(`No nutritional data found for ${ingr}`);
       return null;
     }
 
-    // Extract necessary nutrient information safely
-    const nutrients = data.totalNutrients;
+    // Spoonacular returns an array; we take the first element
+    const ingredientData = data[0];
+    if (!ingredientData.nutrition || !ingredientData.nutrition.nutrients) {
+      console.error(`No nutrition info in the response for ${ingr}`);
+      return null;
+    }
+
+    const nutrients = ingredientData.nutrition.nutrients;
+    // Helper to extract nutrient amount by name (case-insensitive)
+    const getNutrient = (nutrientName: string): number => {
+      const nutrient = nutrients.find((n: any) => n.name.toLowerCase() === nutrientName.toLowerCase());
+      return nutrient ? nutrient.amount : 0;
+    };
 
     return {
-      calories: data.calories || 0,
-      protein: nutrients['PROCNT'] ? nutrients['PROCNT'].quantity : 0,
-      fat: nutrients['FAT'] ? nutrients['FAT'].quantity : 0,
-      carbohydrates: nutrients['CHOCDF'] ? nutrients['CHOCDF'].quantity : 0,
-      fiber: nutrients['FIBTG'] ? nutrients['FIBTG'].quantity : 0,
-      sugar: nutrients['SUGAR'] ? nutrients['SUGAR'].quantity : 0,
-      sodium: nutrients['NA'] ? nutrients['NA'].quantity : 0,
-      cholesterol: nutrients['CHOLE'] ? nutrients['CHOLE'].quantity : 0,
+      calories: getNutrient('Calories'),
+      protein: getNutrient('Protein'),
+      fat: getNutrient('Fat'),
+      carbohydrates: getNutrient('Carbohydrates'),
+      fiber: getNutrient('Fiber'),
+      sugar: getNutrient('Sugar'),
+      sodium: getNutrient('Sodium'),
+      cholesterol: getNutrient('Cholesterol')
     };
   } catch (error: any) {
-    console.error('Error fetching nutritional info from Edamam:', error.message);
+    console.error('Error fetching nutritional info from Spoonacular:', error.message);
     return null;
   }
 }

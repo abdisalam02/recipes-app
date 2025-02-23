@@ -1,181 +1,114 @@
-// "use client";
+// // app/test-nutrition/page.tsx
+// 'use client';
 
-// import React, { useState, ChangeEvent, FormEvent } from "react";
-// import {
-//   Container,
-//   Title,
-//   TextInput,
-//   Button,
-//   Paper,
-//   Stack,
-//   Text,
-//   LoadingOverlay,
-//   NumberInput,
-//   Group,
-//   Select,
-//   Code,
-// } from "@mantine/core";
-// import { notifications } from "@mantine/notifications";
-// import { NutritionalInfo } from '../../../lib/types'; // Adjust path as needed
+// import { useState } from 'react';
+// import { NutritionalInfo } from '@/types';
 
 // export default function TestNutrition() {
-//   const [ingredientName, setIngredientName] = useState<string>("");
-//   const [unit, setUnit] = useState<string>("g");
-//   const [quantity, setQuantity] = useState<number>(100);
 //   const [nutritionalInfo, setNutritionalInfo] = useState<NutritionalInfo | null>(null);
+//   const [error, setError] = useState<string>('');
 //   const [loading, setLoading] = useState<boolean>(false);
 
-//   const unitOptions = [
-//     { value: "g", label: "Grams (g)" },
-//     { value: "kg", label: "Kilograms (kg)" },
-//     { value: "mg", label: "Milligrams (mg)" },
-//     { value: "lb", label: "Pounds (lb)" },
-//     { value: "oz", label: "Ounces (oz)" },
-//     { value: "cups", label: "Cups" },
-//     { value: "tablespoons", label: "Tablespoons" },
-//     { value: "teaspoons", label: "Teaspoons" },
-//     // Add more units as needed
+//   // Test with sample data
+//   const testIngredients = [
+//     { name: 'apple', quantity: 1, unit: 'whole' },
+//     { name: 'sugar', quantity: 10, unit: 'g' },
+//     // Add more test ingredients as needed
 //   ];
 
-//   const fetchNutrition = async (): Promise<void> => {
-//     if (!ingredientName.trim()) {
-//       notifications.show({
-//         title: "Error",
-//         message: "Please enter an ingredient name.",
-//         color: "red",
-//       });
-//       return;
-//     }
-
+//   const handleTestNutrition = async () => {
 //     setLoading(true);
-//     setNutritionalInfo(null);
-
+//     setError('');
 //     try {
-//       // Fetch nutritional info via API route
 //       const response = await fetch('/api/nutrition', {
 //         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
+//         headers: { 'Content-Type': 'application/json' },
 //         body: JSON.stringify({
-//           name: ingredientName.trim(),
-//           quantity,
-//           unit,
+//           ingredients: testIngredients,
+//           portion: 1,
 //         }),
 //       });
 
 //       if (!response.ok) {
-//         const errorData = await response.json();
-//         throw new Error(errorData.error || 'Failed to fetch nutritional data.');
+//         throw new Error('Failed to fetch nutritional info');
 //       }
 
-//       const info: NutritionalInfo = await response.json();
-//       setNutritionalInfo(info);
-//       notifications.show({
-//         title: "Success",
-//         message: "Nutritional data fetched successfully!",
-//         color: "green",
-//       });
-//     } catch (error: any) {
-//       notifications.show({
-//         title: "Error",
-//         message: error.message || "An unknown error occurred.",
-//         color: "red",
-//       });
+//       const data = await response.json();
+//       setNutritionalInfo(data);
+//     } catch (error) {
+//       console.error('Error testing nutrition API:', error);
+//       setError('Failed to get nutritional information');
 //     } finally {
 //       setLoading(false);
 //     }
 //   };
 
 //   return (
-//     <Container size="sm" py="xl">
-//       <Paper withBorder shadow="md" p={30} radius="md" className="relative">
-//         <LoadingOverlay
-//           visible={loading}
-//           zIndex={1000}
-//           overlayProps={{ radius: "sm", blur: 2 }}
-//         />
-//         <Stack align="center" mb="md" gap="md">
-//           <Title order={2}>Test Nutrition API</Title>
-//           <Text color="dimmed" size="sm">
-//             Enter an ingredient to fetch its nutritional information
-//           </Text>
-//         </Stack>
+//     <div className="container mx-auto p-4">
+//       <h1 className="text-2xl font-bold mb-4">Test Nutrition API</h1>
 
-//         <form onSubmit={(e) => { e.preventDefault(); fetchNutrition(); }}>
-//           <Stack gap="md">
-//             <TextInput
-//               label="Ingredient Name"
-//               placeholder="e.g., Chicken Breast"
-//               required
-//               value={ingredientName}
-//               onChange={(e: ChangeEvent<HTMLInputElement>) =>
-//                 setIngredientName(e.target.value)
-//               }
-//               radius="xl"
-//               size="md"
-//             />
+//       <div className="mb-4">
+//         <h2 className="text-lg font-semibold mb-2">Test Ingredients:</h2>
+//         <pre className="bg-gray-100 p-4 rounded">
+//           {JSON.stringify(testIngredients, null, 2)}
+//         </pre>
+//       </div>
 
-//             <Group grow>
-//               <NumberInput
-//                 label="Quantity"
-//                 min={0.1}
-//                 step={0.1}
-//                 required
-//                 value={quantity}
-//                 onChange={(value: number | string) => {
-//                   const numberValue = typeof value === "number" ? value : 0;
-//                   setQuantity(numberValue);
-//                 }}
-//                 radius="xl"
-//                 size="md"
-//                 aria-label="Quantity"
-//               />
+//       <button
+//         onClick={handleTestNutrition}
+//         disabled={loading}
+//         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
+//       >
+//         {loading ? 'Testing...' : 'Test Nutrition API'}
+//       </button>
 
-//               <Select
-//                 label="Unit"
-//                 data={unitOptions}
-//                 required
-//                 value={unit}
-//                 onChange={(value: string | null) =>
-//                   setUnit(value || "g")
-//                 }
-//                 radius="xl"
-//                 size="md"
-//                 aria-label="Unit"
-//               />
-//             </Group>
+//       {error && (
+//         <div className="mt-4 p-4 bg-red-100 text-red-700 rounded">
+//           {error}
+//         </div>
+//       )}
 
-//             <Button
-//               type="submit"
-//               fullWidth
-//               size="md"
-//               radius="xl"
-//               color="blue"
-//               loading={loading}
-//               disabled={loading}
-//             >
-//               Fetch Nutritional Data
-//             </Button>
-
-//             {nutritionalInfo && (
-//               <Paper withBorder shadow="sm" p="md" radius="md">
-//                 <Text mb="sm">Nutritional Information:</Text>
-//                 <Group gap="xs">
-//                   <Text>Calories: {nutritionalInfo.calories} kcal</Text>
-//                   <Text>Protein: {nutritionalInfo.protein} g</Text>
-//                   <Text>Fat: {nutritionalInfo.fat} g</Text>
-//                   <Text>Carbohydrates: {nutritionalInfo.carbohydrates} g</Text>
-//                   <Text>Fiber: {nutritionalInfo.fiber} g</Text>
-//                   <Text>Sugar: {nutritionalInfo.sugar} g</Text>
-//                   <Text>Sodium: {nutritionalInfo.sodium} mg</Text>
-//                   <Text>Cholesterol: {nutritionalInfo.cholesterol} mg</Text>
-//                 </Group>
-//               </Paper>
-//             )}
-//           </Stack>
-//         </form>
-//       </Paper>
-//     </Container>
+//       {nutritionalInfo && (
+//         <div className="mt-4">
+//           <h2 className="text-lg font-semibold mb-2">Nutritional Information:</h2>
+//           <div className="bg-white p-4 rounded shadow">
+//             <dl className="grid grid-cols-2 gap-4">
+//               <div>
+//                 <dt className="text-gray-600">Calories</dt>
+//                 <dd className="text-xl font-semibold">{nutritionalInfo.calories.toFixed(1)} kcal</dd>
+//               </div>
+//               <div>
+//                 <dt className="text-gray-600">Protein</dt>
+//                 <dd className="text-xl font-semibold">{nutritionalInfo.protein.toFixed(1)}g</dd>
+//               </div>
+//               <div>
+//                 <dt className="text-gray-600">Fat</dt>
+//                 <dd className="text-xl font-semibold">{nutritionalInfo.fat.toFixed(1)}g</dd>
+//               </div>
+//               <div>
+//                 <dt className="text-gray-600">Carbohydrates</dt>
+//                 <dd className="text-xl font-semibold">{nutritionalInfo.carbohydrates.toFixed(1)}g</dd>
+//               </div>
+//               <div>
+//                 <dt className="text-gray-600">Fiber</dt>
+//                 <dd className="text-xl font-semibold">{nutritionalInfo.fiber.toFixed(1)}g</dd>
+//               </div>
+//               <div>
+//                 <dt className="text-gray-600">Sugar</dt>
+//                 <dd className="text-xl font-semibold">{nutritionalInfo.sugar.toFixed(1)}g</dd>
+//               </div>
+//               <div>
+//                 <dt className="text-gray-600">Sodium</dt>
+//                 <dd className="text-xl font-semibold">{nutritionalInfo.sodium.toFixed(1)}mg</dd>
+//               </div>
+//               <div>
+//                 <dt className="text-gray-600">Cholesterol</dt>
+//                 <dd className="text-xl font-semibold">{nutritionalInfo.cholesterol.toFixed(1)}mg</dd>
+//               </div>
+//             </dl>
+//           </div>
+//         </div>
+//       )}
+//     </div>
 //   );
 // }
