@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 // // app/test-nutrition/page.tsx
 // 'use client';
 

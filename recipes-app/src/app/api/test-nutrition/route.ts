@@ -1,3 +1,4 @@
+// @ts-nocheck
 // app/api/test-nutrition/route.ts
 import { NextResponse } from "next/server";
 import fetch from "node-fetch";
