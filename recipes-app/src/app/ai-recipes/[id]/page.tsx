@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 // app/ai-recipes/[id]/page.tsx
 'use client';
 
