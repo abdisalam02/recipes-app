@@ -282,7 +282,7 @@ export default function RecipeDetailPage() {
           type="checkbox"
           checked={availableIngredients[id] || false}
           onChange={() => handleIngredientToggle(id)}
-          className="mr-4 w-8 h-8 rounded border-gray-300"
+          className="checkbox checkbox-lg"
         />
         <span className="text-xl">
           {(ing.quantity * scalingFactor).toFixed(2)} {ing.unit} {ing.name}
@@ -291,6 +291,7 @@ export default function RecipeDetailPage() {
     );
   })}
 </ul>
+
 
 
         {/* Steps */}
