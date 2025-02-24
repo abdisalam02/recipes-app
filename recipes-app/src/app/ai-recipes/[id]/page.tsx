@@ -1,3 +1,4 @@
+// app/ai-recipes/[id]/page.tsx
 'use client';
 
 import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
@@ -68,7 +69,7 @@ const StepsModal: React.FC<{ steps: Step[]; onClose: () => void }> = ({ steps, o
             <StepIcon size={48} className="text-primary" />
           </motion.div>
           <motion.div
-            key={steps[currentStep].id}
+            key={steps[currentStep].id || currentStep}
             initial={{ opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -100 }}
@@ -102,10 +103,11 @@ export default function RecipeDetailPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPortions, setCurrentPortions] = useState<number>(1);
-  const [availableIngredients, setAvailableIngredients] = useState<{ [key: number]: boolean }>({});
   const [stepsModalOpen, setStepsModalOpen] = useState<boolean>(false);
   const [viewStepModalOpen, setViewStepModalOpen] = useState<boolean>(false);
   const [selectedStep, setSelectedStep] = useState<Step | null>(null);
+  const [availableIngredients, setAvailableIngredients] = useState<{ [key: number]: boolean }>({});
+
 
   useEffect(() => {
     if (id) {
@@ -121,13 +123,6 @@ export default function RecipeDetailPage() {
         .then((data: RecipeDetail) => {
           setRecipe(data);
           setCurrentPortions(Number(data.portion));
-          const ingredientsList = data.recipe_ingredients || [];
-          const initialAvailability: { [key: number]: boolean } = {};
-          ingredientsList.forEach((ri: RecipeIngredient, index: number) => {
-            const ingId = ri.ingredient_id || index;
-            initialAvailability[ingId] = false;
-          });
-          setAvailableIngredients(initialAvailability);
           setLoading(false);
         })
         .catch((err: unknown) => {
@@ -149,13 +144,6 @@ export default function RecipeDetailPage() {
   const closeViewStepModal = () => {
     setSelectedStep(null);
     setViewStepModalOpen(false);
-  };
-
-  const handleIngredientToggle = (ingredientId: number) => {
-    setAvailableIngredients((prev) => ({
-      ...prev,
-      [ingredientId]: !prev[ingredientId],
-    }));
   };
 
   const scrollToFullInfo = () => {
@@ -199,6 +187,12 @@ export default function RecipeDetailPage() {
 
   const imageUrl = recipe.image && recipe.image.trim() !== '' ? recipe.image : '/default-image.png';
 
+  const handleIngredientToggle = (ingredientId: number) => {
+    setAvailableIngredients((prev) => ({
+      ...prev,
+      [ingredientId]: !prev[ingredientId],
+    }));
+  };
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="card bg-base-100 shadow-md rounded-lg p-8 relative">
@@ -218,9 +212,7 @@ export default function RecipeDetailPage() {
         <div className="flex flex-wrap justify-between items-center mb-6">
           <h2 className="text-3xl font-bold">{recipe.title}</h2>
           <span className="badge badge-secondary">
-            {recipe.category
-              ? recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)
-              : 'Uncategorized'}
+            {recipe.category ? recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1) : 'Uncategorized'}
           </span>
         </div>
 
@@ -276,15 +268,28 @@ export default function RecipeDetailPage() {
         {/* Description */}
         <p className="text-lg mb-6">{recipe.description}</p>
 
-        {/* Ingredients */}
-        <h3 className="text-2xl font-semibold mb-4">Ingredients</h3>
-        <ul className="list-disc list-inside mb-6">
-          {(recipe.recipe_ingredients || []).map((ing: RecipeIngredient, idx: number) => (
-            <li key={ing.ingredient_id ?? idx}>
-              {(ing.quantity * scalingFactor).toFixed(2)} {ing.unit} {ing.ingredient?.name || 'Unknown'}
-            </li>
-          ))}
-        </ul>
+     
+
+
+        <ul className="list-disc list-inside mb-6 text-xl space-y-4">
+  {((recipe as any).ingredients || []).map((ing: any, idx: number) => {
+    const id = ing.ingredient_id ?? idx;
+    return (
+      <li key={id} className="flex items-center space-x-4">
+        <input
+          type="checkbox"
+          checked={availableIngredients[id] || false}
+          onChange={() => handleIngredientToggle(id)}
+          className="mr-4 w-8 h-8 rounded border-gray-300"
+        />
+        <span className="text-xl">
+          {(ing.quantity * scalingFactor).toFixed(2)} {ing.unit} {ing.name}
+        </span>
+      </li>
+    );
+  })}
+</ul>
+
 
         {/* Steps */}
         <h3 className="text-2xl font-semibold mb-4">Steps</h3>
@@ -336,24 +341,23 @@ export default function RecipeDetailPage() {
                 </thead>
                 <tbody>
                   {recipe.per_ingredient_nutritional_info.map((info: PerIngredientNutritionalInfo, idx: number) => {
-                    // Try to match ingredient by ingredient_id from recipe.recipe_ingredients.
-                    const matchedIngredient = (recipe.recipe_ingredients || []).find(
-                      (ri: RecipeIngredient) => ri.ingredient_id === info.ingredient_id
+                    // Match ingredient using recipe.ingredients directly
+                    const matchedIngredient = (recipe.ingredients || []).find(
+                      (ing: RecipeIngredient) => ing.ingredient_id === info.ingredient_id
                     );
                     return (
-                        <tr key={info.ingredient_id ?? idx}>
-                          <td>{matchedIngredient ? matchedIngredient.ingredient?.name : info.ingredient_id}</td>
-                          <td>{((info.calories ?? 0) * scalingFactor).toFixed(2)}</td>
-                          <td>{((info.protein ?? 0) * scalingFactor).toFixed(2)}</td>
-                          <td>{((info.fat ?? 0) * scalingFactor).toFixed(2)}</td>
-                          <td>{((info.carbohydrates ?? 0) * scalingFactor).toFixed(2)}</td>
-                          <td>{((info.fiber ?? 0) * scalingFactor).toFixed(2)}</td>
-                          <td>{((info.sugar ?? 0) * scalingFactor).toFixed(2)}</td>
-                          <td>{((info.sodium ?? 0) * scalingFactor).toFixed(2)}</td>
-                          <td>{((info.cholesterol ?? 0) * scalingFactor).toFixed(2)}</td>
-                        </tr>
-                      );
-                      
+                      <tr key={info.ingredient_id ?? idx}>
+                        <td>{matchedIngredient ? matchedIngredient.name : info.ingredient_id}</td>
+                        <td>{((info.calories ?? 0) * scalingFactor).toFixed(2)}</td>
+                        <td>{((info.protein ?? 0) * scalingFactor).toFixed(2)}</td>
+                        <td>{((info.fat ?? 0) * scalingFactor).toFixed(2)}</td>
+                        <td>{((info.carbohydrates ?? 0) * scalingFactor).toFixed(2)}</td>
+                        <td>{((info.fiber ?? 0) * scalingFactor).toFixed(2)}</td>
+                        <td>{((info.sugar ?? 0) * scalingFactor).toFixed(2)}</td>
+                        <td>{((info.sodium ?? 0) * scalingFactor).toFixed(2)}</td>
+                        <td>{((info.cholesterol ?? 0) * scalingFactor).toFixed(2)}</td>
+                      </tr>
+                    );
                   })}
                 </tbody>
               </table>

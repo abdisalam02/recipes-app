@@ -9,7 +9,7 @@ export async function GET(
     const { id } = params;
     const { data, error } = await supabase
       .from('ai_recipes')
-      .select('*')
+      .select('*')  // Select all columns; no join needed
       .eq('id', id)
       .single();
 
