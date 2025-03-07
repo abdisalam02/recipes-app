@@ -9,6 +9,16 @@ declare module 'next-pwa' {
     sw?: string
     skipWaiting?: boolean
     runtimeCaching?: any[]
+    buildExcludes?: Array<RegExp | string>
+    publicExcludes?: Array<string>
+    fallbacks?: {
+      [key: string]: string
+    }
+    cacheOnFrontEndNav?: boolean
+    reloadOnOnline?: boolean
+    sw?: string
+    register?: boolean
+    scope?: string
   }
 
   function withPWA(config: PWAConfig): (nextConfig: NextConfig) => NextConfig
