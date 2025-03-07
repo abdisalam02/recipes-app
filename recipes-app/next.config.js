@@ -40,6 +40,22 @@ const nextConfig = {
     // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
+  images: {
+    domains: [
+      'www.allrecipes.com',
+      'images.unsplash.com',
+      'via.placeholder.com',
+      'source.unsplash.com',
+      'res.cloudinary.com'
+    ],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+        pathname: '**',
+      },
+    ],
+  },
 };
 
 // Export the combined config
