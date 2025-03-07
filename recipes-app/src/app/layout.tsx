@@ -1,19 +1,37 @@
 // src/app/layout.tsx
 import './globals.css';
 import NavbarWrapper from './NavbarWrapper'; // Client component
+import { Metadata } from 'next';
+import { registerServiceWorker } from './worker';
 
-export const metadata = {
-  title: 'Your PWA App',
-  description: 'An awesome Progressive Web App built with Next.js',
-  themeColor: '#000000',
+// Register service worker
+if (typeof window !== 'undefined') {
+  registerServiceWorker();
+}
+
+export const metadata: Metadata = {
+  title: 'Recipe App',
+  description: 'Your personal recipe collection',
   manifest: '/manifest.json',
+  themeColor: '#000000',
+  viewport: 'minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, viewport-fit=cover',
+  icons: [
+    { rel: 'apple-touch-icon', url: '/icons/icon-192x192.png' },
+    { rel: 'shortcut icon', url: '/favicon.ico' }
+  ]
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <meta name="color-scheme" content="light dark" />
+        <meta name="application-name" content="Recipe App" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Recipe App" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
       <body className="bg-base-200">
         <NavbarWrapper />

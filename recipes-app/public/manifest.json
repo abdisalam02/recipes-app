@@ -1,21 +1,41 @@
 {
-    "name": "Your App Name",
-    "short_name": "App",
+    "name": "Recipe App",
+    "short_name": "Recipes",
+    "description": "Your personal recipe collection",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#000000",
+    "orientation": "portrait",
+    "prefer_related_applications": false,
+    "screenshots": [
+      {
+        "src": "/screenshots/desktop1.png",
+        "sizes": "1948x1117",
+        "type": "image/png",
+        "form_factor": "wide",
+        "label": "Homescreen of Recipe App"
+      },
+      {
+        "src": "/screenshots/mobile1.png",
+        "sizes": "707x1029",
+        "type": "image/png",
+        "form_factor": "narrow",
+        "label": "Mobile homescreen of Recipe App"
+      }
+    ],
     "icons": [
       {
         "src": "/icons/icon-192x192.png",
-        "sizes": "192x192",
-        "type": "image/png"
+        "sizes": "1024x1024",
+        "type": "image/png",
+        "purpose": "any maskable"
       },
       {
         "src": "/icons/icon-512x512.png",
-        "sizes": "512x512",
+        "sizes": "1024x1024",
         "type": "image/png"
       }
     ]
-  }
+}
   
