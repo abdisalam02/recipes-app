@@ -54,8 +54,10 @@
     "@types/parse-json": "^4.0.2",
     "@types/prop-types": "^15.7.14",
     "@types/react-transition-group": "^4.4.12",
-    "eslint": "^9",
-    "eslint-config-next": "15.1.4",
+    "@typescript-eslint/eslint-plugin": "^8.26.0",
+    "@typescript-eslint/parser": "^8.26.0",
+    "eslint": "^9.21.0",
+    "eslint-config-next": "^15.1.4",
     "postcss-preset-mantine": "^1.17.0",
     "postcss-simple-vars": "^7.0.1",
     "ts-node": "^10.9.2"
