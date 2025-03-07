@@ -3,8 +3,31 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useEffect, ChangeEvent } from 'react';
-import { IconHeart, IconHeartFilled, IconArrowUp } from '@tabler/icons-react';
+import { IconHeart, IconHeartFilled, IconArrowUp, IconCheck, IconX } from '@tabler/icons-react';
 import { Recipe, Favorite } from '../../lib/types';
+
+// Toast notification component
+const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 3000); // Auto close after 3 seconds
+    
+    return () => clearTimeout(timer);
+  }, [onClose]);
+  
+  return (
+    <div className="toast toast-end z-50">
+      <div className={`alert ${type === 'success' ? 'alert-success' : 'alert-error'} flex items-center`}>
+        <div className="flex items-center">
+          {type === 'success' ? <IconCheck size={18} /> : <IconX size={18} />}
+          <span className="ml-2">{message}</span>
+        </div>
+        <button onClick={onClose} className="btn btn-ghost btn-xs">×</button>
+      </div>
+    </div>
+  );
+};
 
 /**
  * A simple debounce hook.
@@ -59,6 +82,23 @@ export default function FindRecipesPage() {
 
   // Secret link trigger (for admin page)
   const [secretVisible, setSecretVisible] = useState<boolean>(false);
+
+  // Toast state
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
+    show: false,
+    message: '',
+    type: 'success'
+  });
+  
+  // Function to show toast
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ show: true, message, type });
+  };
+  
+  // Function to hide toast
+  const hideToast = () => {
+    setToast({ ...toast, show: false });
+  };
 
   // Fetch data on mount and whenever selectedTab changes
   useEffect(() => {
@@ -159,7 +199,7 @@ export default function FindRecipesPage() {
           throw new Error(errorData.error || 'Failed to remove favorite');
         }
         setFavorites((prev) => prev.filter((fav) => fav.recipe_id !== recipe_id));
-        alert('Removed from Favorites');
+        showToast('Removed from Favorites', 'success');
       } else {
         const res = await fetch('/api/favorites', {
           method: 'POST',
@@ -172,10 +212,11 @@ export default function FindRecipesPage() {
         }
         const newFavorite: Favorite = await res.json();
         setFavorites((prev) => [...prev, newFavorite]);
-        alert('Added to Favorites');
+        showToast('Added to Favorites', 'success');
       }
     } catch (error: any) {
-      alert(`Error: ${error.message || 'An error occurred.'}`);
+      console.error('Favorite toggle error:', error);
+      showToast(error.message || 'Failed to update favorites', 'error');
     }
   };
 
@@ -199,6 +240,15 @@ export default function FindRecipesPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 relative">
+      {/* Toast notification */}
+      {toast.show && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={hideToast} 
+        />
+      )}
+      
       {/* Secret Link Trigger (for admin page) */}
       <button
         className="absolute top-4 right-4 btn btn-xs btn-ghost opacity-50 hover:opacity-100 transition-opacity"
@@ -398,13 +448,13 @@ export default function FindRecipesPage() {
       )}
 
       {/* Scroll-to-Top Button */}
-      {scroll.y > 100 && (
+      {scroll.y > 300 && (
         <button
           onClick={scrollToTop}
-          className="btn btn-circle fixed bottom-6 right-6 transition-transform hover:scale-110"
+          className="fixed bottom-6 right-6 btn btn-circle btn-primary"
           aria-label="Scroll to top"
         >
-          <IconArrowUp size={24} />
+          <IconArrowUp size={20} />
         </button>
       )}
     </div>
@@ -417,5 +467,29 @@ function isFavorited(recipe_id: number): boolean {
 }
 
 async function toggleFavorite(recipe_id: number): Promise<void> {
-  console.log(`Toggling favorite for recipe ${recipe_id}`);
+  try {
+    // This is a dummy function that would be replaced with actual implementation
+    console.log(`Toggling favorite for recipe ${recipe_id}`);
+    
+    // Create and show a toast notification
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-end z-50';
+    
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success flex items-center';
+    
+    const message = document.createElement('span');
+    message.textContent = 'Updated favorites';
+    
+    alert.appendChild(message);
+    toast.appendChild(alert);
+    document.body.appendChild(toast);
+    
+    // Remove the toast after 3 seconds
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 3000);
+  } catch (error) {
+    console.error('Error toggling favorite:', error);
+  }
 }
