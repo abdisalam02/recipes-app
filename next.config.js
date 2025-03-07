@@ -1,10 +1,3 @@
-// next.config.js
-// @ts-check
-const {
-  PHASE_DEVELOPMENT_SERVER,
-  PHASE_PRODUCTION_BUILD,
-} = require("next/constants");
-
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
@@ -27,7 +20,6 @@ const withPWA = require('next-pwa')({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
   typescript: {
     // !! WARN !!
     // Dangerously allow production builds to successfully complete even if
@@ -40,7 +32,12 @@ const nextConfig = {
     // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
+  // Ensure we're looking at the correct src directory
+  distDir: '.next',
+  experimental: {
+    appDir: true,
+  },
 };
 
 // Export the combined config
-module.exports = withPWA(nextConfig);
+module.exports = withPWA(nextConfig); 

@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "SKIP_TYPE_CHECK=true next build",
-    "build:win": "set SKIP_TYPE_CHECK=true && next build",
-    "start": "next start",
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts",
-    "lint": "next lint",
-    "check-types": "tsc --noEmit"
+    "dev": "cd recipes-app && next dev --turbopack",
+    "build": "cd recipes-app && SKIP_TYPE_CHECK=true next build",
+    "build:win": "cd recipes-app && set SKIP_TYPE_CHECK=true && next build",
+    "start": "cd recipes-app && next start",
+    "seed": "cd recipes-app && ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts",
+    "lint": "cd recipes-app && next lint",
+    "check-types": "cd recipes-app && tsc --noEmit"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
@@ -66,4 +66,4 @@
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   }
-}
+} 
