@@ -49,13 +49,13 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ recipe, onSwipe, triggerS
   return (
     <motion.div
       ref={constraintsRef}
-      className="absolute w-full h-full flex items-center justify-center pointer-events-none"
+      className="absolute inset-0 flex items-center justify-center pointer-events-none"
     >
       <motion.div
         ref={cardRef}
-        drag
+        drag="x"
         dragConstraints={constraintsRef}
-        dragElastic={0.7}
+        dragElastic={0.9}
         whileDrag={{ scale: 1.02 }}
         onDragStart={() => setIsDragging(true)}
         onDrag={(event, info) => {
@@ -79,7 +79,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ recipe, onSwipe, triggerS
               x: direction === 'right' ? 1500 : -1500,
               rotate: direction === 'right' ? 45 : -45,
               opacity: 0,
-              transition: { duration: 0.5 }
+              transition: { duration: 0.5, ease: "easeOut" }
             }).then(() => {
               onSwipe(direction, recipe);
             });
@@ -95,10 +95,11 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ recipe, onSwipe, triggerS
         animate={controls}
         initial={{ scale: 0.95, opacity: 0 }}
         whileInView={{ scale: 1, opacity: 1 }}
-        className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden w-[90vw] max-w-md h-[70vh] pointer-events-auto relative transform-gpu"
+        className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden w-[90vw] max-w-md h-[60vh] pointer-events-auto relative transform-gpu"
         style={{
           perspective: "1000px",
-          transformStyle: "preserve-3d"
+          transformStyle: "preserve-3d",
+          touchAction: "pan-y"
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/60 z-10" />
@@ -275,17 +276,17 @@ export default function RecipeTinderPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 overflow-hidden relative">
       {/* Tinder-like header */}
-      <div className="absolute top-0 left-0 right-0 h-16 bg-white dark:bg-gray-800 shadow-sm z-30 flex items-center justify-center">
+      <div className="absolute top-0 left-0 right-0 h-14 bg-white dark:bg-gray-800 shadow-sm z-30 flex items-center justify-center">
         <div className="flex items-center">
-          <IconHeart size={28} className="text-rose-500 mr-2" fill="#f43f5e" />
-          <h1 className="text-xl font-bold bg-gradient-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
+          <IconHeart size={24} className="text-rose-500 mr-2" fill="#f43f5e" />
+          <h1 className="text-lg font-bold bg-gradient-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
             Recipe Matcher
           </h1>
         </div>
       </div>
       
-      <div className="container mx-auto px-4 py-8 pt-20 relative">
-        <div className="flex flex-col items-center justify-center min-h-[80vh] relative">
+      <div className="container mx-auto px-4 pt-16 pb-4 flex flex-col h-[100vh]">
+        <div className="flex-grow flex flex-col items-center justify-center relative">
           {deck.length === 0 && !loading && (
             <motion.div 
               initial={{ opacity: 0 }}
@@ -303,7 +304,7 @@ export default function RecipeTinderPage() {
             </motion.div>
           )}
           
-          <div className="relative w-full h-[70vh] flex items-center justify-center">
+          <div className="relative w-full flex-grow flex items-center justify-center">
             {deck.map((recipe, index) => {
               const isTop = index === deck.length - 1;
               return (
@@ -318,7 +319,7 @@ export default function RecipeTinderPage() {
           </div>
           
           {deck.length > 0 && (
-            <div className="flex gap-6 mt-8">
+            <div className="flex gap-6 mb-4 mt-auto">
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
@@ -326,7 +327,7 @@ export default function RecipeTinderPage() {
                 className="p-5 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all"
                 aria-label="Dislike"
               >
-                <IconX size={32} className="text-red-500" />
+                <IconX size={28} className="text-red-500" />
               </motion.button>
               
               <motion.button
@@ -336,7 +337,7 @@ export default function RecipeTinderPage() {
                 className="p-5 rounded-full bg-gradient-to-r from-rose-500 to-pink-600 shadow-lg hover:shadow-xl transition-all"
                 aria-label="Like"
               >
-                <IconHeart size={32} className="text-white" />
+                <IconHeart size={28} className="text-white" />
               </motion.button>
             </div>
           )}

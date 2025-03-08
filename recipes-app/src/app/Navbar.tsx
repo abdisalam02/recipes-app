@@ -10,20 +10,45 @@ import {
   IconMenu,
   IconX,
   IconRobot,
+  IconPalette,
+  IconChevronDown,
+  IconMoon,
+  IconSun,
+  IconColorSwatch
 } from '@tabler/icons-react';
+import { ThemeType } from './NavbarWrapper';
+
+// Define a simpler list of themes to cycle through
+const popularThemes: Array<{name: ThemeType, label: string, icon: React.ReactNode}> = [
+  { name: 'light', label: 'Light', icon: <IconSun size={16} /> },
+  { name: 'dark', label: 'Dark', icon: <IconMoon size={16} /> },
+  { name: 'cupcake', label: 'Cupcake', icon: <IconColorSwatch size={16} /> },
+  { name: 'synthwave', label: 'Synthwave', icon: <IconColorSwatch size={16} /> },
+  { name: 'retro', label: 'Retro', icon: <IconColorSwatch size={16} /> },
+  { name: 'cyberpunk', label: 'Cyberpunk', icon: <IconColorSwatch size={16} /> },
+  { name: 'dracula', label: 'Dracula', icon: <IconColorSwatch size={16} /> },
+  { name: 'night', label: 'Night', icon: <IconColorSwatch size={16} /> },
+];
 
 interface NavbarProps {
-  colorScheme: 'light' | 'dark';
-  toggleColorScheme: () => void;
+  currentTheme: ThemeType;
+  changeTheme: (theme: ThemeType) => void;
 }
 
-export default function Navbar({ colorScheme, toggleColorScheme }: NavbarProps) {
+export default function Navbar({ currentTheme, changeTheme }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  useEffect(() => {
-    // Update the HTML element with the current theme.
-    document.documentElement.setAttribute('data-theme', colorScheme);
-  }, [colorScheme]);
+  
+  // Get current theme info
+  const getCurrentThemeInfo = () => {
+    return popularThemes.find(t => t.name === currentTheme) || popularThemes[0];
+  };
+  
+  // Toggle to next theme in the list
+  const toggleToNextTheme = () => {
+    const currentIndex = popularThemes.findIndex(t => t.name === currentTheme);
+    const nextIndex = (currentIndex + 1) % popularThemes.length;
+    changeTheme(popularThemes[nextIndex].name);
+  };
 
   return (
     <nav className="navbar bg-base-100 shadow py-2">
@@ -94,15 +119,23 @@ export default function Navbar({ colorScheme, toggleColorScheme }: NavbarProps) 
                     <IconRobot size={18} /> AI Recipes
                   </Link>
                 </li>
-                <li>
-                  <button
+                
+                {/* Simple Theme Toggle */}
+                <li className="mt-4">
+                  <button 
+                    className="flex items-center justify-between gap-3 text-lg py-2"
                     onClick={() => {
-                      toggleColorScheme();
-                      setMobileOpen(false);
+                      toggleToNextTheme();
+                      // Don't close the mobile menu so user can see theme change
                     }}
-                    className="flex items-center gap-3 text-lg py-2"
                   >
-                    Toggle Theme
+                    <div className="flex items-center gap-2">
+                      <IconPalette size={18} /> 
+                      <span>Toggle Theme</span>
+                    </div>
+                    <div className="badge badge-primary">
+                      {getCurrentThemeInfo().label}
+                    </div>
                   </button>
                 </li>
               </ul>
@@ -139,9 +172,15 @@ export default function Navbar({ colorScheme, toggleColorScheme }: NavbarProps) 
                 <IconRobot size={16} /> AI Recipes
               </Link>
             </li>
+            
+            {/* Simple Theme Toggle for Desktop */}
             <li>
-              <button onClick={toggleColorScheme} className="btn btn-ghost">
-                Toggle Theme
+              <button 
+                onClick={toggleToNextTheme} 
+                className="btn btn-ghost flex items-center gap-2"
+              >
+                {getCurrentThemeInfo().icon}
+                {getCurrentThemeInfo().label}
               </button>
             </li>
           </ul>

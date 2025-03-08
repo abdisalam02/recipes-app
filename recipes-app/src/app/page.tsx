@@ -17,13 +17,15 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
   }, [onClose]);
   
   return (
-    <div className="toast toast-end z-50">
-      <div className={`alert ${type === 'success' ? 'alert-success' : 'alert-error'} flex items-center`}>
+    <div className="fixed bottom-4 right-4 z-50">
+      <div className={`${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-4 py-3 rounded-lg shadow-lg flex items-center`}>
         <div className="flex items-center">
           {type === 'success' ? <IconCheck size={18} /> : <IconX size={18} />}
           <span className="ml-2">{message}</span>
         </div>
-        <button onClick={onClose} className="btn btn-ghost btn-xs">×</button>
+        <button onClick={onClose} className="ml-4 text-white hover:text-gray-200">
+          <IconX size={16} />
+        </button>
       </div>
     </div>
   );
@@ -240,12 +242,23 @@ export default function FindRecipesPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 relative">
+      {/* Back to top button */}
+      {scroll.y > 300 && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-40 p-3 rounded-full bg-primary text-white shadow-lg hover:bg-primary-focus transition-colors"
+          aria-label="Back to top"
+        >
+          <IconArrowUp size={20} />
+        </button>
+      )}
+      
       {/* Toast notification */}
       {toast.show && (
-        <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={hideToast} 
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={hideToast}
         />
       )}
       
@@ -258,205 +271,352 @@ export default function FindRecipesPage() {
         ?
       </button>
 
-      {/* Page Title */}
-      <div className="flex items-center justify-center mb-6">
-        <h1 className="text-4xl font-bold">Recipe Collection</h1>
+      {/* Page Header */}
+      <div className="mb-8 text-center">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          Recipe Collection
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
+          Discover and explore delicious recipes
+        </p>
       </div>
 
       {/* Tab Slider */}
-      <div className="flex justify-center mb-6">
-        <button
-          className={`btn ${selectedTab === 'recipes' ? 'btn-primary' : 'btn-outline'}`}
-          onClick={() => setSelectedTab('recipes')}
-        >
-          Recipes
-        </button>
-        <button
-          className={`btn ml-2 ${selectedTab === 'ai-recipes' ? 'btn-primary' : 'btn-outline'}`}
-          onClick={() => setSelectedTab('ai-recipes')}
-        >
-          AI Recipes
-        </button>
+      <div className="flex justify-center mb-8">
+        <div className="bg-base-200 p-1 rounded-full inline-flex">
+          <button
+            className={`px-6 py-2 rounded-full transition-all ${
+              selectedTab === 'recipes' 
+                ? 'bg-primary text-white shadow-md' 
+                : 'hover:bg-base-300'
+            }`}
+            onClick={() => setSelectedTab('recipes')}
+          >
+            Recipes
+          </button>
+          <button
+            className={`px-6 py-2 rounded-full transition-all ${
+              selectedTab === 'ai-recipes' 
+                ? 'bg-primary text-white shadow-md' 
+                : 'hover:bg-base-300'
+            }`}
+            onClick={() => setSelectedTab('ai-recipes')}
+          >
+            AI Recipes
+          </button>
+        </div>
       </div>
 
       {selectedTab === 'ai-recipes' && (
-  <div className="flex justify-center mb-6">
-    <button
-      className="btn btn-primary"
-      onClick={() => router.push('/AI')}
-    >
-      Generate Recipe with AI
-    </button>
-  </div>
-)}
+        <div className="flex justify-center mb-8">
+          <button
+            className="btn btn-primary btn-lg rounded-full shadow-md hover:shadow-lg transition-shadow"
+            onClick={() => router.push('/AI')}
+          >
+            Generate Recipe with AI
+          </button>
+        </div>
+      )}
 
-
-      {/* Search Input */}
-      <div className="mb-6">
-        <label className="label">
-          <span className="label-text">Search Recipes</span>
-        </label>
-        <input
-          type="text"
-          placeholder="Type recipe name..."
-          className="input input-bordered w-full"
-          value={searchTerm}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-          aria-label="Search Recipes"
-        />
-      </div>
-
-      {/* Filter Drawer Button */}
-      <div className="mb-6">
-        <button
-          className="btn btn-outline"
-          onClick={() => setDrawerOpen(true)}
-          aria-label="Open Filters"
-        >
-          Filter Recipes
-        </button>
-      </div>
-
-      {/* Drawer for Filters */}
-      {drawerOpen && (
-        <>
-          <div className="fixed inset-0 bg-black opacity-50" onClick={() => setDrawerOpen(false)}></div>
-          <div className="fixed top-0 right-0 w-64 h-full bg-base-200 shadow-lg p-4 z-50 transform transition-transform duration-300">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Filters</h2>
-              <button className="btn btn-sm btn-square" onClick={() => setDrawerOpen(false)}>
-                ✕
-              </button>
-            </div>
-            {/* Categories */}
-            <div className="mb-4">
-              <h3 className="font-semibold mb-2">Categories</h3>
-              <div className="flex flex-wrap gap-2">
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() =>
-                      setSelectedCategory((prev) => (prev === category ? '' : category))
-                    }
-                    className={`btn btn-xs ${selectedCategory === category ? 'btn-primary' : 'btn-outline'}`}
-                  >
-                    {category ? category.charAt(0).toUpperCase() + category.slice(1) : 'Uncategorized'}
-                  </button>
-                ))}
+      {/* Search and Filter Section */}
+      <div className="mb-8 bg-base-200 rounded-xl p-6 shadow-md">
+        <div className="flex flex-col md:flex-row gap-4 items-start">
+          {/* Search Input */}
+          <div className="flex-1 w-full">
+            <label className="text-sm font-medium mb-2 block">
+              Search Recipes
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input input-bordered w-full pl-10 py-3 text-base"
+                style={{ minHeight: '3rem' }}
+              />
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </div>
-            </div>
-            {/* Regions */}
-            <div className="mb-4">
-              <h3 className="font-semibold mb-2">Regions</h3>
-              <div className="flex flex-wrap gap-2">
-                {regions.map((region) => (
-                  <button
-                    key={region}
-                    onClick={() =>
-                      setSelectedRegion((prev) => (prev === region ? '' : region))
-                    }
-                    className={`btn btn-xs ${selectedRegion === region ? 'btn-primary' : 'btn-outline'}`}
-                  >
-                    {region ? region.charAt(0).toUpperCase() + region.slice(1) : 'Unknown'}
-                  </button>
-                ))}
-              </div>
+              {searchTerm && (
+                <button 
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <IconX size={18} />
+                </button>
+              )}
             </div>
           </div>
-        </>
-      )}
+
+          {/* Filter Button (Mobile) */}
+          <div className="md:hidden w-full">
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="btn btn-outline w-full py-3"
+              style={{ minHeight: '3rem' }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              Filters
+            </button>
+          </div>
+
+          {/* Desktop Filters */}
+          <div className="hidden md:flex gap-4">
+            {/* Category Filter */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Category
+              </label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="select select-bordered w-full"
+              >
+                <option value="">All Categories</option>
+                {categories.map((category) => {
+                  // Safely handle category formatting
+                  const displayCategory = typeof category === 'string' && category 
+                    ? category.charAt(0).toUpperCase() + category.slice(1) 
+                    : 'Other';
+                    
+                  return (
+                    <option key={category} value={category}>
+                      {displayCategory}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            {/* Region Filter */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Region
+              </label>
+              <select
+                value={selectedRegion}
+                onChange={(e) => setSelectedRegion(e.target.value)}
+                className="select select-bordered w-full"
+              >
+                <option value="">All Regions</option>
+                {regions.map((region) => {
+                  // Safely handle region formatting
+                  const displayRegion = typeof region === 'string' && region 
+                    ? region.charAt(0).toUpperCase() + region.slice(1) 
+                    : 'Other';
+                    
+                  return (
+                    <option key={region} value={region}>
+                      {displayRegion}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Recipes Grid */}
       {filteredRecipes.length === 0 ? (
-        <div className="flex justify-center">
-          <p className="text-gray-500">No recipes found.</p>
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="text-6xl mb-4">🍽️</div>
+          <p className="text-xl text-gray-500">No recipes found.</p>
+          <p className="text-gray-400 mt-2">Try adjusting your search or filters.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {filteredRecipes.map((recipe) => (
-          <div
-            key={recipe.id}
-            onClick={() =>
-              router.push(
-                selectedTab === 'ai-recipes'
-                  ? `/ai-recipes/${recipe.id}`
-                  : `/recipes/${recipe.id}`
-              )
-            }
-            className="card bg-base-100 shadow-lg hover:shadow-2xl transition transform hover:scale-105 cursor-pointer"
-          >
-            <figure>
-              <img
-                src={getImageUrl(recipe.image)}
-                alt={recipe.title}
-                className="object-cover w-full h-40"
-                loading="lazy"
-              />
-            </figure>
-            <div className="card-body p-4">
-              <div className="flex items-center justify-between">
-                <h2 className="card-title">{recipe.title}</h2>
-                <div className="badge badge-secondary font-semibold">
-                  {recipe.category
-                    ? recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)
-                    : 'Uncategorized'}
-                </div>
-              </div>
-              <p className="text-sm text-gray-500 line-clamp-3">
-                {recipe.description.length > 100
-                  ? `${recipe.description.substring(0, 100)}...`
-                  : recipe.description}
-              </p>
-              <div className="flex items-center justify-between mt-4">
-                <span className="text-sm text-gray-500">Portions: {recipe.portion}</span>
-                <div className="tooltip" data-tip={isFavorited(recipe.id) ? 'Unfavorite' : 'Favorite'}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredRecipes.map((recipe) => (
+            <div
+              key={recipe.id}
+              onClick={() =>
+                router.push(
+                  selectedTab === 'ai-recipes'
+                    ? `/ai-recipes/${recipe.id}`
+                    : `/recipes/${recipe.id}`
+                )
+              }
+              className="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-5px] overflow-hidden"
+            >
+              <figure className="relative h-48">
+                <img
+                  src={getImageUrl(recipe.image)}
+                  alt={recipe.title}
+                  className="object-cover w-full h-full"
+                  loading="lazy"
+                />
+                <div className="absolute top-2 right-2">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleFavorite(recipe.id);
                     }}
-                    className="btn btn-ghost btn-sm"
-                    aria-label={isFavorited(recipe.id) ? 'Unfavorite' : 'Favorite'}
+                    className="btn btn-circle btn-sm bg-white/80 hover:bg-white border-none"
                   >
                     {isFavorited(recipe.id) ? (
-                      <IconHeartFilled size={24} className="text-red-500" />
+                      <IconHeartFilled size={18} className="text-red-500" />
                     ) : (
-                      <IconHeart size={24} className="text-gray-500" />
+                      <IconHeart size={18} className="text-gray-500" />
                     )}
                   </button>
                 </div>
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                  <div className="badge badge-primary">
+                    {recipe.category && typeof recipe.category === 'string'
+                      ? recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)
+                      : 'Uncategorized'}
+                  </div>
+                </div>
+              </figure>
+              <div className="card-body p-4">
+                <h2 className="card-title text-lg">{recipe.title}</h2>
+                <p className="text-sm text-gray-500 line-clamp-2">{recipe.description}</p>
+                <div className="flex justify-between items-center mt-2">
+                  <div className="text-xs text-gray-400">
+                    {recipe.portion ? `${recipe.portion} servings` : '30 min'}
+                  </div>
+                  <div className="badge badge-outline badge-sm">
+                    {recipe.region && typeof recipe.region === 'string'
+                      ? recipe.region.charAt(0).toUpperCase() + recipe.region.slice(1)
+                      : 'Global'}
+                  </div>
+                </div>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  router.push(
-                    selectedTab === 'ai-recipes'
-                      ? `/ai-recipes/${recipe.id}`
-                      : `/recipes/${recipe.id}`
-                  );
-                }}
-                className="btn btn-primary btn-sm mt-4"
-                aria-label={`View details of ${recipe.title}`}
-              >
-                View Recipe
-              </button>
             </div>
-          </div>
-        ))}
-      </div>
-      
+          ))}
+        </div>
       )}
 
-      {/* Scroll-to-Top Button */}
-      {scroll.y > 300 && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-6 right-6 btn btn-circle btn-primary"
-          aria-label="Scroll to top"
-        >
-          <IconArrowUp size={20} />
-        </button>
-      )}
+      {/* Replace the current filter UI with a cooler one */}
+      <div className={`fixed inset-0 bg-black/70 backdrop-blur-sm z-50 transition-opacity duration-300 ${drawerOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className={`fixed bottom-0 left-0 right-0 bg-gradient-to-t from-base-100 to-base-200 rounded-t-3xl p-6 transition-transform duration-300 shadow-2xl ${drawerOpen ? 'translate-y-0' : 'translate-y-full'}`} style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Refine Results</h3>
+            <button 
+              onClick={() => setDrawerOpen(false)} 
+              className="btn btn-circle btn-sm bg-base-300 hover:bg-base-300/80 border-none"
+            >
+              <IconX size={18} />
+            </button>
+          </div>
+          
+          {/* Visual indicator for active filters */}
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-2 h-2 rounded-full bg-primary"></div>
+            <span className="text-sm">
+              {selectedCategory || selectedRegion 
+                ? `Filtering by ${[
+                    selectedCategory && 'category',
+                    selectedRegion && 'region'
+                  ].filter(Boolean).join(' and ')}`
+                : 'No filters applied'}
+            </span>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Category Filter with visual chips */}
+            <div className="space-y-4">
+              <label className="text-base font-medium block">
+                Category
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSelectedCategory('')}
+                  className={`px-3 py-1.5 rounded-full text-sm transition-all ${
+                    selectedCategory === '' 
+                      ? 'bg-primary text-white shadow-md' 
+                      : 'bg-base-300 hover:bg-base-300/80'
+                  }`}
+                >
+                  All
+                </button>
+                {categories.map((category) => {
+                  // Safely handle category formatting
+                  const displayCategory = typeof category === 'string' && category 
+                    ? category.charAt(0).toUpperCase() + category.slice(1) 
+                    : 'Other';
+                    
+                  return (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`px-3 py-1.5 rounded-full text-sm transition-all ${
+                        selectedCategory === category 
+                          ? 'bg-primary text-white shadow-md' 
+                          : 'bg-base-300 hover:bg-base-300/80'
+                      }`}
+                    >
+                      {displayCategory}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Region Filter with visual chips */}
+            <div className="space-y-4">
+              <label className="text-base font-medium block">
+                Region
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSelectedRegion('')}
+                  className={`px-3 py-1.5 rounded-full text-sm transition-all ${
+                    selectedRegion === '' 
+                      ? 'bg-primary text-white shadow-md' 
+                      : 'bg-base-300 hover:bg-base-300/80'
+                  }`}
+                >
+                  All
+                </button>
+                {regions.map((region) => {
+                  // Safely handle region formatting
+                  const displayRegion = typeof region === 'string' && region 
+                    ? region.charAt(0).toUpperCase() + region.slice(1) 
+                    : 'Other';
+                    
+                  return (
+                    <button
+                      key={region}
+                      onClick={() => setSelectedRegion(region)}
+                      className={`px-3 py-1.5 rounded-full text-sm transition-all ${
+                        selectedRegion === region 
+                          ? 'bg-primary text-white shadow-md' 
+                          : 'bg-base-300 hover:bg-base-300/80'
+                      }`}
+                    >
+                      {displayRegion}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-8 flex gap-4">
+            <button 
+              className="btn btn-outline flex-1"
+              onClick={() => {
+                setSelectedCategory('');
+                setSelectedRegion('');
+              }}
+            >
+              Reset Filters
+            </button>
+            <button 
+              className="btn btn-primary flex-1"
+              onClick={() => setDrawerOpen(false)}
+            >
+              Apply Filters
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

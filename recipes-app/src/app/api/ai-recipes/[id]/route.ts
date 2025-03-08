@@ -26,3 +26,32 @@ export async function GET(
     );
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const id = params.id;
+    
+    // Delete the AI recipe from the database
+    const { error } = await supabase
+      .from('ai_recipes')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting AI recipe:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    // Return a success response
+    return NextResponse.json({ success: true, message: 'AI recipe deleted successfully' }, { status: 200 });
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete AI recipe' },
+      { status: 500 }
+    );
+  }
+}
