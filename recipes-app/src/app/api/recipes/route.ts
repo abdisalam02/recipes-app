@@ -8,8 +8,10 @@ import {
   NutritionalInfo,
   RecipeDetail,
   RecipeIngredient,
+  Recipe,
+  RecipeWithIngredients,
 } from '../../../../lib/types'; // Corrected import path
-import { getNutritionalInfo } from '../../../../lib/nutrition'; // Corrected import path
+import { getNutritionalInfo } from '../../../../lib/existingNutrition'; // Corrected import path
 
 /**
  * GET /api/recipes
@@ -69,256 +71,399 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const data: RecipeInput = await request.json();
-    const { title, category, region, description, ingredients, steps, portion, image } = data;
+    const { title, category, region, description, ingredients = [], steps = [], portion, image } = data;
 
-    // Basic validation
-    if (
-      !title ||
-      !category ||
-      !region ||
-      !description ||
-      !portion ||
-      !Array.isArray(ingredients) ||
-      !Array.isArray(steps)
-    ) {
+    console.log('Received recipe submission:', {
+      title,
+      category,
+      region,
+      ingredientsCount: ingredients?.length || 0,
+      stepsCount: steps?.length || 0,
+      portion
+    });
+
+    // Enhanced validation with specific error messages
+    if (!title || typeof title !== 'string' || title.trim() === '') {
       return NextResponse.json(
-        { error: 'All fields are required and must be in the correct format.' },
+        { error: 'Recipe title is required and must be a non-empty string.' },
         { status: 400 }
       );
     }
+    
+    if (!category || typeof category !== 'string' || category.trim() === '') {
+      return NextResponse.json(
+        { error: 'Recipe category is required and must be a non-empty string.' },
+        { status: 400 }
+      );
+    }
+    
+    if (!region || typeof region !== 'string' || region.trim() === '') {
+      return NextResponse.json(
+        { error: 'Recipe region is required and must be a non-empty string.' },
+        { status: 400 }
+      );
+    }
+    
+    if (!description || typeof description !== 'string' || description.trim() === '') {
+      return NextResponse.json(
+        { error: 'Recipe description is required and must be a non-empty string.' },
+        { status: 400 }
+      );
+    }
+    
+    if (!portion || typeof portion !== 'number' || portion < 1) {
+      return NextResponse.json(
+        { error: 'Recipe portion is required and must be a positive number.' },
+        { status: 400 }
+      );
+    }
+    
+    // Allow empty ingredients and steps arrays - we'll create a recipe without them
+    // This is a change from the previous validation that required at least one ingredient and step
+    
+    // Sanitize and validate inputs before database insertion
+    const sanitizedTitle = title.trim().substring(0, 255); // Limit title length
+    const sanitizedCategory = category.trim().substring(0, 100);
+    const sanitizedRegion = region.trim().substring(0, 100);
+    const sanitizedDescription = description.trim().substring(0, 1000); // Limit description length
+    const sanitizedImage = image ? image.trim() : null;
 
     // Insert recipe into Supabase
-    const { data: recipeData, error: recipeError } = await supabase
-      .from('recipes')
-      .insert({
-        title,
-        category,
-        region,
-        description,
-        portion,
-        image: image || null,
-      })
-      .select('*')
-      .single();
-
-    if (recipeError) {
-      console.error('Error inserting recipe:', recipeError.message);
-      throw recipeError;
-    }
-
-    // Handle ingredients: get or create ingredient IDs
-    const processedIngredients: { ingredient_id: number; quantity: number; unit: string }[] = [];
-
-    for (const ing of ingredients) {
-      if (!ing.name || !ing.quantity || !ing.unit) {
-        console.warn('Incomplete ingredient data:', ing);
-        continue; // Skip incomplete ingredients
-      }
-
-      // Standardize unit before processing
-      const standardizedUnit = standardizeUnit(ing.unit.trim());
-
-      // Convert 'whole' units to grams if necessary
-      const { convertedQuantity, finalUnit } = convertToStandardUnit(
-        ing.name.trim(),
-        ing.quantity,
-        standardizedUnit
-      );
-
-      // Get or create ingredient
-      const ingredientId = await getOrCreateIngredient(ing.name.trim());
-
-      if (!ingredientId) {
-        console.error(`Failed to get or create ingredient: ${ing.name}`);
-        continue; // Skip this ingredient
-      }
-
-      processedIngredients.push({
-        ingredient_id: ingredientId,
-        quantity: convertedQuantity,
-        unit: finalUnit, // Use standardized and converted unit
-      });
-    }
-
-    if (processedIngredients.length === 0) {
-      console.warn('No valid ingredients to process.');
-      // Optionally, decide whether to proceed without ingredients
-    }
-
-    // Insert into recipe_ingredients table
-    const { data: recipeIngredientsData, error: recipeIngredientsError } = await supabase
-      .from('recipe_ingredients')
-      .insert(
-        processedIngredients.map((ing) => ({
-          recipe_id: recipeData.id,
-          ingredient_id: ing.ingredient_id,
-          quantity: ing.quantity,
-          unit: ing.unit,
-        }))
-      )
-      .select('*');
-
-    if (recipeIngredientsError) {
-      console.error('Error inserting recipe ingredients:', recipeIngredientsError.message);
-      throw recipeIngredientsError;
-    }
-
-    // Insert steps
-    const stepsWithRecipeId = steps.map((step, index) => ({
-      recipe_id: recipeData.id,
-      order: step.order || index + 1,
-      description: step.description,
-    }));
-
-    const { data: stepsData, error: stepsError } = await supabase
-      .from('steps')
-      .insert(stepsWithRecipeId)
-      .select('*');
-
-    if (stepsError) {
-      console.error('Error inserting steps:', stepsError.message);
-      throw stepsError;
-    }
-
-    // Initialize total nutritional info
-    let totalNutritionalInfo: NutritionalInfo = {
-      calories: 0,
-      protein: 0,
-      fat: 0,
-      carbohydrates: 0,
-      fiber: 0,
-      sugar: 0,
-      sodium: 0,
-      cholesterol: 0,
-    };
-
-    // Insert per-ingredient nutritional info and aggregate using Promise.all for efficiency
-    const nutritionalPromises = (recipeIngredientsData || []).map(async (ing) => {
-      const ingredient_id = ing.ingredient_id;
-
-      if (!ingredient_id) {
-        console.error('Ingredient ID is missing for ingredient in recipe.');
-        return null;
-      }
-
-      // Fetch ingredient details to get the name
-      const { data: ingredientData, error: ingredientError } = await supabase
-        .from('ingredients')
-        .select('name')
-        .eq('id', ingredient_id)
+    try {
+      const { data: recipeData, error: recipeError } = await supabase
+        .from('recipes')
+        .insert({
+          title: sanitizedTitle,
+          category: sanitizedCategory,
+          region: sanitizedRegion,
+          description: sanitizedDescription,
+          portion,
+          image: sanitizedImage,
+        })
+        .select('*')
         .single();
 
-      if (ingredientError) {
-        console.error(
-          `Failed to fetch ingredient name for ID ${ingredient_id}:`,
-          ingredientError.message
+      if (recipeError) {
+        console.error('Error inserting recipe:', recipeError.message);
+        return NextResponse.json(
+          { error: `Failed to insert recipe: ${recipeError.message}` },
+          { status: 500 }
         );
-        return null;
       }
 
-      const ingredientName = ingredientData.name;
+      // Handle ingredients: get or create ingredient IDs
+      const processedIngredients: { ingredient_id: number; quantity: number; unit: string }[] = [];
+      const ingredientErrors: string[] = [];
 
-      // Fetch nutritional info via getNutritionalInfo
-      const nutritionalData = await getNutritionalInfo(
-        ingredientName,
-        ing.quantity,
-        ing.unit
-      );
+      for (const ing of ingredients) {
+        try {
+          if (!ing.name || !ing.quantity || !ing.unit) {
+            console.warn('Incomplete ingredient data:', ing);
+            ingredientErrors.push(`Incomplete data for ingredient: ${ing.name || 'unnamed'}`);
+            continue; // Skip incomplete ingredients
+          }
 
-      if (nutritionalData) {
-        // Insert into nutritional_info table
-        const { error: nutritionalError } = await supabase
-          .from('nutritional_info')
-          .insert([
-            {
-              recipe_id: recipeData.id,
-              ingredient_id: ingredient_id,
-              calories: nutritionalData.calories,
-              protein: nutritionalData.protein,
-              fat: nutritionalData.fat,
-              carbohydrates: nutritionalData.carbohydrates,
-              fiber: nutritionalData.fiber,
-              sugar: nutritionalData.sugar,
-              sodium: nutritionalData.sodium,
-              cholesterol: nutritionalData.cholesterol,
-            },
-          ]);
+          // Sanitize ingredient name
+          const sanitizedName = ing.name.trim().substring(0, 100); // Limit name length
+          
+          if (sanitizedName === '') {
+            ingredientErrors.push('Ingredient name cannot be empty');
+            continue;
+          }
 
-        if (nutritionalError) {
-          console.error('Error inserting nutritional info:', nutritionalError.message);
-          // Optionally, continue or handle rollback
+          // Standardize unit before processing
+          const standardizedUnit = standardizeUnit(ing.unit.trim());
+
+          // Convert 'whole' units to grams if necessary
+          const { convertedQuantity, finalUnit } = convertToStandardUnit(
+            sanitizedName,
+            ing.quantity,
+            standardizedUnit
+          );
+
+          // Get or create ingredient with better error handling
+          try {
+            const ingredientId = await getOrCreateIngredient(sanitizedName);
+
+            if (!ingredientId) {
+              console.error(`Failed to get or create ingredient: ${sanitizedName}`);
+              ingredientErrors.push(`Failed to process ingredient: ${sanitizedName}`);
+              continue; // Skip this ingredient
+            }
+
+            processedIngredients.push({
+              ingredient_id: ingredientId,
+              quantity: convertedQuantity,
+              unit: finalUnit, // Use standardized and converted unit
+            });
+          } catch (ingredientError: any) {
+            console.error(`Error processing ingredient ${sanitizedName}:`, ingredientError);
+            ingredientErrors.push(`Error with ingredient ${sanitizedName}: ${ingredientError.message}`);
+            continue;
+          }
+        } catch (ingError: any) {
+          console.error('Error processing ingredient:', ingError);
+          ingredientErrors.push(`Error processing ingredient: ${ingError.message}`);
+          continue;
+        }
+      }
+
+      if (processedIngredients.length === 0) {
+        console.warn('No valid ingredients to process.');
+        // Don't return an error if there are no ingredients - just continue with an empty array
+        // This allows recipes to be created without ingredients initially
+      }
+
+      // Insert into recipe_ingredients table
+      let recipeIngredientsData = [];
+      if (processedIngredients.length > 0) {
+        try {
+          const { data: insertedIngredients, error: recipeIngredientsError } = await supabase
+            .from('recipe_ingredients')
+            .insert(
+              processedIngredients.map((ing) => ({
+                recipe_id: recipeData.id,
+                ingredient_id: ing.ingredient_id,
+                quantity: ing.quantity,
+                unit: ing.unit,
+              }))
+            )
+            .select('*');
+
+          if (recipeIngredientsError) {
+            console.error('Error inserting recipe ingredients:', recipeIngredientsError.message);
+            // Continue with steps even if ingredients fail
+          } else if (insertedIngredients) {
+            recipeIngredientsData = insertedIngredients;
+            console.log(`Successfully inserted ${insertedIngredients.length} ingredients`);
+          }
+        } catch (recipeIngError: any) {
+          console.error('Error inserting recipe ingredients:', recipeIngError);
+          // Continue with steps even if ingredients fail
+        }
+      } else {
+        console.warn('No ingredients to insert for recipe:', recipeData.id);
+      }
+
+      // Process and sanitize steps
+      const sanitizedSteps = steps.map((step, index) => {
+        const description = step.description?.trim() || '';
+        if (description === '') {
+          console.warn(`Empty description for step ${index + 1}`);
+        }
+        return {
+          recipe_id: recipeData.id,
+          order: step.order || index + 1,
+          description: description.substring(0, 1000), // Limit description length
+        };
+      }).filter(step => step.description !== '');
+
+      // Insert steps
+      if (sanitizedSteps.length > 0) {
+        try {
+          const { data: stepsData, error: stepsError } = await supabase
+            .from('steps')
+            .insert(sanitizedSteps)
+            .select('*');
+
+          if (stepsError) {
+            console.error('Error inserting steps:', stepsError.message);
+            // Continue even if steps fail
+          }
+        } catch (stepsInsertError: any) {
+          console.error('Error inserting steps:', stepsInsertError);
+          // Continue even if steps fail
+        }
+      }
+
+      // Initialize total nutritional info
+      let totalNutritionalInfo: NutritionalInfo = {
+        calories: 0,
+        protein: 0,
+        fat: 0,
+        carbohydrates: 0,
+        fiber: 0,
+        sugar: 0,
+        sodium: 0,
+        cholesterol: 0,
+      };
+
+      // Insert per-ingredient nutritional info and aggregate using Promise.all for efficiency
+      const nutritionalPromises = recipeIngredientsData.map(async (ing) => {
+        const ingredient_id = ing.ingredient_id;
+
+        if (!ingredient_id) {
+          console.error('Ingredient ID is missing for ingredient in recipe.');
           return null;
         }
 
-        // Return the nutritional data for aggregation
-        return nutritionalData;
-      } else {
-        console.warn(`No nutritional data found for ingredient "${ingredientName}".`);
-        return null;
+        // Fetch ingredient details to get the name
+        const { data: ingredientData, error: ingredientError } = await supabase
+          .from('ingredients')
+          .select('name')
+          .eq('id', ingredient_id)
+          .single();
+
+        if (ingredientError) {
+          console.error(
+            `Failed to fetch ingredient name for ID ${ingredient_id}:`,
+            ingredientError.message
+          );
+          return null;
+        }
+
+        const ingredientName = ingredientData.name;
+
+        try {
+          // Fetch nutritional info via getNutritionalInfo
+          const nutritionalData = await getNutritionalInfo(
+            ingredientName,
+            ing.quantity,
+            ing.unit
+          );
+
+          if (nutritionalData) {
+            // Insert into nutritional_info table
+            const { error: nutritionalError } = await supabase
+              .from('nutritional_info')
+              .insert([
+                {
+                  recipe_id: recipeData.id,
+                  ingredient_id: ingredient_id,
+                  calories: nutritionalData.calories,
+                  protein: nutritionalData.protein,
+                  fat: nutritionalData.fat,
+                  carbohydrates: nutritionalData.carbohydrates,
+                  fiber: nutritionalData.fiber,
+                  sugar: nutritionalData.sugar,
+                  sodium: nutritionalData.sodium,
+                  cholesterol: nutritionalData.cholesterol,
+                },
+              ]);
+
+            if (nutritionalError) {
+              console.error('Error inserting nutritional info:', nutritionalError.message);
+              // Optionally, continue or handle rollback
+              return null;
+            }
+
+            // Return the nutritional data for aggregation
+            return nutritionalData;
+          } else {
+            console.warn(`No nutritional data found for ingredient "${ingredientName}".`);
+            
+            // Create default nutritional info for ingredients without data
+            const defaultNutritionalData = {
+              calories: 0,
+              protein: 0,
+              fat: 0,
+              carbohydrates: 0,
+              fiber: 0,
+              sugar: 0,
+              sodium: 0,
+              cholesterol: 0,
+            };
+            
+            // Insert default nutritional info to ensure the ingredient is associated with the recipe
+            const { error: defaultNutritionalError } = await supabase
+              .from('nutritional_info')
+              .insert([
+                {
+                  recipe_id: recipeData.id,
+                  ingredient_id: ingredient_id,
+                  ...defaultNutritionalData
+                },
+              ]);
+              
+            if (defaultNutritionalError) {
+              console.error('Error inserting default nutritional info:', defaultNutritionalError.message);
+            } else {
+              console.log(`Inserted default nutritional info for "${ingredientName}"`);
+            }
+            
+            return null;
+          }
+        } catch (nutritionError: any) {
+          console.error(`Error fetching nutritional info for "${ingredientName}":`, nutritionError.message);
+          return null;
+        }
+      });
+
+      // Await all nutritional info fetches
+      const nutritionalResults = await Promise.all(nutritionalPromises);
+
+      // Aggregate nutritional information
+      nutritionalResults.forEach((nutri) => {
+        if (nutri) {
+          totalNutritionalInfo.calories += nutri.calories;
+          totalNutritionalInfo.protein += nutri.protein;
+          totalNutritionalInfo.fat += nutri.fat;
+          totalNutritionalInfo.carbohydrates += nutri.carbohydrates;
+          totalNutritionalInfo.fiber += nutri.fiber;
+          totalNutritionalInfo.sugar += nutri.sugar;
+          totalNutritionalInfo.sodium += nutri.sodium;
+          totalNutritionalInfo.cholesterol += nutri.cholesterol;
+        }
+      });
+
+      console.log('Total Nutritional Info (All Ingredients):', totalNutritionalInfo);
+
+      // Store total nutrients without scaling by portion
+      const totalNutrients: NutritionalInfo = {
+        calories: roundToOneDecimal(totalNutritionalInfo.calories),
+        protein: roundToOneDecimal(totalNutritionalInfo.protein),
+        fat: roundToOneDecimal(totalNutritionalInfo.fat),
+        carbohydrates: roundToOneDecimal(totalNutritionalInfo.carbohydrates),
+        fiber: roundToOneDecimal(totalNutritionalInfo.fiber),
+        sugar: roundToOneDecimal(totalNutritionalInfo.sugar),
+        sodium: roundToOneDecimal(totalNutritionalInfo.sodium),
+        cholesterol: roundToOneDecimal(totalNutritionalInfo.cholesterol),
+      };
+
+      console.log('Total Nutritional Info (Total):', totalNutrients);
+
+      // Update the recipe with total nutritional_info
+      const { error: updateError } = await supabase
+        .from('recipes')
+        .update({ nutritional_info: totalNutrients })
+        .eq('id', recipeData.id);
+
+      if (updateError) {
+        console.error(
+          'Error updating recipe with nutritional info:',
+          updateError.message
+        );
+        return NextResponse.json(
+          {
+            error: 'Recipe added, but failed to update nutritional information.',
+          },
+          { status: 500 }
+        );
       }
-    });
 
-    // Await all nutritional info fetches
-    const nutritionalResults = await Promise.all(nutritionalPromises);
+      console.log(`Updating recipe ID ${recipeData.id} with nutritional info:`, totalNutrients);
 
-    // Aggregate nutritional information
-    nutritionalResults.forEach((nutri) => {
-      if (nutri) {
-        totalNutritionalInfo.calories += nutri.calories;
-        totalNutritionalInfo.protein += nutri.protein;
-        totalNutritionalInfo.fat += nutri.fat;
-        totalNutritionalInfo.carbohydrates += nutri.carbohydrates;
-        totalNutritionalInfo.fiber += nutri.fiber;
-        totalNutritionalInfo.sugar += nutri.sugar;
-        totalNutritionalInfo.sodium += nutri.sodium;
-        totalNutritionalInfo.cholesterol += nutri.cholesterol;
-      }
-    });
-
-    console.log('Total Nutritional Info (All Ingredients):', totalNutritionalInfo);
-
-    // Store total nutrients without scaling by portion
-    const totalNutrients: NutritionalInfo = {
-      calories: roundToOneDecimal(totalNutritionalInfo.calories),
-      protein: roundToOneDecimal(totalNutritionalInfo.protein),
-      fat: roundToOneDecimal(totalNutritionalInfo.fat),
-      carbohydrates: roundToOneDecimal(totalNutritionalInfo.carbohydrates),
-      fiber: roundToOneDecimal(totalNutritionalInfo.fiber),
-      sugar: roundToOneDecimal(totalNutritionalInfo.sugar),
-      sodium: roundToOneDecimal(totalNutritionalInfo.sodium),
-      cholesterol: roundToOneDecimal(totalNutritionalInfo.cholesterol),
-    };
-
-    console.log('Total Nutritional Info (Total):', totalNutrients);
-
-    // Update the recipe with total nutritional_info
-    const { error: updateError } = await supabase
-      .from('recipes')
-      .update({ nutritional_info: totalNutrients })
-      .eq('id', recipeData.id);
-
-    if (updateError) {
-      console.error(
-        'Error updating recipe with nutritional info:',
-        updateError.message
-      );
       return NextResponse.json(
-        {
-          error: 'Recipe added, but failed to update nutritional information.',
+        { 
+          message: 'Recipe added successfully.', 
+          recipe: recipeData,
+          warnings: ingredientErrors.length > 0 ? ingredientErrors : undefined
         },
+        { status: 201 }
+      );
+    } catch (dbError: any) {
+      console.error('Database error:', dbError);
+      return NextResponse.json(
+        { error: `Database error: ${dbError.message}` },
         { status: 500 }
       );
     }
-
-    console.log(`Updating recipe ID ${recipeData.id} with nutritional info:`, totalNutrients);
-
-    return NextResponse.json(
-      { message: 'Recipe added successfully.', recipe: recipeData },
-      { status: 201 }
-    );
   } catch (error: any) {
     console.error('Error adding recipe:', error.message);
-    return NextResponse.json({ error: 'Failed to add recipe.' }, { status: 500 });
+    return NextResponse.json(
+      { error: `Failed to add recipe: ${error.message}` },
+      { status: 500 }
+    );
   }
 }
 
@@ -328,38 +473,104 @@ export async function POST(request: NextRequest) {
  * @returns The ID of the existing or newly created ingredient, or null if failed.
  */
 async function getOrCreateIngredient(name: string): Promise<number | null> {
-  try {
-    // Check if the ingredient exists (case-insensitive)
-    const { data, error } = await supabase
-      .from('ingredients')
-      .select('id')
-      .ilike('name', name)
-      .single();
-
-    if (data) {
-      return data.id;
-    } else if (error && error.code === 'PGRST116') { // Row not found
-      // Create the ingredient
-      const { data: newIngredient, error: insertError } = await supabase
-        .from('ingredients')
-        .insert({ name })
-        .select('id')
-        .single();
-
-      if (insertError) {
-        console.error(`Error creating ingredient "${name}":`, insertError.message);
-        return null;
-      }
-
-      return newIngredient.id;
-    } else {
-      console.error(`Error fetching ingredient "${name}":`, error.message);
-      return null;
-    }
-  } catch (error) {
-    console.error(`Unhandled error in getOrCreateIngredient for "${name}":`, error);
+  // Sanitize the ingredient name
+  const sanitizedName = name.trim().substring(0, 100); // Limit to 100 chars
+  
+  if (sanitizedName === '') {
+    console.error('Empty ingredient name provided');
     return null;
   }
+  
+  // Try up to 3 times to get or create the ingredient
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      console.log(`Attempt ${attempt} to get or create ingredient: "${sanitizedName}"`);
+      
+      // Check if the ingredient exists (case-insensitive)
+      const { data, error } = await supabase
+        .from('ingredients')
+        .select('id')
+        .ilike('name', sanitizedName)
+        .single();
+
+      if (data) {
+        console.log(`Found existing ingredient "${sanitizedName}" with ID ${data.id}`);
+        return data.id;
+      } else if (error && error.code === 'PGRST116') { // Row not found
+        console.log(`Ingredient "${sanitizedName}" not found, creating new one`);
+        
+        // Create the ingredient
+        try {
+          const { data: newIngredient, error: insertError } = await supabase
+            .from('ingredients')
+            .insert({ name: sanitizedName })
+            .select('id')
+            .single();
+
+          if (insertError) {
+            console.error(`Error creating ingredient "${sanitizedName}":`, insertError.message);
+            
+            // If it's a unique constraint violation, try to fetch it again
+            if (insertError.code === '23505') { // Unique violation
+              console.log(`Unique violation for "${sanitizedName}", trying to fetch again`);
+              const { data: existingData, error: fetchError } = await supabase
+                .from('ingredients')
+                .select('id')
+                .ilike('name', sanitizedName)
+                .single();
+                
+              if (!fetchError && existingData) {
+                console.log(`Found ingredient "${sanitizedName}" after unique violation with ID ${existingData.id}`);
+                return existingData.id;
+              }
+            }
+            
+            if (attempt < 3) {
+              console.log(`Retrying after error (attempt ${attempt}/3)`);
+              continue; // Try again
+            }
+            return null;
+          }
+
+          if (!newIngredient || !newIngredient.id) {
+            console.error(`Failed to get ID for newly created ingredient "${sanitizedName}"`);
+            if (attempt < 3) {
+              console.log(`Retrying after missing ID (attempt ${attempt}/3)`);
+              continue; // Try again
+            }
+            return null;
+          }
+
+          console.log(`Created new ingredient "${sanitizedName}" with ID ${newIngredient.id}`);
+          return newIngredient.id;
+        } catch (err: any) {
+          console.error(`Error in supabase operation for "${sanitizedName}":`, err.message);
+          if (attempt < 3) {
+            console.log(`Retrying after exception (attempt ${attempt}/3)`);
+            continue; // Try again
+          }
+          return null;
+        }
+      } else if (error) {
+        console.error(`Error checking for existing ingredient "${sanitizedName}":`, error.message);
+        if (attempt < 3) {
+          console.log(`Retrying after query error (attempt ${attempt}/3)`);
+          continue; // Try again
+        }
+        return null;
+      }
+    } catch (err: any) {
+      console.error(`Unexpected error for ingredient "${sanitizedName}":`, err.message);
+      if (attempt < 3) {
+        console.log(`Retrying after unexpected error (attempt ${attempt}/3)`);
+        continue; // Try again
+      }
+      return null;
+    }
+  }
+  
+  console.error(`All attempts failed for ingredient "${sanitizedName}"`);
+  return null;
 }
 
 /**

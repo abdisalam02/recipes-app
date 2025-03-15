@@ -8,8 +8,8 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   IconArrowDown,
   IconX,
-  IconClipboardList,
-  IconChecklist,
+  IconShoppingCart,
+  IconListCheck,
   IconHelpCircle,
   IconBulb,
   IconStars,
@@ -17,6 +17,7 @@ import {
 } from '@tabler/icons-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RecipeDetail, Step, RecipeIngredient, PerIngredientNutritionalInfo } from '../../../../lib/types';
+import Image from 'next/image';
 
 // Custom hook to track vertical scroll position.
 function useWindowScroll() {
@@ -32,8 +33,19 @@ function useWindowScroll() {
 // StepsModal component (for "Start Recipe" feature)
 const StepsModal: React.FC<{ steps: Step[]; onClose: () => void }> = ({ steps, onClose }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const stepIcons = [IconClipboardList, IconChecklist, IconHelpCircle, IconBulb, IconStars, IconRocket];
-  const StepIcon = stepIcons[currentStep % stepIcons.length];
+  const totalSteps = steps.length;
+  
+  // Define an array of background colors for steps
+  const bgColors = [
+    'from-blue-500 to-purple-600',
+    'from-green-500 to-teal-600',
+    'from-orange-500 to-red-600',
+    'from-pink-500 to-rose-600',
+    'from-indigo-500 to-blue-600'
+  ];
+  
+  // Get current background color based on step index
+  const currentBgColor = bgColors[currentStep % bgColors.length];
 
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
@@ -57,38 +69,90 @@ const StepsModal: React.FC<{ steps: Step[]; onClose: () => void }> = ({ steps, o
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-md"></div>
-        <div className="modal-box max-w-md bg-gradient-to-br from-green-200 to-cyan-200 border-4 border-green-300 shadow-2xl rounded-lg p-6 relative">
-          <button className="btn btn-sm btn-circle absolute top-2 right-2" onClick={onClose} aria-label="Close Steps">
-            <IconX size={16} />
-          </button>
-          <motion.div
-            className="flex flex-col items-center mb-4"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-          >
-            <StepIcon size={48} className="text-primary" />
-          </motion.div>
-          <motion.div
-            key={steps[currentStep].id || currentStep}
-            initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -100 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h3 className="text-xl font-bold mb-2">Step {steps[currentStep].order}</h3>
-            <p className="text-base">{steps[currentStep].description}</p>
-          </motion.div>
-          <div className="flex justify-between mt-4">
-            <button onClick={prevStep} className="btn btn-outline" disabled={currentStep === 0}>
-              Previous
-            </button>
-            <button onClick={nextStep} className="btn btn-primary">
-              {currentStep === steps.length - 1 ? 'Finish' : 'Next'}
-            </button>
+        {/* Blurred backdrop */}
+        <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-md" onClick={onClose}></div>
+        
+        <motion.div 
+          className={`relative max-w-md w-full mx-4 rounded-2xl overflow-hidden shadow-2xl`}
+          initial={{ scale: 0.9, y: 20 }}
+          animate={{ scale: 1, y: 0 }}
+          exit={{ scale: 0.9, y: 20 }}
+          style={{ maxHeight: 'calc(100vh - 40px)' }}
+        >
+          {/* Progress bar */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gray-300 z-10">
+            <motion.div 
+              className="h-full bg-white"
+              initial={{ width: `${(currentStep / totalSteps) * 100}%` }}
+              animate={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
+              transition={{ duration: 0.3 }}
+            />
           </div>
-        </div>
+          
+          {/* Content */}
+          <div className={`bg-gradient-to-br ${currentBgColor} p-4 sm:p-6 pt-6 overflow-y-auto`} 
+               style={{ maxHeight: 'calc(100vh - 40px)' }}>
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              className="absolute top-3 right-3 text-white/80 hover:text-white z-10"
+              aria-label="Close modal"
+            >
+              <IconX size={20} />
+            </button>
+            
+            {/* Step counter */}
+            <div className="text-white/80 text-xs sm:text-sm font-medium mb-3 sm:mb-4">
+              Step {currentStep + 1} of {totalSteps}
+            </div>
+            
+            {/* Step content */}
+            <motion.div
+              key={`step-${steps[currentStep].id || currentStep}`}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="text-white"
+            >
+              <div className="flex items-center justify-center mb-4 sm:mb-6">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/20 flex items-center justify-center text-white text-2xl sm:text-3xl font-bold">
+                  {currentStep + 1}
+                </div>
+              </div>
+              
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-center">
+                {steps[currentStep].description}
+              </h3>
+              
+              <p className="text-white/90 text-sm sm:text-base text-center mb-6 sm:mb-8">
+                Follow this step carefully before moving to the next one.
+              </p>
+            </motion.div>
+            
+            {/* Navigation buttons */}
+            <div className="flex justify-between mt-6 sm:mt-8">
+              <button
+                onClick={prevStep}
+                className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base ${
+                  currentStep === 0 
+                    ? 'bg-white/20 text-white/50 cursor-not-allowed' 
+                    : 'bg-white/30 text-white hover:bg-white/40'
+                }`}
+                disabled={currentStep === 0}
+              >
+                Previous
+              </button>
+              
+              <button
+                onClick={nextStep}
+                className="px-4 sm:px-6 py-2 sm:py-3 rounded-full bg-white text-gray-900 font-medium hover:bg-opacity-90 text-sm sm:text-base"
+              >
+                {currentStep === steps.length - 1 ? 'Finish' : 'Next'}
+              </button>
+            </div>
+          </div>
+        </motion.div>
       </motion.div>
     </AnimatePresence>
   );
@@ -187,7 +251,9 @@ export default function RecipeDetailPage() {
       }
     : null;
 
-  const imageUrl = recipe.image && recipe.image.trim() !== '' ? recipe.image : '/default-image.png';
+  const imageUrl = recipe.image && recipe.image.trim() !== '' 
+    ? recipe.image 
+    : '/default-recipe-image.jpg';
 
   const handleIngredientToggle = (ingredientId: number) => {
     setAvailableIngredients((prev) => ({
@@ -195,180 +261,185 @@ export default function RecipeDetailPage() {
       [ingredientId]: !prev[ingredientId],
     }));
   };
+  
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="card bg-base-100 shadow-md rounded-lg p-8 relative">
-        {/* Image Section */}
-        <img src={imageUrl} alt={recipe.title} className="w-full h-72 object-cover rounded-md mb-6" />
-
-        {/* Start Recipe Button */}
-        {recipe.steps && recipe.steps.length > 0 && (
-          <div className="flex justify-center mb-6">
-            <button onClick={() => setStepsModalOpen(true)} className="btn btn-accent animate-pulse transition-all hover:scale-110">
-              Start Recipe
-            </button>
+      <div className="card bg-base-100 shadow-xl rounded-xl overflow-hidden">
+        {/* Hero Image Section */}
+        <div className="relative h-64 sm:h-80 md:h-96 w-full">
+          <div className="absolute inset-0">
+            <img
+              src={imageUrl}
+              alt={recipe.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/default-image.png';
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
           </div>
-        )}
-
-        {/* Header Section */}
-        <div className="flex flex-wrap justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold">{recipe.title}</h2>
-          <span className="badge badge-secondary">
-            {recipe.category ? recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1) : 'Uncategorized'}
-          </span>
+          
+          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2 drop-shadow-lg">{recipe.title}</h2>
+            <div className="flex items-center gap-2">
+              <span className="badge badge-lg bg-primary text-white border-none">
+                {recipe.category ? recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1) : 'Uncategorized'}
+              </span>
+              <span className="text-sm opacity-90">
+                {recipe.portion.toString()} {parseInt(recipe.portion.toString()) === 1 ? 'serving' : 'servings'}
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Portion Control */}
-        <div className="flex flex-wrap items-center gap-4 mb-6">
-          <span className="text-sm">Portions: {currentPortions}</span>
-          <input
-            type="range"
-            min="1"
-            max="20"
-            step="1"
-            value={currentPortions}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentPortions(Number(e.target.value))}
-            className="range range-primary w-full max-w-xs"
-            aria-label="Portion Slider"
-          />
-          <input
-            type="number"
-            value={currentPortions}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentPortions(Number(e.target.value))}
-            min="1"
-            max="20"
-            step="1"
-            className="input input-bordered w-16"
-            aria-label="Portions Number Input"
-          />
-        </div>
+        <div className="p-4 sm:p-6 md:p-8">
+          {/* Start Recipe Button */}
+          {recipe.steps && recipe.steps.length > 0 && (
+            <div className="flex justify-center -mt-8 sm:-mt-10 md:-mt-16 mb-6 relative z-10">
+              <button
+                onClick={() => setStepsModalOpen(true)}
+                className="btn btn-primary rounded-full shadow-lg px-6 py-2 sm:px-8 sm:py-3 hover:scale-105 transition-transform text-sm sm:text-base"
+              >
+                Start Cooking
+              </button>
+            </div>
+          )}
 
-        {/* Full Nutritional Info (Per Recipe) */}
-        {scaledNutritionalInfo && (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="p-4 border rounded-lg shadow-sm ">
-                <p className="text-sm font-semibold">Calories</p>
-                <p className="text-lg">{scaledNutritionalInfo.calories} kcal</p>
+          {/* Description Section */}
+          <p className="text-base sm:text-lg mb-6 sm:mb-8">{recipe.description}</p>
+
+          {/* Simplified Nutritional Info - Only Calories and Protein */}
+          {scaledNutritionalInfo && (
+            <div className="grid grid-cols-2 gap-4 mb-6 sm:mb-8 p-4 bg-base-200 rounded-xl">
+              <div className="text-center">
+                <div className="stat-value text-primary text-xl sm:text-2xl">{scaledNutritionalInfo.calories}</div>
+                <div className="stat-title text-xs sm:text-sm">Calories</div>
               </div>
-              <div className="p-4 border rounded-lg shadow-sm">
-                <p className="text-sm font-semibold">Protein</p>
-                <p className="text-lg">{scaledNutritionalInfo.protein} g</p>
+              <div className="text-center">
+                <div className="stat-value text-primary text-xl sm:text-2xl">{scaledNutritionalInfo.protein}g</div>
+                <div className="stat-title text-xs sm:text-sm">Protein</div>
               </div>
             </div>
-            <button
-              onClick={() => fullNutritionalInfoRef.current?.scrollIntoView({ behavior: 'smooth' })}
-              className="btn btn-outline btn-primary btn-lg mb-6"
-              aria-label="See Per-Ingredient Nutritional Info"
-            >
-              <IconArrowDown size={16} className="mr-2" />
-              See Per-Ingredient Nutritional Info
-            </button>
-          </>
-        )}
+          )}
 
-        {/* Description */}
-        <p className="text-lg mb-6">{recipe.description}</p>
+          {/* Portion Control Section */}
+          <div className="flex flex-wrap items-center gap-3 mb-6 sm:mb-8 p-4 bg-base-200 rounded-xl">
+            <span className="font-semibold text-sm sm:text-base">Adjust Portions:</span>
+            <div className="flex items-center">
+              <button
+                onClick={() => setCurrentPortions(Math.max(1, currentPortions - 1))}
+                className="btn btn-circle btn-sm"
+                disabled={currentPortions <= 1}
+              >
+                -
+              </button>
+              <span className="mx-3 sm:mx-4 font-bold">{currentPortions}</span>
+              <button
+                onClick={() => setCurrentPortions(currentPortions + 1)}
+                className="btn btn-circle btn-sm"
+              >
+                +
+              </button>
+            </div>
+          </div>
 
-     
-
-
-        <ul className="list-disc list-inside mb-6 text-xl space-y-4">
-  {((recipe as any).ingredients || []).map((ing: any, idx: number) => {
-    const id = ing.ingredient_id ?? idx;
-    return (
-      <li key={id} className="flex items-center space-x-4">
-        <input
-          type="checkbox"
-          checked={availableIngredients[id] || false}
-          onChange={() => handleIngredientToggle(id)}
-          className="checkbox checkbox-lg"
-        />
-        <span className="text-xl">
-          {(ing.quantity * scalingFactor).toFixed(2)} {ing.unit} {ing.name}
-        </span>
-      </li>
-    );
-  })}
-</ul>
-
-
-
-        {/* Steps */}
-        <h3 className="text-2xl font-semibold mb-4">Steps</h3>
-        <div className="space-y-4 mb-6">
-          {recipe.steps.map((step: Step, idx: number) => (
-            <div key={step.id ?? idx} className="collapse collapse-arrow border border-base-300 bg-base-100 rounded-box">
-              <input type="checkbox" />
-              <div className="collapse-title text-xl font-medium">
-                Step {step.order}: {step.description}
-              </div>
-              <div className="collapse-content">
-                <div className="flex items-center gap-4">
-                  <p className="text-sm">{step.description}</p>
-                  <button
-                    onClick={() => {
-                      setSelectedStep(step);
-                      setViewStepModalOpen(true);
-                    }}
-                    className="btn btn-sm btn-ghost"
-                    aria-label={`View more details for Step ${step.order}`}
-                  >
-                    View More
-                  </button>
+          {/* Ingredients Section */}
+          <div className="mb-6 sm:mb-8">
+            <h3 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4 flex items-center">
+              <IconShoppingCart className="mr-2" size={20} />
+              Ingredients
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
+              {recipe.recipe_ingredients && recipe.recipe_ingredients.length > 0 ? (
+                recipe.recipe_ingredients.map((ingredient) => {
+                  const scaledQuantity = (ingredient.quantity * scalingFactor).toFixed(2);
+                  return (
+                    <div key={ingredient.ingredient_id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-base-200 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={availableIngredients[ingredient.ingredient_id] || false}
+                        onChange={() => handleIngredientToggle(ingredient.ingredient_id)}
+                        className="checkbox checkbox-primary checkbox-sm"
+                      />
+                      <span className={availableIngredients[ingredient.ingredient_id] ? "line-through opacity-60 text-sm sm:text-base" : "text-sm sm:text-base"}>
+                        <span className="font-medium">{scaledQuantity} {ingredient.unit}</span> {ingredient.ingredient?.name || ingredient.name}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="col-span-2 text-center p-4 bg-base-200 rounded-lg">
+                  <p className="text-gray-500">No ingredients available for this recipe.</p>
                 </div>
-              </div>
+              )}
             </div>
-          ))}
-        </div>
+          </div>
 
-        {/* Per-Ingredient Nutritional Info Table */}
-        {recipe.per_ingredient_nutritional_info && recipe.per_ingredient_nutritional_info.length > 0 && (
-          <>
-            <div ref={fullNutritionalInfoRef}></div>
-            <h3 className="text-2xl font-semibold mt-8 mb-4">Per-Ingredient Nutritional Information</h3>
-            <div className="overflow-auto" style={{ maxHeight: '400px' }}>
-              <table className="table table-zebra w-full">
-                <thead>
-                  <tr>
-                    <th>Ingredient</th>
-                    <th>Calories</th>
-                    <th>Protein (g)</th>
-                    <th>Fat (g)</th>
-                    <th>Carbs (g)</th>
-                    <th>Fiber (g)</th>
-                    <th>Sugar (g)</th>
-                    <th>Sodium (mg)</th>
-                    <th>Cholesterol (mg)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recipe.per_ingredient_nutritional_info.map((info: PerIngredientNutritionalInfo, idx: number) => {
-                    // Match ingredient using recipe.ingredients directly
-                    const matchedIngredient = (recipe.ingredients || []).find(
-                      (ing: RecipeIngredient) => ing.ingredient_id === info.ingredient_id
-                    );
-                    return (
-                      <tr key={info.ingredient_id ?? idx}>
-                        <td>{matchedIngredient ? matchedIngredient.name : info.ingredient_id}</td>
-                        <td>{((info.calories ?? 0) * scalingFactor).toFixed(2)}</td>
-                        <td>{((info.protein ?? 0) * scalingFactor).toFixed(2)}</td>
-                        <td>{((info.fat ?? 0) * scalingFactor).toFixed(2)}</td>
-                        <td>{((info.carbohydrates ?? 0) * scalingFactor).toFixed(2)}</td>
-                        <td>{((info.fiber ?? 0) * scalingFactor).toFixed(2)}</td>
-                        <td>{((info.sugar ?? 0) * scalingFactor).toFixed(2)}</td>
-                        <td>{((info.sodium ?? 0) * scalingFactor).toFixed(2)}</td>
-                        <td>{((info.cholesterol ?? 0) * scalingFactor).toFixed(2)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          {/* Steps Section */}
+          <div className="mb-6 sm:mb-8">
+            <h3 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4 flex items-center">
+              <IconListCheck className="mr-2" size={20} />
+              Steps
+            </h3>
+            <div className="space-y-4 sm:space-y-6">
+              {recipe.steps && recipe.steps.map((step) => (
+                <div key={step.id} className="p-3 sm:p-4 bg-base-200 rounded-xl">
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <div className="bg-primary text-white rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center flex-shrink-0 text-sm sm:text-base">
+                      {step.order}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm sm:text-lg">{step.description}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </>
-        )}
+          </div>
+          
+          {/* Full Nutritional Info Section */}
+          {recipe.per_ingredient_nutritional_info && recipe.per_ingredient_nutritional_info.length > 0 && (
+            <>
+              <div ref={fullNutritionalInfoRef}></div>
+              <h3 className="text-xl sm:text-2xl font-semibold mt-8 mb-4">
+                Per-Ingredient Nutritional Information
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="table table-zebra w-full">
+                  <thead>
+                    <tr>
+                      <th>Ingredient</th>
+                      <th>Calories</th>
+                      <th>Protein</th>
+                      <th>Fat</th>
+                      <th>Carbs</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recipe.per_ingredient_nutritional_info.map((info) => {
+                      const ingredient = recipe.recipe_ingredients?.find(
+                        (ri) => ri.ingredient_id === info.ingredient_id
+                      )?.ingredient;
+                      return (
+                        <tr key={info.id}>
+                          <td>{ingredient ? ingredient.name : 'Unknown'}</td>
+                          <td>{info.calories || 0}</td>
+                          <td>{info.protein || 0}g</td>
+                          <td>{info.fat || 0}g</td>
+                          <td>{info.carbohydrates || 0}g</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
+      {/* Scroll-to-Top Button */}
       {scroll.y > 100 && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -379,28 +450,15 @@ export default function RecipeDetailPage() {
         </button>
       )}
 
+      {/* Steps Modal for "Start Recipe" Feature */}
       {stepsModalOpen && recipe.steps && (
         <StepsModal steps={recipe.steps} onClose={() => setStepsModalOpen(false)} />
-      )}
-
-      {viewStepModalOpen && selectedStep && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-md">
-            <h3 className="font-bold text-xl mb-4">Step {selectedStep.order}</h3>
-            <p className="py-4">{selectedStep.description}</p>
-            <div className="modal-action">
-              <button className="btn" onClick={closeViewStepModal}>
-                Close
-              </button>
-            </div>
-          </div>
-          <div className="modal-backdrop bg-black opacity-50"></div>
-        </div>
       )}
     </div>
   );
 }
 
 function closeViewStepModal() {
-  // Closes the view step modal
+  setSelectedStep(null);
+  setViewStepModalOpen(false);
 }

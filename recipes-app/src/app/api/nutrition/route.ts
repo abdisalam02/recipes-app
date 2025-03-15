@@ -2,8 +2,8 @@
 
 // app/api/nutrition/route.ts
 import { NextResponse } from "next/server";
-import fetch from "node-fetch";
 import { NutritionalInfo } from "../../../../lib/types";
+import { getComprehensiveNutritionalInfo } from "../../../../lib/nutrition";
 
 // Helper to convert "whole" units to grams
 function convertWholeUnit(name: string, quantity: number, unit: string): { quantity: number; unit: string } {
@@ -23,14 +23,6 @@ function convertWholeUnit(name: string, quantity: number, unit: string): { quant
 }
 
 export async function POST(request: Request) {
-  const apiKey = process.env.SPOONACULAR_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { message: "Spoonacular API key is missing." },
-      { status: 500 }
-    );
-  }
-
   try {
     const { ingredients, portion } = await request.json();
     
@@ -41,33 +33,29 @@ export async function POST(request: Request) {
       );
     }
 
-    // Process each ingredient
+    console.log(`Processing nutritional information for ${ingredients.length} ingredients`);
+
+    // Process each ingredient with improved multi-API nutrition system
     const nutritionPromises = ingredients.map(async (ing: { name: string; quantity: number; unit: string; }) => {
       // Convert whole units to grams if needed
       const { quantity, unit } = convertWholeUnit(ing.name, ing.quantity, ing.unit);
-      const ingredientString = `${quantity} ${unit} ${ing.name}`;
-      const url = `https://api.spoonacular.com/recipes/parseIngredients`;
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "x-api-key": apiKey,
-        },
-        body: new URLSearchParams({
-          ingredientList: ingredientString,
-          servings: "1",
-          includeNutrition: "true",
-          language: "en"
-        }).toString()
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch nutrition for ${ing.name}`);
+      
+      // Use the comprehensive nutrition system that tries multiple APIs and fallbacks
+      try {
+        console.log(`Fetching nutrition for: ${quantity} ${unit} ${ing.name}`);
+        const result = await getComprehensiveNutritionalInfo(ing.name, quantity, unit);
+        
+        if (result && result.nutritionalInfo) {
+          console.log(`Successfully retrieved nutrition for ${ing.name} from ${result.source}`);
+          return result.nutritionalInfo;
+        } else {
+          console.log(`No nutrition data found for ${ing.name}`);
+          return null;
+        }
+      } catch (error) {
+        console.error(`Error fetching nutrition for ${ing.name}:`, error);
+        return null;
       }
-
-      const data = await response.json();
-      return data[0]?.nutrition?.nutrients || null;
     });
 
     const nutritionResults = await Promise.all(nutritionPromises);
@@ -84,38 +72,26 @@ export async function POST(request: Request) {
       cholesterol: 0,
     };
 
-    nutritionResults.forEach(nutrients => {
-      if (!nutrients) return;
-      nutrients.forEach((nutrient: any) => {
-        const nutrientName = nutrient.name.toLowerCase();
-        switch (nutrientName) {
-          case 'calories':
-            totalNutrition.calories += nutrient.amount;
-            break;
-          case 'protein':
-            totalNutrition.protein += nutrient.amount;
-            break;
-          case 'fat':
-            totalNutrition.fat += nutrient.amount;
-            break;
-          case 'carbohydrates':
-            totalNutrition.carbohydrates += nutrient.amount;
-            break;
-          case 'fiber':
-            totalNutrition.fiber += nutrient.amount;
-            break;
-          case 'sugar':
-            totalNutrition.sugar += nutrient.amount;
-            break;
-          case 'sodium':
-            totalNutrition.sodium += nutrient.amount;
-            break;
-          case 'cholesterol':
-            totalNutrition.cholesterol += nutrient.amount;
-            break;
-        }
-      });
+    // Count number of ingredients with nutrition data
+    let ingredientsWithData = 0;
+
+    nutritionResults.forEach(nutritionalInfo => {
+      if (!nutritionalInfo) return;
+      
+      ingredientsWithData++;
+      
+      // Add to total
+      totalNutrition.calories += nutritionalInfo.calories;
+      totalNutrition.protein += nutritionalInfo.protein;
+      totalNutrition.fat += nutritionalInfo.fat;
+      totalNutrition.carbohydrates += nutritionalInfo.carbohydrates;
+      totalNutrition.fiber += nutritionalInfo.fiber;
+      totalNutrition.sugar += nutritionalInfo.sugar;
+      totalNutrition.sodium += nutritionalInfo.sodium;
+      totalNutrition.cholesterol += nutritionalInfo.cholesterol;
     });
+
+    console.log(`Found nutrition data for ${ingredientsWithData} out of ${ingredients.length} ingredients`);
 
     // Calculate per portion nutritional info
     const perPortion: NutritionalInfo = {

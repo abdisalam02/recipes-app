@@ -151,8 +151,8 @@ export default function FindRecipesPage() {
   }, [selectedTab]);
 
   // Derived state for filtering
-  const categories = Array.from(new Set(recipes.map((recipe) => recipe.category)));
-  const regions = Array.from(new Set(recipes.map((recipe) => recipe.region)));
+  const categories = Array.from(new Set(recipes.map((recipe) => recipe.category).filter(Boolean)));
+  const regions = Array.from(new Set(recipes.map((recipe) => recipe.region).filter(Boolean)));
   const uniqueIngredientNames = Array.from(new Set(allIngredients.map((ing) => ing.name)));
   console.log('Unique Ingredient Names:', uniqueIngredientNames);
 
@@ -385,7 +385,7 @@ export default function FindRecipesPage() {
                     : 'Other';
                     
                   return (
-                    <option key={category} value={category}>
+                    <option key={category || 'unknown-category'} value={category || ''}>
                       {displayCategory}
                     </option>
                   );
@@ -411,7 +411,7 @@ export default function FindRecipesPage() {
                     : 'Other';
                     
                   return (
-                    <option key={region} value={region}>
+                    <option key={region || 'unknown-region'} value={region || ''}>
                       {displayRegion}
                     </option>
                   );
@@ -543,8 +543,8 @@ export default function FindRecipesPage() {
                     
                   return (
                     <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
+                      key={category || 'unknown-category'}
+                      onClick={() => setSelectedCategory(category || '')}
                       className={`px-3 py-1.5 rounded-full text-sm transition-all ${
                         selectedCategory === category 
                           ? 'bg-primary text-white shadow-md' 
@@ -582,8 +582,8 @@ export default function FindRecipesPage() {
                     
                   return (
                     <button
-                      key={region}
-                      onClick={() => setSelectedRegion(region)}
+                      key={region || 'unknown-region'}
+                      onClick={() => setSelectedRegion(region || '')}
                       className={`px-3 py-1.5 rounded-full text-sm transition-all ${
                         selectedRegion === region 
                           ? 'bg-primary text-white shadow-md' 

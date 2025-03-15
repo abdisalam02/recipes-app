@@ -69,6 +69,11 @@ export interface NutritionalInfo {
   sugar: number;
   sodium: number;
   cholesterol: number;
+  source?: string;
+  ingredients?: Array<{
+    name: string;
+    calories: number;
+  }>;
 }
 
 export interface RecipeDetail {

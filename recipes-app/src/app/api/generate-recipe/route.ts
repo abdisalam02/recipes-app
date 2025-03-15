@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import supabase from '../../../../lib/supabaseClient';
 import { fetchGoogleImages } from '../../../../lib/googleSearch';
-import { getNutritionalInfo } from '../../../../lib/nutrition';
+import { getNutritionalInfo } from '../../../../lib/existingNutrition';
 
 export async function POST(request: Request) {
   try {
@@ -146,19 +146,76 @@ For example:
       cholesterol: 0,
     };
 
+    console.log(`Calculating nutrition for ${recipe.ingredients.length} ingredients in "${recipe.title}"`);
+
+    // Process each ingredient sequentially to avoid race conditions
     for (const ing of recipe.ingredients) {
-      const nutri = await getNutritionalInfo(ing.name, ing.quantity, ing.unit);
-      if (nutri) {
-        totalNutrition.calories += nutri.calories;
-        totalNutrition.protein += nutri.protein;
-        totalNutrition.fat += nutri.fat;
-        totalNutrition.carbohydrates += nutri.carbohydrates;
-        totalNutrition.fiber += nutri.fiber;
-        totalNutrition.sugar += nutri.sugar;
-        totalNutrition.sodium += nutri.sodium;
-        totalNutrition.cholesterol += nutri.cholesterol;
+      try {
+        console.log(`Processing nutrition for: ${ing.quantity} ${ing.unit} ${ing.name}`);
+        
+        const nutri = await getNutritionalInfo(ing.name, ing.quantity, ing.unit);
+        
+        if (nutri) {
+          // Apply sanity checks - cap unrealistically high values
+          const maxCaloriesPerIngredient = 1000;
+          let scaledNutri = { ...nutri };
+          
+          if (scaledNutri.calories > maxCaloriesPerIngredient) {
+            console.log(`WARNING: Capping high calorie value for ${ing.name}: ${scaledNutri.calories} -> ${maxCaloriesPerIngredient}`);
+            
+            // Scale everything proportionally
+            const scaleFactor = maxCaloriesPerIngredient / scaledNutri.calories;
+            scaledNutri = {
+              calories: maxCaloriesPerIngredient,
+              protein: nutri.protein * scaleFactor,
+              fat: nutri.fat * scaleFactor,
+              carbohydrates: nutri.carbohydrates * scaleFactor,
+              fiber: nutri.fiber * scaleFactor,
+              sugar: nutri.sugar * scaleFactor,
+              sodium: nutri.sodium * scaleFactor,
+              cholesterol: nutri.cholesterol * scaleFactor
+            };
+          }
+          
+          // Add to total
+          totalNutrition.calories += scaledNutri.calories;
+          totalNutrition.protein += scaledNutri.protein;
+          totalNutrition.fat += scaledNutri.fat;
+          totalNutrition.carbohydrates += scaledNutri.carbohydrates;
+          totalNutrition.fiber += scaledNutri.fiber;
+          totalNutrition.sugar += scaledNutri.sugar;
+          totalNutrition.sodium += scaledNutri.sodium;
+          totalNutrition.cholesterol += scaledNutri.cholesterol;
+          
+          console.log(`Added nutrition values for ${ing.name}: ${scaledNutri.calories.toFixed(2)} calories`);
+        } else {
+          console.log(`No nutrition data available for ${ing.name}`);
+        }
+      } catch (error) {
+        console.error(`Error getting nutrition for ${ing.name}:`, error);
       }
     }
+
+    // Final sanity check on total values
+    const maxTotalCalories = 5000;
+    if (totalNutrition.calories > maxTotalCalories) {
+      console.log(`WARNING: Capping total recipe calories from ${totalNutrition.calories} to ${maxTotalCalories}`);
+      const scaleFactor = maxTotalCalories / totalNutrition.calories;
+      
+      // Scale all values proportionally
+      totalNutrition = {
+        calories: maxTotalCalories,
+        protein: totalNutrition.protein * scaleFactor,
+        fat: totalNutrition.fat * scaleFactor,
+        carbohydrates: totalNutrition.carbohydrates * scaleFactor,
+        fiber: totalNutrition.fiber * scaleFactor,
+        sugar: totalNutrition.sugar * scaleFactor,
+        sodium: totalNutrition.sodium * scaleFactor,
+        cholesterol: totalNutrition.cholesterol * scaleFactor
+      };
+    }
+
+    console.log(`Final nutrition calculation for "${recipe.title}": ${totalNutrition.calories.toFixed(2)} calories`);
     recipe.nutritional_info = totalNutrition;
 
     // Insert the generated recipe into ai_recipes table.

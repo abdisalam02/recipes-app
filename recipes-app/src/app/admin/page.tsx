@@ -54,25 +54,28 @@ export default function AdminDashboardPage() {
     }, [onClose]);
 
     return (
-      <div className="fixed bottom-4 right-4 z-50">
-        <div className={`${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-4 py-3 rounded-lg shadow-lg flex items-center`}>
-          <div className="flex items-center">
-            {type === 'success' ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+      <div className="fixed inset-0 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
+        <div className={`${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-4 rounded-lg shadow-xl max-w-md w-full mx-4`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              {type === 'success' ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              )}
+              <span className="text-lg font-medium">{message}</span>
+            </div>
+            <button onClick={onClose} className="text-white hover:text-gray-200">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            )}
-            <span>{message}</span>
+            </button>
           </div>
-          <button onClick={onClose} className="ml-4 text-white hover:text-gray-200">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
         </div>
       </div>
     );
@@ -561,19 +564,15 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Edit Recipe Drawer */}
+      {/* Edit Recipe Modal */}
       {currentRecipe && (
-        <div className="drawer drawer-end">
-          <input id="edit-drawer" type="checkbox" className="drawer-toggle" checked readOnly />
-          <div className="drawer-content"></div>
-          <div className="drawer-side">
-            <label
-              htmlFor="edit-drawer"
-              className="drawer-overlay"
-              onClick={() => setCurrentRecipe(null)}
-            ></label>
-            <div className="menu p-4 w-80 bg-base-200 text-base-content">
-              <div className="flex flex-col gap-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setCurrentRecipe(null)}></div>
+          <div className="bg-base-100 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <h3 className="text-xl font-bold mb-4">Edit Recipe</h3>
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="label">Title</label>
                 <input
                   type="text"
                   placeholder="Title"
@@ -581,9 +580,13 @@ export default function AdminDashboardPage() {
                   onChange={(e) =>
                     setCurrentRecipe({ ...currentRecipe, title: e.target.value })
                   }
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
                   required
                 />
+              </div>
+              
+              <div>
+                <label className="label">Category</label>
                 <input
                   type="text"
                   placeholder="Category"
@@ -591,18 +594,27 @@ export default function AdminDashboardPage() {
                   onChange={(e) =>
                     setCurrentRecipe({ ...currentRecipe, category: e.target.value })
                   }
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
                   required
                 />
+              </div>
+              
+              <div>
+                <label className="label">Description</label>
                 <textarea
                   placeholder="Description"
                   value={currentRecipe.description}
                   onChange={(e) =>
                     setCurrentRecipe({ ...currentRecipe, description: e.target.value })
                   }
-                  className="textarea textarea-bordered"
+                  className="textarea textarea-bordered w-full"
+                  rows={4}
                   required
                 ></textarea>
+              </div>
+              
+              <div>
+                <label className="label">Portions</label>
                 <input
                   type="number"
                   placeholder="Portions"
@@ -610,9 +622,14 @@ export default function AdminDashboardPage() {
                   onChange={(e) =>
                     setCurrentRecipe({ ...currentRecipe, portion: Number(e.target.value) })
                   }
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
+                  min="1"
                   required
                 />
+              </div>
+              
+              <div>
+                <label className="label">Image URL</label>
                 <input
                   type="text"
                   placeholder="Image URL"
@@ -620,10 +637,22 @@ export default function AdminDashboardPage() {
                   onChange={(e) =>
                     setCurrentRecipe({ ...currentRecipe, image: e.target.value })
                   }
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
                   required
                 />
-                <button onClick={handleEditSubmit} className="btn btn-success">
+              </div>
+              
+              <div className="flex justify-end gap-2 mt-4">
+                <button 
+                  onClick={() => setCurrentRecipe(null)} 
+                  className="btn btn-outline"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleEditSubmit} 
+                  className="btn btn-primary"
+                >
                   Save Changes
                 </button>
               </div>
