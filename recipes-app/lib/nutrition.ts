@@ -268,7 +268,7 @@ export async function fetchNutritionFromSpoonacular(
       console.log('[NUTRITION-DEBUG] No nutrition data returned from Spoonacular');
       return null;
     }
-    
+
     // Convert to our nutrition info format
     const result: NutritionalInfo = {
       calories: 0,
