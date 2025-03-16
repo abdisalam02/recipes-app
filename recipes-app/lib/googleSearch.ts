@@ -28,6 +28,16 @@ export async function fetchGoogleImages(query: string, num: number = 1): Promise
   const API_KEY = process.env.GOOGLE_API_KEY;
   const CX = process.env.GOOGLE_CSE_ID;
 
+  // Add more detailed debugging
+  console.log("Environment variables check:");
+  console.log("- GOOGLE_API_KEY exists:", !!API_KEY);
+  console.log("- GOOGLE_CSE_ID exists:", !!CX);
+  
+  // List all available environment variables (keys only for security)
+  console.log("Available environment variables:", Object.keys(process.env).filter(key => 
+    key.includes('GOOGLE') || key.includes('API') || key.includes('CSE')
+  ));
+
   if (!API_KEY || !CX) {
     console.error("Google CSE API key or CSE ID not set in env variables.");
     return [];

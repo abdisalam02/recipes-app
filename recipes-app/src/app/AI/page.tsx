@@ -530,9 +530,38 @@ Format the answer as JSON with the following structure:
         const images = await fetchGoogleImages(tempEntry.description, 1);
         if (images && images.length > 0) {
           foodImage = images[0];
+        } else {
+          // Fallback if Google search returns no results
+          console.log("Google image search failed, using fallback method");
+          // Try to fetch a default image based on food category
+          const fallbackImages: {[key: string]: string} = {
+            "pizza": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38",
+            "cake": "https://images.unsplash.com/photo-1578985545062-69928b1d9587",
+            "burger": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd",
+            "chicken": "https://images.unsplash.com/photo-1587593810167-a84920ea0781",
+            "salad": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd",
+            "pasta": "https://images.unsplash.com/photo-1556761223-4c4282c73f77",
+            "default": "https://images.unsplash.com/photo-1495195134817-aeb325a55b65"
+          };
+          
+          // Find a matching category in the food description
+          const description = tempEntry.description.toLowerCase();
+          for (const [category, url] of Object.entries(fallbackImages)) {
+            if (description.includes(category)) {
+              foodImage = url;
+              break;
+            }
+          }
+          
+          // Use default food image if no category matches
+          if (!foodImage) {
+            foodImage = fallbackImages.default;
+          }
         }
       } catch (error) {
         console.error('Error fetching food image:', error);
+        // Provide a generic food image as ultimate fallback
+        foodImage = "https://images.unsplash.com/photo-1495195134817-aeb325a55b65";
       }
     })();
     

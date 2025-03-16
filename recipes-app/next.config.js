@@ -56,6 +56,13 @@ const nextConfig = {
       },
     ],
   },
+  env: {
+    GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
+    GOOGLE_CSE_ID: process.env.GOOGLE_CSE_ID,
+    NUTRITIONIX_APP_ID: process.env.NUTRITIONIX_APP_ID,
+    NUTRITIONIX_API_KEY: process.env.NUTRITIONIX_API_KEY,
+    RAPID_API_KEY: process.env.RAPID_API_KEY,
+  },
 };
 
 // Export the combined config
