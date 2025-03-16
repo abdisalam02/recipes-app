@@ -743,6 +743,7 @@ export async function getNutritionForFood(
 // Set a timeout for API requests
 const TIMEOUT_MS = 8000; // 8 seconds timeout
 
+// Helper function to create a promise that rejects after a timeout
 function timeoutPromise(ms: number) {
   return new Promise((_, reject) => {
     setTimeout(() => {
@@ -751,64 +752,256 @@ function timeoutPromise(ms: number) {
   });
 }
 
+// POST handler with improved AI preprocessing and error handling
 export async function POST(request: Request) {
   try {
-    const { foodDescription } = await request.json();
+    console.log("[ANALYZE-FOOD] POST request received");
     
-    if (!foodDescription) {
+    // Check API keys availability
+    const hasRapidApiKey = !!process.env.RAPID_API_KEY;
+    const hasSpoonacularKey = !!process.env.SPOONACULAR_API_KEY;
+    
+    console.log(`[ANALYZE-FOOD] API Keys status - RapidAPI: ${hasRapidApiKey ? 'Available' : 'Missing'}, Spoonacular: ${hasSpoonacularKey ? 'Available' : 'Missing'}`);
+    
+    if (!hasRapidApiKey && !hasSpoonacularKey) {
+      console.warn("[ANALYZE-FOOD] WARNING: No API keys are configured. Using only local database for nutrition data.");
+    }
+    
+    let body;
+    try {
+      body = await request.json();
+      console.log("[ANALYZE-FOOD] Request body:", JSON.stringify(body));
+    } catch (parseError) {
+      console.error("[ANALYZE-FOOD] Failed to parse request body:", parseError);
       return NextResponse.json(
-        { error: "Food description is required" },
+        { error: 'Invalid request format. Please provide a valid JSON body.' },
         { status: 400 }
       );
     }
-
-    console.log(`Analyzing food: "${foodDescription}"`);
     
-    // Use Promise.race to implement timeout
-    const nutritionData = await Promise.race([
-      getNutritionForFood(foodDescription),
-      timeoutPromise(TIMEOUT_MS)
-    ]);
-
-    return NextResponse.json(nutritionData);
-  } catch (error: any) {
-    console.error("Error analyzing food:", error.message || error);
+    const { foodDescription } = body;
     
-    // Check if it's a timeout error
-    if (error.message && error.message.includes("timed out")) {
-      // Attempt to get approximate values instead
+    if (!foodDescription || typeof foodDescription !== 'string') {
+      console.log("[ANALYZE-FOOD] Invalid food description:", foodDescription);
+      return NextResponse.json(
+        { error: 'Invalid food description. Please provide a text description of the food.' },
+        { status: 400 }
+      );
+    }
+    
+    console.log(`[ANALYZE-FOOD] Processing food: "${foodDescription}"`);
+    
+    let processedFoodData = null;
+    
+    // Step 1: Use AI to preprocess the food description
+    try {
+      processedFoodData = await aiPreprocessFood(foodDescription);
+      console.log('[ANALYZE-FOOD] AI Preprocessing result:', JSON.stringify(processedFoodData));
+    } catch (preprocessError) {
+      console.error("[ANALYZE-FOOD] Error during AI preprocessing:", preprocessError);
+      // Continue with null processedFoodData - will use basic processing below
+    }
+    
+    // If AI preprocessing failed or returned null, use basic processing
+    if (!processedFoodData) {
+      console.log('[ANALYZE-FOOD] AI preprocessing failed, using basic processing');
       try {
-        const preprocessedFood = aiPreprocessFood(foodDescription);
-        const fallbackData = approximateNutritionForFood(preprocessedFood);
+        console.log(`[ANALYZE-FOOD] Calling getNutritionForFood with "${foodDescription}"`);
+        const basicResult = await getNutritionForFood(foodDescription);
+        console.log(`[ANALYZE-FOOD] Basic result received - source: ${basicResult.source}`);
         
+        const response = {
+          description: foodDescription,
+          quantity: 1,
+          unit: 'serving',
+          nutritionalInfo: basicResult.nutritionalInfo,
+          source: basicResult.source,
+          isComposite: false,
+          components: null
+        };
+        
+        console.log(`[ANALYZE-FOOD] Returning response for "${foodDescription}"`, response);
+        return NextResponse.json(response);
+      } catch (basicError) {
+        console.error("[ANALYZE-FOOD] Error in basic nutrition processing:", basicError);
+        // Fall back to approximate values
+        const fallbackNutrition = {
+          calories: 100,
+          protein: 2, 
+          fat: 2,
+          carbohydrates: 15,
+          fiber: 1,
+          sugar: 5,
+          sodium: 50,
+          cholesterol: 0
+        };
+        
+        console.log(`[ANALYZE-FOOD] Using fallback values for "${foodDescription}"`);
         return NextResponse.json({
-          nutritionalInfo: fallbackData,
-          source: "Timeout Fallback (Approximated)",
-          food: foodDescription,
-          message: "API request timed out. Using approximated values."
-        });
-      } catch (fallbackError) {
-        // If even the fallback fails, return a generic response
-        return NextResponse.json({
-          nutritionalInfo: {
-            calories: 250,
-            protein: 5,
-            fat: 10,
-            carbohydrates: 30,
-            fiber: 2,
-            sugar: 15,
-            sodium: 200,
-            cholesterol: 25
-          },
-          source: "Generic Fallback",
-          food: foodDescription,
-          message: "API request timed out and fallback approximation failed."
+          description: foodDescription,
+          quantity: 1,
+          unit: 'serving',
+          nutritionalInfo: fallbackNutrition,
+          source: "Fallback (error recovery)",
+          isComposite: false,
+          components: null
         });
       }
     }
     
+    // Step 2: Handle composite foods with components
+    try {
+      if (processedFoodData.components && processedFoodData.components.length > 0) {
+        console.log(`[ANALYZE-FOOD] Handling composite food with ${processedFoodData.components.length} components`);
+        
+        // Get nutritional info for each component
+        const componentsWithNutrition = await Promise.all(
+          processedFoodData.components.map(async (component) => {
+            console.log(`[ANALYZE-FOOD] Processing component: ${component.name} (${component.quantity} ${component.unit})`);
+            try {
+              const result = await getNutritionForFood(
+                component.name,
+                component.quantity,
+                component.unit
+              );
+              
+              console.log(`[ANALYZE-FOOD] Component "${component.name}" processed, source: ${result.source}`);
+              
+              return {
+                ...component,
+                nutritionalInfo: result.nutritionalInfo,
+                source: result.source
+              };
+            } catch (componentError) {
+              console.error(`[ANALYZE-FOOD] Error processing component "${component.name}":`, componentError);
+              // Return default values for failed components
+              return {
+                ...component,
+                nutritionalInfo: commonFoods.default,
+                source: "Error Recovery"
+              };
+            }
+          })
+        );
+        
+        // Combine nutritional values from all components
+        const combinedNutrition: NutritionalInfo = {
+          calories: 0,
+          protein: 0,
+          fat: 0,
+          carbohydrates: 0,
+          fiber: 0,
+          sugar: 0,
+          sodium: 0,
+          cholesterol: 0
+        };
+        
+        componentsWithNutrition.forEach(component => {
+          console.log(`[ANALYZE-FOOD] Adding nutritional values from component "${component.name}"`);
+          
+          Object.keys(combinedNutrition).forEach(key => {
+            const nutritionKey = key as keyof NutritionalInfo;
+            combinedNutrition[nutritionKey] += component.nutritionalInfo[nutritionKey];
+          });
+        });
+        
+        // Safety check for unrealistic values
+        if (combinedNutrition.calories > 5000) {
+          console.warn(`[ANALYZE-FOOD] WARNING: Unrealistically high calorie value (${combinedNutrition.calories}) for "${foodDescription}". Capping at 1000.`);
+          combinedNutrition.calories = Math.min(combinedNutrition.calories, 1000);
+        }
+        
+        const response = {
+          description: foodDescription,
+          quantity: processedFoodData.quantity,
+          unit: processedFoodData.unit,
+          nutritionalInfo: combinedNutrition,
+          source: "Combined Components",
+          isComposite: true,
+          components: componentsWithNutrition
+        };
+        
+        console.log(`[ANALYZE-FOOD] Returning composite response for "${foodDescription}"`, response);
+        return NextResponse.json(response);
+      } else {
+        // Step 3: Handle single food
+        console.log('[ANALYZE-FOOD] Single food detected, fetching nutrition');
+        
+        try {
+          console.log(`[ANALYZE-FOOD] Calling getNutritionForFood with "${processedFoodData.name}"`);
+          const result = await getNutritionForFood(
+            processedFoodData.name,
+            processedFoodData.quantity,
+            processedFoodData.unit
+          );
+          
+          console.log(`[ANALYZE-FOOD] Result received for "${processedFoodData.name}" - source: ${result.source}`);
+          
+          const response = {
+            description: processedFoodData.name,
+            quantity: processedFoodData.quantity,
+            unit: processedFoodData.unit,
+            nutritionalInfo: result.nutritionalInfo,
+            source: result.source,
+            isComposite: false,
+            components: null
+          };
+          
+          console.log(`[ANALYZE-FOOD] Returning response for "${foodDescription}"`, response);
+          return NextResponse.json(response);
+        } catch (nutritionError) {
+          console.error(`[ANALYZE-FOOD] Error fetching nutrition for "${processedFoodData.name}":`, nutritionError);
+          
+          // Fall back to approximation
+          const fallbackNutrition = approximateNutritionForFood(
+            processedFoodData.name,
+            processedFoodData.quantity,
+            processedFoodData.unit
+          );
+          
+          const response = {
+            description: processedFoodData.name,
+            quantity: processedFoodData.quantity,
+            unit: processedFoodData.unit,
+            nutritionalInfo: fallbackNutrition,
+            source: "Approximation (Error Recovery)",
+            isComposite: false,
+            components: null
+          };
+          
+          console.log(`[ANALYZE-FOOD] Returning fallback response for "${foodDescription}"`, response);
+          return NextResponse.json(response);
+        }
+      }
+    } catch (processingError) {
+      console.error("[ANALYZE-FOOD] Error processing food data:", processingError);
+      // Fall back to approximate values
+      const fallbackNutrition = {
+        calories: 100,
+        protein: 2, 
+        fat: 2,
+        carbohydrates: 15,
+        fiber: 1,
+        sugar: 5,
+        sodium: 50,
+        cholesterol: 0
+      };
+      
+      console.log(`[ANALYZE-FOOD] Using final fallback values due to processing error for "${foodDescription}"`);
+      return NextResponse.json({
+        description: foodDescription,
+        quantity: 1,
+        unit: 'serving',
+        nutritionalInfo: fallbackNutrition,
+        source: "Fallback (error recovery)",
+        isComposite: false,
+        components: null
+      });
+    }
+  } catch (error: any) {
+    console.error('[ANALYZE-FOOD] Unhandled error processing request:', error);
     return NextResponse.json(
-      { error: "Failed to analyze food", message: error.message || "Unknown error" },
+      { error: `Failed to process food: ${error.message}` },
       { status: 500 }
     );
   }
