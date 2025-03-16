@@ -9,25 +9,12 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: false,
-  runtimeCaching: [
-    {
-      urlPattern: /^https?.*/,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'offlineCache',
-        expiration: {
-          maxEntries: 200,
-          maxAgeSeconds: 24 * 60 * 60 // 24 hours
-        }
-      }
-    }
-  ]
+  disable: process.env.NODE_ENV === 'development'
 });
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false,
   typescript: {
     // !! WARN !!
     // Dangerously allow production builds to successfully complete even if
@@ -42,17 +29,30 @@ const nextConfig = {
   },
   images: {
     domains: [
-      'www.allrecipes.com',
       'images.unsplash.com',
-      'via.placeholder.com',
-      'source.unsplash.com',
-      'res.cloudinary.com'
+      'images.pexels.com',
+      'img.freepik.com',
+      'cdn.pixabay.com',
+      'images.spoonacular.com',
+      'media.istockphoto.com',
+      'pexels.com',
+      'loremflickr.com',
+      'picsum.photos',
+      'example.com',
+      'randomwordgenerator.com',
+      'blogger.googleusercontent.com',
+      'wp.com',
+      'upload.wikimedia.org',
+      'amazonaws.com',
+      'i.imgur.com',
+      'cloudinary.com',
+      'res.cloudinary.com',
+      'media-cdn.tripadvisor.com'
     ],
     remotePatterns: [
       {
         protocol: 'https',
         hostname: '**',
-        pathname: '**',
       },
     ],
   },
@@ -61,7 +61,26 @@ const nextConfig = {
     GOOGLE_CSE_ID: process.env.GOOGLE_CSE_ID,
     NUTRITIONIX_APP_ID: process.env.NUTRITIONIX_APP_ID,
     NUTRITIONIX_API_KEY: process.env.NUTRITIONIX_API_KEY,
-    RAPID_API_KEY: process.env.RAPID_API_KEY,
+    EDAMAM_APP_ID: process.env.EDAMAM_APP_ID,
+    EDAMAM_API_KEY: process.env.EDAMAM_API_KEY,
+    SPOONACULAR_API_KEY: process.env.SPOONACULAR_API_KEY,
+    RAPID_API_KEY: process.env.RAPID_API_KEY
+  },
+  experimental: {
+    serverComponentsExternalPackages: ['sharp', 'kld-intersections']
+  },
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Credentials', value: 'true' },
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET,DELETE,PATCH,POST,PUT' },
+          { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version' },
+        ],
+      },
+    ]
   },
 };
 
