@@ -6,7 +6,7 @@ import { IconArrowUp, IconArrowDown, IconX, IconShoppingCart, IconListCheck, Ico
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { searchRecipes } from './recipe-search';
-import { fetchGoogleImages } from "../../../lib/googleSearch";
+import { fetchGoogleImages, getFallbackFoodImage } from "../../../lib/googleSearch";
 
 const AnimatedInstructions: React.FC = () => {
   return (
@@ -285,6 +285,28 @@ function useWindowScroll() {
   return scroll;
 }
 
+// Function to fetch food image with fallback
+const fetchFoodImage = async (foodName: string): Promise<string> => {
+  try {
+    console.log(`Fetching image for food: ${foodName}`);
+    // Try to get image from Google CSE
+    const images = await fetchGoogleImages(`${foodName} food`, 1);
+    
+    if (images && images.length > 0) {
+      console.log(`Found image for ${foodName}: ${images[0]}`);
+      return images[0];
+    }
+    
+    console.log(`No images found from Google CSE for ${foodName}, using fallback`);
+    // If Google CSE failed or returned no results, use our fallback function
+    return getFallbackFoodImage(foodName);
+  } catch (error) {
+    console.error(`Error fetching image for ${foodName}:`, error);
+    // In case of any error, use fallback
+    return getFallbackFoodImage(foodName);
+  }
+};
+
 export default function AiRecipePage() {
   const router = useRouter();
   const [ingredientsInput, setIngredientsInput] = useState<string>("");
@@ -526,38 +548,8 @@ Format the answer as JSON with the following structure:
     let foodImage: string | null = null;
     const fetchImagePromise = (async () => {
       try {
-        // Fetch image from Google
-        const images = await fetchGoogleImages(tempEntry.description, 1);
-        if (images && images.length > 0) {
-          foodImage = images[0];
-        } else {
-          // Fallback if Google search returns no results
-          console.log("Google image search failed, using fallback method");
-          // Try to fetch a default image based on food category
-          const fallbackImages: {[key: string]: string} = {
-            "pizza": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38",
-            "cake": "https://images.unsplash.com/photo-1578985545062-69928b1d9587",
-            "burger": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd",
-            "chicken": "https://images.unsplash.com/photo-1587593810167-a84920ea0781",
-            "salad": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd",
-            "pasta": "https://images.unsplash.com/photo-1556761223-4c4282c73f77",
-            "default": "https://images.unsplash.com/photo-1495195134817-aeb325a55b65"
-          };
-          
-          // Find a matching category in the food description
-          const description = tempEntry.description.toLowerCase();
-          for (const [category, url] of Object.entries(fallbackImages)) {
-            if (description.includes(category)) {
-              foodImage = url;
-              break;
-            }
-          }
-          
-          // Use default food image if no category matches
-          if (!foodImage) {
-            foodImage = fallbackImages.default;
-          }
-        }
+        // Use our enhanced fetchFoodImage function that includes fallback mechanism
+        foodImage = await fetchFoodImage(tempEntry.description);
       } catch (error) {
         console.error('Error fetching food image:', error);
         // Provide a generic food image as ultimate fallback

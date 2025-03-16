@@ -3,7 +3,19 @@
 // app/api/nutrition/route.ts
 import { NextResponse } from "next/server";
 import { NutritionalInfo } from "../../../../lib/types";
-import { getComprehensiveNutritionalInfo } from "../../../../lib/nutrition";
+import { getComprehensiveNutritionalInfo, approximateNutritionForFood } from "../../../../lib/nutrition";
+
+// Define the timeout for API requests
+const TIMEOUT_MS = 8000; // 8 seconds timeout
+
+// Create a promise that rejects after a set time
+function timeoutPromise(ms: number) {
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error(`Request timed out after ${ms}ms`));
+    }, ms);
+  });
+}
 
 // Helper to convert "whole" units to grams
 function convertWholeUnit(name: string, quantity: number, unit: string): { quantity: number; unit: string } {
@@ -40,21 +52,39 @@ export async function POST(request: Request) {
       // Convert whole units to grams if needed
       const { quantity, unit } = convertWholeUnit(ing.name, ing.quantity, ing.unit);
       
-      // Use the comprehensive nutrition system that tries multiple APIs and fallbacks
+      // Use Promise.race to implement a timeout
       try {
         console.log(`Fetching nutrition for: ${quantity} ${unit} ${ing.name}`);
-        const result = await getComprehensiveNutritionalInfo(ing.name, quantity, unit);
+        
+        const result = await Promise.race([
+          getComprehensiveNutritionalInfo(ing.name, quantity, unit),
+          timeoutPromise(TIMEOUT_MS)
+        ]);
         
         if (result && result.nutritionalInfo) {
           console.log(`Successfully retrieved nutrition for ${ing.name} from ${result.source}`);
-          return result.nutritionalInfo;
+          return {
+            data: result.nutritionalInfo,
+            source: result.source
+          };
         } else {
-          console.log(`No nutrition data found for ${ing.name}`);
-          return null;
+          console.log(`No nutrition data found for ${ing.name}, using approximation`);
+          // Fallback to approximation
+          const approxNutrition = approximateNutritionForFood(ing.name, quantity, unit);
+          return {
+            data: approxNutrition,
+            source: "Approximation"
+          };
         }
       } catch (error) {
         console.error(`Error fetching nutrition for ${ing.name}:`, error);
-        return null;
+        // If timeout or other error, use approximation
+        console.log(`Using approximation for ${ing.name} due to error: ${error.message}`);
+        const approxNutrition = approximateNutritionForFood(ing.name, quantity, unit);
+        return {
+          data: approxNutrition,
+          source: error.message.includes("timed out") ? "Timeout Fallback" : "Error Fallback" 
+        };
       }
     });
 
@@ -72,13 +102,23 @@ export async function POST(request: Request) {
       cholesterol: 0,
     };
 
+    // Track data sources for debugging
+    const dataSources: Record<string, number> = {};
+    
     // Count number of ingredients with nutrition data
     let ingredientsWithData = 0;
 
-    nutritionResults.forEach(nutritionalInfo => {
-      if (!nutritionalInfo) return;
+    nutritionResults.forEach(result => {
+      if (!result || !result.data) return;
       
       ingredientsWithData++;
+      
+      // Track data source
+      if (result.source) {
+        dataSources[result.source] = (dataSources[result.source] || 0) + 1;
+      }
+      
+      const nutritionalInfo = result.data;
       
       // Add to total
       totalNutrition.calories += nutritionalInfo.calories;
@@ -92,6 +132,7 @@ export async function POST(request: Request) {
     });
 
     console.log(`Found nutrition data for ${ingredientsWithData} out of ${ingredients.length} ingredients`);
+    console.log(`Data sources: ${JSON.stringify(dataSources)}`);
 
     // Calculate per portion nutritional info
     const perPortion: NutritionalInfo = {
