@@ -3,28 +3,24 @@
 
 import { useState, useEffect } from 'react';
 import Navbar from './Navbar';
+import Link from 'next/link';
 
 // Define available themes
-export type ThemeType = 'light' | 'dark' | 'cupcake' | 'bumblebee' | 'emerald' | 'corporate' | 'synthwave' | 'retro' | 'cyberpunk' | 'valentine' | 'halloween' | 'garden' | 'forest' | 'aqua' | 'lofi' | 'pastel' | 'fantasy' | 'wireframe' | 'black' | 'luxury' | 'dracula' | 'cmyk' | 'autumn' | 'business' | 'acid' | 'lemonade' | 'night' | 'coffee' | 'winter';
+export type ThemeType = 'light' | 'dark' | 'cupcake' | 'synthwave' | 'retro' | 'cyberpunk' | 'valentine' | 'halloween' | 'garden' | 'forest' | 'aqua' | 'lofi' | 'pastel' | 'fantasy' | 'wireframe' | 'black' | 'luxury' | 'dracula' | 'cmyk' | 'autumn' | 'business' | 'acid' | 'lemonade' | 'night' | 'coffee' | 'winter';
 
 export default function NavbarWrapper() {
   const [theme, setTheme] = useState<ThemeType>('light');
 
+  // Load theme from localStorage on mount
   useEffect(() => {
-    // Get theme from localStorage or use default
-    const savedTheme = localStorage.getItem('theme') as ThemeType;
-    const validThemes: ThemeType[] = ['light', 'dark', 'cupcake', 'bumblebee', 'emerald', 'corporate', 'synthwave', 'retro', 'cyberpunk', 'valentine', 'halloween', 'garden', 'forest', 'aqua', 'lofi', 'pastel', 'fantasy', 'wireframe', 'black', 'luxury', 'dracula', 'cmyk', 'autumn', 'business', 'acid', 'lemonade', 'night', 'coffee', 'winter'];
-    
-    if (savedTheme && validThemes.includes(savedTheme)) {
-      setTheme(savedTheme);
-      document.documentElement.setAttribute('data-theme', savedTheme);
-    } else {
-      // Default theme
-      setTheme('light');
-      document.documentElement.setAttribute('data-theme', 'light');
+    const storedTheme = localStorage.getItem('theme') as ThemeType;
+    if (storedTheme && storedTheme !== theme) {
+      setTheme(storedTheme);
+      document.documentElement.setAttribute('data-theme', storedTheme);
     }
-  }, []);
+  }, [theme]);
 
+  // Handle theme change
   const changeTheme = (newTheme: ThemeType) => {
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);

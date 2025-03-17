@@ -14,7 +14,8 @@ import {
   IconChevronDown,
   IconMoon,
   IconSun,
-  IconColorSwatch
+  IconColorSwatch,
+  IconCalendarEvent
 } from '@tabler/icons-react';
 import { ThemeType } from './NavbarWrapper';
 
@@ -31,11 +32,12 @@ const popularThemes: Array<{name: ThemeType, label: string, icon: React.ReactNod
 ];
 
 interface NavbarProps {
-  currentTheme: ThemeType;
-  changeTheme: (theme: ThemeType) => void;
+  currentTheme: string;
+  changeTheme: (theme: string) => void;
+  children?: React.ReactNode;
 }
 
-export default function Navbar({ currentTheme, changeTheme }: NavbarProps) {
+export default function Navbar({ currentTheme, changeTheme, children }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   
   // Get current theme info
@@ -170,6 +172,11 @@ export default function Navbar({ currentTheme, changeTheme }: NavbarProps) {
             <li>
               <Link href="/AI" className="flex items-center gap-2">
                 <IconRobot size={16} /> AI Recipes
+              </Link>
+            </li>
+            <li>
+              <Link href="/daily-recipes" className="flex items-center gap-2">
+                <IconCalendarEvent size={16} /> Recipes of the Day
               </Link>
             </li>
             

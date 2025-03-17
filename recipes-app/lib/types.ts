@@ -127,4 +127,19 @@ export interface Favorite {
   created_at: string;
 }
 
+export interface DailyRecipe {
+  id: number;
+  date: string;
+  recipe_1_id?: number;
+  recipe_1_source: string;
+  recipe_1_data: any;
+  recipe_2_id?: number;
+  recipe_2_source: string;
+  recipe_2_data: any;
+  recipe_3_id?: number;
+  recipe_3_source: string;
+  recipe_3_data: any;
+  created_at: string;
+}
+
 

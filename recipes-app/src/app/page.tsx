@@ -2,31 +2,34 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useState, useEffect, ChangeEvent } from 'react';
-import { IconHeart, IconHeartFilled, IconArrowUp, IconCheck, IconX } from '@tabler/icons-react';
+import { useState, useEffect, ChangeEvent, useRef, useCallback } from 'react';
+import { IconHeart, IconHeartFilled, IconArrowUp, IconCheck, IconX, IconClock, IconChefHat, IconShare, IconChevronLeft, IconChevronRight, IconRobot, IconCalendarEvent } from '@tabler/icons-react';
 import { Recipe, Favorite } from '../../lib/types';
+import Image from 'next/image';
+import RecipeCard from './components/RecipeCard';
+import TabSlider from './components/TabSlider';
 
-// Toast notification component
-const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) => {
+// Toast Notification component
+const Toast = ({ message, type = 'success', onClose }: { message: string; type?: 'success' | 'error'; onClose: () => void }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
-    }, 3000); // Auto close after 3 seconds
+    }, 3000);
     
     return () => clearTimeout(timer);
   }, [onClose]);
   
   return (
-    <div className="fixed bottom-4 right-4 z-50">
-      <div className={`${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-4 py-3 rounded-lg shadow-lg flex items-center`}>
-        <div className="flex items-center">
-          {type === 'success' ? <IconCheck size={18} /> : <IconX size={18} />}
-          <span className="ml-2">{message}</span>
-        </div>
-        <button onClick={onClose} className="ml-4 text-white hover:text-gray-200">
-          <IconX size={16} />
-        </button>
+    <div className={`fixed bottom-4 right-4 z-50 flex items-center p-4 mb-4 rounded-lg shadow-lg ${
+      type === 'success' ? 'bg-primary/90 text-white' : 'bg-error/90 text-white'
+    }`}>
+      <div className="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg">
+        {type === 'success' ? <IconCheck size={24} /> : <IconX size={24} />}
       </div>
+      <div className="ms-3 text-sm font-normal">{message}</div>
+      <button onClick={onClose} className="ms-auto -mx-1.5 -my-1.5 rounded-lg p-1.5 inline-flex items-center justify-center h-8 w-8">
+        <IconX size={16} />
+      </button>
     </div>
   );
 };
@@ -48,12 +51,277 @@ function useDebouncedValue<T>(value: T, delay: number): T {
  */
 function useWindowScroll() {
   const [scroll, setScroll] = useState({ y: 0 });
+  const [showScrollButton, setShowScrollButton] = useState(false);
+
   useEffect(() => {
-    const handleScroll = () => setScroll({ y: window.scrollY });
+    const handleScroll = () => {
+      setScroll({ y: window.scrollY });
+      setShowScrollButton(window.scrollY > 200);
+    };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-  return scroll;
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  return { scroll, showScrollButton, scrollToTop };
+}
+
+// Search function for filtering recipes
+function searchRecipes(recipes: any[], searchQuery: string): any[] {
+  if (!searchQuery.trim()) {
+    return recipes;
+  }
+  
+  const query = searchQuery.toLowerCase();
+  return recipes.filter(recipe => 
+    recipe.title.toLowerCase().includes(query)
+  );
+}
+
+// Enhanced RecipeCarousel component
+const RecipeCarousel = ({ recipes, favorites, onToggleFavorite, showToast }: { 
+  recipes: Recipe[], 
+  favorites: Favorite[], 
+  onToggleFavorite: (e: React.MouseEvent, id: number) => void,
+  showToast: (message: string, type: 'success' | 'error') => void
+}) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovering, setIsHovering] = useState(false);
+  const router = useRouter();
+
+  // Helper function to get image URL with fallback
+  const getImageUrl = (image?: string): string => {
+    return image && image.trim() !== '' ? image : '/default-recipe.jpg';
+  };
+  
+  // Auto advance slides every 5 seconds, but pause when hovering
+  useEffect(() => {
+    if (recipes.length <= 1 || isHovering) return;
+    
+    const timer = setInterval(() => {
+      setCurrentIndex(prevIndex => (prevIndex + 1) % recipes.length);
+    }, 5000);
+    
+    return () => clearInterval(timer);
+  }, [recipes.length, isHovering]);
+  
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex((currentIndex - 1 + recipes.length) % recipes.length);
+  };
+  
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex((currentIndex + 1) % recipes.length);
+  };
+  
+  // Touch gesture support
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
+  
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+  
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+  
+  const handleTouchEnd = () => {
+    if (touchStart - touchEnd > 50) {
+      handleNext({ stopPropagation: () => {} } as React.MouseEvent);
+    }
+    
+    if (touchEnd - touchStart > 50) {
+      handlePrev({ stopPropagation: () => {} } as React.MouseEvent);
+    }
+  };
+  
+  if (recipes.length === 0) {
+    return <div className="h-[400px] flex items-center justify-center">No recipes available</div>;
+  }
+  
+  return (
+    <div 
+      className="relative overflow-hidden rounded-xl shadow-lg"
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Carousel container */}
+      <div className="relative h-[350px] sm:h-[400px] md:h-[450px]">
+        {recipes.map((recipe, index) => (
+          <div 
+            key={recipe.id}
+            className={`absolute inset-0 w-full h-full transition-all duration-500 ease-in-out ${
+              index === currentIndex ? 'opacity-100 z-10 transform scale-100' : 'opacity-0 z-0 transform scale-95'
+            }`}
+            onClick={() => router.push(`/recipes/${recipe.id}`)}
+          >
+            <Image
+              src={getImageUrl(recipe.image)}
+              alt={recipe.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              priority={index === currentIndex}
+            />
+            
+            {/* Dark gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+            
+            {/* Favorite button */}
+            <div className="absolute top-3 right-3 z-20">
+              <button
+                onClick={(e) => onToggleFavorite(e, recipe.id)}
+                className="btn btn-circle btn-sm bg-white/80 hover:bg-white border-none"
+                aria-label={favorites.some(fav => fav.recipe_id === recipe.id) ? "Remove from favorites" : "Add to favorites"}
+              >
+                {favorites.some(fav => fav.recipe_id === recipe.id) ? (
+                  <IconHeartFilled size={18} className="text-red-500" />
+                ) : (
+                  <IconHeart size={18} className="text-gray-500" />
+                )}
+              </button>
+            </div>
+            
+            {/* Recipe info */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 text-white z-20">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 drop-shadow-lg leading-tight line-clamp-2">{recipe.title}</h2>
+              <p className="text-sm md:text-base mb-3 opacity-90 line-clamp-2 max-w-3xl">{recipe.description}</p>
+              
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <span className="badge badge-sm sm:badge-md badge-primary">{recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)}</span>
+                <div className="flex items-center text-white text-xs md:text-sm">
+                  <IconClock size={16} className="mr-1" />
+                  {recipe.steps?.length ? recipe.steps.length * 5 : 30} min
+                </div>
+                <div className="text-xs md:text-sm">
+                  {recipe.portion || 2} servings
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
+                <button 
+                  className="btn btn-primary btn-sm sm:btn-md"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/recipes/${recipe.id}`);
+                  }}
+                >
+                  View Recipe
+                </button>
+                
+                <button 
+                  className="btn btn-sm sm:btn-md btn-outline btn-secondary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (navigator.share) {
+                      navigator.share({
+                        title: recipe.title,
+                        text: `Check out this recipe: ${recipe.title}`,
+                        url: window.location.origin + `/recipes/${recipe.id}`,
+                      }).catch(err => console.log('Error sharing', err));
+                    } else {
+                      // Fallback for browsers that don't support the Web Share API
+                      navigator.clipboard.writeText(window.location.origin + `/recipes/${recipe.id}`)
+                        .then(() => showToast('Link copied to clipboard!', 'success'))
+                        .catch(err => console.error('Failed to copy link:', err));
+                    }
+                  }}
+                >
+                  <IconShare size={16} className="mr-1" />
+                  Share
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Navigation buttons */}
+      {recipes.length > 1 && (
+        <>
+          <button 
+            className="absolute top-1/2 left-2 md:left-4 -translate-y-1/2 bg-white/70 hover:bg-white text-gray-800 p-2 rounded-full shadow-lg z-20 focus:outline-none opacity-80 hover:opacity-100"
+            onClick={handlePrev}
+            aria-label="Previous recipe"
+          >
+            <IconChevronLeft size={20} strokeWidth={2.5} />
+          </button>
+          
+          <button 
+            className="absolute top-1/2 right-2 md:right-4 -translate-y-1/2 bg-white/70 hover:bg-white text-gray-800 p-2 rounded-full shadow-lg z-20 focus:outline-none opacity-80 hover:opacity-100"
+            onClick={handleNext}
+            aria-label="Next recipe"
+          >
+            <IconChevronRight size={20} strokeWidth={2.5} />
+          </button>
+          
+          {/* Indicator dots */}
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-20">
+            {recipes.map((_, index) => (
+              <button
+                key={index}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentIndex(index);
+                }}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  index === currentIndex ? 'w-6 bg-white' : 'bg-white/40'
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+// Tab switcher that doesn't cause page jump
+function TabSwitcher({ selectedTab, setSelectedTab }: {
+  selectedTab: 'recipes' | 'ai-recipes',
+  setSelectedTab: (tab: 'recipes' | 'ai-recipes') => void
+}) {
+  // Prevent default behavior to avoid page jumps
+  const handleTabClick = (e: React.MouseEvent, tab: 'recipes' | 'ai-recipes') => {
+    e.preventDefault();
+    setSelectedTab(tab);
+  };
+  
+  return (
+    <div className="flex justify-center mb-8">
+      <div className="bg-base-200 p-1 rounded-full inline-flex shadow-md">
+        <button
+          className={`px-5 py-2 rounded-full transition-all text-sm font-medium ${
+            selectedTab === 'recipes' 
+              ? 'bg-primary text-white shadow-sm' 
+              : 'hover:bg-base-300'
+          }`}
+          onClick={(e) => handleTabClick(e, 'recipes')}
+        >
+          Recipes
+        </button>
+        <button
+          className={`px-5 py-2 rounded-full transition-all text-sm font-medium ${
+            selectedTab === 'ai-recipes' 
+              ? 'bg-primary text-white shadow-sm' 
+              : 'hover:bg-base-300'
+          }`}
+          onClick={(e) => handleTabClick(e, 'ai-recipes')}
+        >
+          AI Recipes
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function FindRecipesPage() {
@@ -80,7 +348,7 @@ export default function FindRecipesPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Scroll state
-  const scroll = useWindowScroll();
+  const { scroll, showScrollButton, scrollToTop } = useWindowScroll();
 
   // Secret link trigger (for admin page)
   const [secretVisible, setSecretVisible] = useState<boolean>(false);
@@ -100,6 +368,41 @@ export default function FindRecipesPage() {
   // Function to hide toast
   const hideToast = () => {
     setToast({ ...toast, show: false });
+  };
+
+  // New state for daily recipes
+  const [loadingDailyRecipes, setLoadingDailyRecipes] = useState(true);
+  const [dailyRecipes, setDailyRecipes] = useState<Recipe[]>([]);
+  const [activeIndex, setActiveIndex] = useState(0); // For carousel
+    
+  // Swipe handlers for the carousel
+  const getSwipeHandlers = () => {
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    return {
+      onTouchStart: (e: React.TouchEvent) => {
+        touchStartX = e.targetTouches[0].clientX;
+      },
+      onTouchMove: (e: React.TouchEvent) => {
+        touchEndX = e.targetTouches[0].clientX;
+      },
+      onTouchEnd: () => {
+        if (touchStartX - touchEndX > 50) {
+          // Swipe left
+          setActiveIndex((activeIndex + 1) % dailyRecipes.length);
+        } else if (touchEndX - touchStartX > 50) {
+          // Swipe right
+          setActiveIndex((activeIndex - 1 + dailyRecipes.length) % dailyRecipes.length);
+        }
+      }
+    };
+  };
+  
+  // Function to handle favorite toggling (renamed for consistency)
+  const onToggleFavorite = (e: React.MouseEvent, recipeId: number) => {
+    e.stopPropagation();
+    toggleFavorite(e, recipeId, true);
   };
 
   // Fetch data on mount and whenever selectedTab changes
@@ -148,7 +451,45 @@ export default function FindRecipesPage() {
       }
     };
     fetchData();
+    
+    // Also fetch daily recipes
+    fetchDailyRecipes();
   }, [selectedTab]);
+  
+  // Fetch daily recipes
+  const fetchDailyRecipes = async () => {
+    try {
+      setLoadingDailyRecipes(true);
+      const res = await fetch('/api/daily-recipes');
+      
+      if (!res.ok) {
+        throw new Error(`Failed to fetch daily recipes: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      setDailyRecipes(data || []);
+    } catch (error) {
+      console.error('Error fetching daily recipes:', error);
+    } finally {
+      setLoadingDailyRecipes(false);
+    }
+  };
+
+  // Reset activeIndex when dailyRecipes changes
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [dailyRecipes]);
+
+  // Auto-advance carousel every 5 seconds
+  useEffect(() => {
+    if (dailyRecipes.length <= 1) return;
+    
+    const timer = setInterval(() => {
+      setActiveIndex((prevIndex) => (prevIndex + 1) % dailyRecipes.length);
+    }, 5000);
+    
+    return () => clearInterval(timer);
+  }, [dailyRecipes.length]);
 
   // Derived state for filtering
   const categories = Array.from(new Set(recipes.map((recipe) => recipe.category).filter(Boolean)));
@@ -188,37 +529,41 @@ export default function FindRecipesPage() {
     return favorites.some((fav) => fav.recipe_id === recipe_id);
   };
 
-  const toggleFavorite = async (recipe_id: number) => {
+  const toggleFavorite = async (e: React.MouseEvent, recipe_id: number, showToast: boolean) => {
+    e.stopPropagation();
+    
     try {
-      if (isFavorited(recipe_id)) {
-        const res = await fetch('/api/favorites', {
+      const isFavorited = favorites.some(fav => fav.recipe_id === recipe_id);
+      
+      if (isFavorited) {
+        await fetch('/api/favorites', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ recipe_id }),
         });
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || 'Failed to remove favorite');
+        
+        setFavorites(favorites.filter(fav => fav.recipe_id !== recipe_id));
+        if (showToast) {
+          showToast('Removed from favorites', 'success');
         }
-        setFavorites((prev) => prev.filter((fav) => fav.recipe_id !== recipe_id));
-        showToast('Removed from Favorites', 'success');
       } else {
         const res = await fetch('/api/favorites', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ recipe_id }),
         });
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || 'Failed to add favorite');
+        
+        if (res.ok) {
+          const newFavorite = await res.json();
+          setFavorites([...favorites, newFavorite]);
+          if (showToast) {
+            showToast('Added to favorites', 'success');
+          }
         }
-        const newFavorite: Favorite = await res.json();
-        setFavorites((prev) => [...prev, newFavorite]);
-        showToast('Added to Favorites', 'success');
       }
-    } catch (error: any) {
-      console.error('Favorite toggle error:', error);
-      showToast(error.message || 'Failed to update favorites', 'error');
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      showToast('Failed to update favorites', 'error');
     }
   };
 
@@ -228,9 +573,6 @@ export default function FindRecipesPage() {
       ? image
       : 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg';
   };
-
-  // Scroll-to-top helper
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
   if (loading) {
     return (
@@ -243,7 +585,7 @@ export default function FindRecipesPage() {
   return (
     <div className="container mx-auto px-4 py-8 relative">
       {/* Back to top button */}
-      {scroll.y > 300 && (
+      {showScrollButton && (
         <button
           onClick={scrollToTop}
           className="fixed bottom-6 right-6 z-40 p-3 rounded-full bg-primary text-white shadow-lg hover:bg-primary-focus transition-colors"
@@ -271,50 +613,102 @@ export default function FindRecipesPage() {
         ?
       </button>
 
-      {/* Page Header */}
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-          Recipe Collection
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Discover and explore delicious recipes
-        </p>
-      </div>
-
-      {/* Tab Slider */}
-      <div className="flex justify-center mb-8">
-        <div className="bg-base-200 p-1 rounded-full inline-flex">
-          <button
-            className={`px-6 py-2 rounded-full transition-all ${
-              selectedTab === 'recipes' 
-                ? 'bg-primary text-white shadow-md' 
-                : 'hover:bg-base-300'
-            }`}
-            onClick={() => setSelectedTab('recipes')}
-          >
-            Recipes
-          </button>
-          <button
-            className={`px-6 py-2 rounded-full transition-all ${
-              selectedTab === 'ai-recipes' 
-                ? 'bg-primary text-white shadow-md' 
-                : 'hover:bg-base-300'
-            }`}
-            onClick={() => setSelectedTab('ai-recipes')}
-          >
-            AI Recipes
-          </button>
+      {/* Enhanced Hero Section */}
+      <div className="relative py-10 px-6 mb-12 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 shadow-lg">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-4">
+            Your Kitchen Companion
+          </h1>
+          <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-6 max-w-2xl mx-auto">
+            Discover, cook, and enjoy delicious recipes curated just for you
+          </p>
+          <div className="flex flex-wrap gap-4 justify-center">
+            <button 
+              onClick={() => router.push('/recipes/add')}
+              className="btn btn-primary"
+            >
+              Add Recipe
+            </button>
+            <button 
+              onClick={() => router.push('/AI')}
+              className="btn btn-outline btn-secondary"
+            >
+              Generate with AI
+            </button>
+          </div>
         </div>
+        
+        {/* Decorative elements */}
+        <div className="absolute -top-2 -left-2 w-12 h-12 rounded-full bg-primary/20 blur-xl"></div>
+        <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-secondary/20 blur-xl"></div>
       </div>
+      
+      {/* Daily Recipes Section with Enhanced Styling */}
+      {!loadingDailyRecipes && dailyRecipes.length > 0 && (
+        <div className="mb-16 relative">
+          <div className="absolute -top-6 -left-6 w-16 h-16 rounded-full bg-primary/10 blur-xl"></div>
+          
+          {/* Fancy header for daily recipes */}
+          <div className="relative mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between">
+              <div className="mb-4 sm:mb-0">
+                <div className="inline-block relative">
+                  <span className="absolute -top-3 -left-3 text-xs font-bold px-2 py-1 bg-accent text-white rounded-lg rotate-[-6deg] shadow-md">
+                    Daily Fresh
+                  </span>
+                  <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                    Today's Culinary Inspirations
+                  </h2>
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 mt-2 max-w-2xl">
+                  Fresh recipes updated daily to inspire your next cooking adventure. Discover new flavors and techniques to elevate your kitchen skills!
+                </p>
+              </div>
+              <button 
+                onClick={() => router.push('/daily-recipes')}
+                className="btn btn-primary btn-md btn-outline gap-2"
+              >
+                <IconCalendarEvent size={18} />
+                Explore All Daily Recipes
+              </button>
+            </div>
+            
+            {/* Decorative separator */}
+            <div className="w-20 h-1 bg-gradient-to-r from-primary to-secondary rounded-full my-4"></div>
+          </div>
+          
+          {/* Use RecipeCarousel component */}
+          <RecipeCarousel 
+            recipes={dailyRecipes}
+            favorites={favorites}
+            onToggleFavorite={(e, id) => toggleFavorite(e, id, true)}
+            showToast={showToast}
+          />
+          
+          {/* Featured Badge */}
+          <div className="absolute -top-4 -right-4 bg-gradient-to-r from-secondary to-accent text-white py-1 px-4 rounded-full shadow-md text-sm font-semibold transform rotate-3">
+            Chef's Selection
+          </div>
+        </div>
+      )}
+
+      {/* Tab Slider with enhanced styling */}
+      <TabSwitcher selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
 
       {selectedTab === 'ai-recipes' && (
-        <div className="flex justify-center mb-8">
-          <button
-            className="btn btn-primary btn-lg rounded-full shadow-md hover:shadow-lg transition-shadow"
-            onClick={() => router.push('/AI')}
-          >
-            Generate Recipe with AI
-          </button>
+        <div className="flex justify-center mb-12">
+          <div className="text-center max-w-xl">
+            <p className="mb-4 text-gray-600 dark:text-gray-400">
+              Unlock a world of innovative recipes created with artificial intelligence. Let our AI chef inspire your next meal!
+            </p>
+            <button
+              className="btn btn-secondary btn-lg rounded-full shadow-md hover:shadow-lg transition-shadow"
+              onClick={() => router.push('/AI')}
+            >
+              <IconRobot className="mr-2" size={20} />
+              Generate New Recipe with AI
+            </button>
+          </div>
         </div>
       )}
 
@@ -454,7 +848,7 @@ export default function FindRecipesPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleFavorite(recipe.id);
+                      toggleFavorite(e, recipe.id, true);
                     }}
                     className="btn btn-circle btn-sm bg-white/80 hover:bg-white border-none"
                   >
@@ -626,7 +1020,7 @@ function isFavorited(recipe_id: number): boolean {
   return false;
 }
 
-async function toggleFavorite(recipe_id: number): Promise<void> {
+async function toggleFavorite(recipe_id: number, showToast: boolean): Promise<void> {
   try {
     // This is a dummy function that would be replaced with actual implementation
     console.log(`Toggling favorite for recipe ${recipe_id}`);
