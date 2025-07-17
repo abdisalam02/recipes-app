@@ -4,6 +4,7 @@ import NavbarWrapper from "./NavbarWrapper"; // Client component
 import { Metadata } from "next";
 import { registerServiceWorker } from "./worker";
 import { FadeInWrapper } from "./components/FadeInWrapper";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 // Register service worker
 if (typeof window !== "undefined") {
@@ -54,18 +55,20 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-base-200">
-        <NavbarWrapper />
-        <main className="min-h-screen container mx-auto px-4 py-8">
-          <FadeInWrapper>{children}</FadeInWrapper>
-        </main>
-        <footer className="footer p-4 bg-base-300 text-base-content">
-          <div className="items-center grid-flow-col">
-            <p>
-              &copy; {new Date().getFullYear()} Recipes App. All rights
-              reserved. External images may be subject to copyright.
-            </p>
-          </div>
-        </footer>
+        <ThemeProvider>
+          <NavbarWrapper />
+          <main className="min-h-screen container mx-auto px-4 py-8">
+            <FadeInWrapper>{children}</FadeInWrapper>
+          </main>
+          <footer className="footer p-4 bg-base-300 text-base-content">
+            <div className="items-center grid-flow-col">
+              <p>
+                &copy; {new Date().getFullYear()} Recipes App. All rights
+                reserved. External images may be subject to copyright.
+              </p>
+            </div>
+          </footer>
+        </ThemeProvider>
       </body>
     </html>
   );

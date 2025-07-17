@@ -15,6 +15,7 @@ import {
   IconFlame,
   IconDots,
 } from "@tabler/icons-react";
+import { useTheme } from "../contexts/ThemeContext";
 
 export interface NavItem {
   icon: React.ComponentType<any>;
@@ -29,6 +30,7 @@ interface FloatingNavigationProps {
 }
 
 export const FloatingNavigation = ({ router }: FloatingNavigationProps) => {
+  const { theme, themes } = useTheme();
   const [isExpanded, setIsExpanded] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [inactivityTimer, setInactivityTimer] = useState<NodeJS.Timeout | null>(
@@ -36,6 +38,9 @@ export const FloatingNavigation = ({ router }: FloatingNavigationProps) => {
   );
   const [isInteracting, setIsInteracting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Get current theme colors
+  const currentTheme = themes.find((t) => t.name === theme) || themes[0];
 
   // Core navigation items that match hamburger menu
   const coreNavItems: NavItem[] = [
@@ -173,7 +178,13 @@ export const FloatingNavigation = ({ router }: FloatingNavigationProps) => {
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className="fixed bottom-0 left-0 right-0 w-full z-50"
           >
-            <div className="glass-panel backdrop-blur-xl bg-white/10 border-t border-white/20 px-4 py-4 shadow-2xl">
+            <div
+              className="px-4 py-4 shadow-lg backdrop-blur-sm"
+              style={{
+                backgroundColor: `${currentTheme.colors.background}f0`,
+                borderTop: `1px solid ${currentTheme.colors.primary}30`,
+              }}
+            >
               {/* Horizontally Scrolling Navigation Items */}
               <div
                 ref={scrollRef}
@@ -189,19 +200,30 @@ export const FloatingNavigation = ({ router }: FloatingNavigationProps) => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: (index % coreNavItems.length) * 0.05 }}
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => handleItemClick(item)}
-                    className="flex-shrink-0 flex flex-col items-center gap-2 p-3 glass-panel backdrop-blur-xl bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 transition-all duration-300 group min-w-[70px]"
+                    className="flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-xl transition-colors duration-200 group min-w-[70px]"
+                    style={{
+                      backgroundColor: `${currentTheme.colors.surface}`,
+                      border: `1px solid ${currentTheme.colors.primary}20`,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = `${currentTheme.colors.primary}15`;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        currentTheme.colors.surface;
+                    }}
                   >
                     <div
-                      className={`${item.bgColor} rounded-full p-2 shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                      className={`${item.bgColor} rounded-full p-2 shadow-md transition-transform duration-200`}
                     >
                       <item.icon size={18} className="text-white" />
                     </div>
                     <span
                       className="text-xs font-medium text-center leading-tight"
-                      style={{ color: "var(--text-secondary)" }}
+                      style={{ color: currentTheme.colors.textSecondary }}
                     >
                       {item.label}
                     </span>
@@ -218,7 +240,10 @@ export const FloatingNavigation = ({ router }: FloatingNavigationProps) => {
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: i * 0.1 }}
-                      className="w-1.5 h-1.5 rounded-full bg-gray-400 opacity-50"
+                      className="w-1.5 h-1.5 rounded-full opacity-50"
+                      style={{
+                        backgroundColor: currentTheme.colors.textSecondary,
+                      }}
                     />
                   ))}
                 </div>
@@ -235,14 +260,16 @@ export const FloatingNavigation = ({ router }: FloatingNavigationProps) => {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0 }}
-            className="fixed bottom-6 left-1/2 z-50"
-            style={{ transform: "translateX(-50%)" }}
+            className="fixed bottom-6 left-1/2 z-50 transform -translate-x-1/2"
           >
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={handleToggle}
-              className="glass-panel backdrop-blur-xl bg-gradient-to-r from-indigo-500 to-purple-500 border border-white/30 rounded-full p-4 shadow-2xl hover:shadow-indigo-500/25 transition-all duration-300"
+              className="rounded-full p-4 shadow-lg hover:shadow-xl transition-all duration-200"
+              style={{
+                background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`,
+              }}
             >
               <IconDots size={24} className="text-white" />
             </motion.button>

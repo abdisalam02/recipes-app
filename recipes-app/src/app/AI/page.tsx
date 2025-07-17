@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef, ChangeEvent } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  ChangeEvent,
+  useMemo,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   IconArrowUp,
@@ -14,15 +20,21 @@ import {
   IconPlus,
   IconTrash,
   IconApple,
+  IconSparkles,
+  IconRocket,
+  IconBrain,
 } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { searchRecipes } from "./recipe-search";
 import { fetchGoogleImages } from "../../../lib/googleSearch";
 import { FloatingNavigation } from "../components/FloatingNavigation";
-import { LoadingOverlay } from "../components/MinimalistLoader";
+import { MinimalistLoader } from "../components/MinimalistLoader";
+import { useTheme } from "../contexts/ThemeContext";
 
-const AnimatedInstructions: React.FC = () => {
+const AnimatedInstructions: React.FC<{ currentTheme: any }> = ({
+  currentTheme,
+}) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -30,13 +42,78 @@ const AnimatedInstructions: React.FC = () => {
       transition={{ duration: 0.8 }}
       className="mb-8 text-center"
     >
-      <h2 className="text-2xl font-bold mb-2">
-        Welcome to AI Recipe Generator!
-      </h2>
-      <p className="text-lg">
-        Enter your ingredients and preferences below, then click "Generate
-        Recipe" to see your custom AI recipe.
-      </p>
+      <div
+        className="backdrop-blur-xl border rounded-3xl p-8 shadow-2xl mb-6"
+        style={{
+          background: `linear-gradient(135deg, ${currentTheme.colors.surface}f0, ${currentTheme.colors.surface}80)`,
+          borderColor: `${currentTheme.colors.primary}30`,
+        }}
+      >
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.2 }}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-white mb-6 shadow-2xl"
+        >
+          <IconBrain size={20} />
+          <span className="font-semibold">AI Recipe Generator</span>
+        </motion.div>
+
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 leading-tight"
+        >
+          <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
+            Create Your Perfect
+          </span>
+          <br />
+          <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+            AI Recipe
+          </span>
+        </motion.h2>
+
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed"
+        >
+          Enter your ingredients and preferences below, then click{" "}
+          <span className="font-semibold text-purple-600">
+            "Generate Recipe"
+          </span>{" "}
+          to see your custom AI-powered culinary creation!
+        </motion.p>
+
+        {/* Feature highlights */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 max-w-2xl mx-auto"
+        >
+          <div className="glass-panel backdrop-blur-xl bg-white/20 border border-white/20 p-4 rounded-2xl text-center shadow-lg">
+            <IconSparkles size={24} className="text-purple-500 mx-auto mb-2" />
+            <div className="text-sm font-semibold text-gray-700">
+              AI-Powered
+            </div>
+          </div>
+          <div className="glass-panel backdrop-blur-xl bg-white/20 border border-white/20 p-4 rounded-2xl text-center shadow-lg">
+            <IconChefHat size={24} className="text-emerald-500 mx-auto mb-2" />
+            <div className="text-sm font-semibold text-gray-700">
+              Custom Recipes
+            </div>
+          </div>
+          <div className="glass-panel backdrop-blur-xl bg-white/20 border border-white/20 p-4 rounded-2xl text-center shadow-lg">
+            <IconCalculator size={24} className="text-blue-500 mx-auto mb-2" />
+            <div className="text-sm font-semibold text-gray-700">
+              Nutrition Info
+            </div>
+          </div>
+        </motion.div>
+      </div>
     </motion.div>
   );
 };
@@ -339,6 +416,12 @@ const fetchFoodImage = async (foodName: string): Promise<string> => {
 
 export default function AiRecipePage() {
   const router = useRouter();
+  const { theme, themes } = useTheme();
+  const currentTheme = useMemo(
+    () => themes.find((t) => t.name === theme) || themes[0],
+    [theme, themes]
+  );
+
   const [ingredientsInput, setIngredientsInput] = useState<string>("");
   const [preferences, setPreferences] = useState<string>("");
   const [generatedRecipe, setGeneratedRecipe] = useState<any>(null);
@@ -902,18 +985,31 @@ Format the answer as JSON with the following structure:
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
+    <div
+      className="min-h-screen relative overflow-hidden"
+      style={{ backgroundColor: currentTheme.colors.background }}
+    >
       {/* Enhanced Background decorative elements */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-decorative-1 opacity-20 rounded-full blur-3xl animate-pulse"></div>
       <div
-        className="absolute bottom-0 right-0 w-96 h-96 bg-decorative-2 opacity-20 rounded-full blur-3xl animate-pulse"
-        style={{ animationDelay: "2s" }}
+        className="absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl animate-pulse"
+        style={{
+          background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`,
+          opacity: 0.1,
+        }}
+      ></div>
+      <div
+        className="absolute bottom-0 right-0 w-96 h-96 rounded-full blur-3xl animate-pulse"
+        style={{
+          background: `linear-gradient(135deg, ${currentTheme.colors.secondary}, ${currentTheme.colors.primary})`,
+          opacity: 0.1,
+          animationDelay: "2s",
+        }}
       ></div>
 
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 relative z-10 pb-24 md:pb-8">
         {/* Loading overlay - include both loading states */}
         {(loading || loadingNutrition) && (
-          <LoadingOverlay message="Loading..." />
+          <MinimalistLoader message="Loading..." size="lg" />
         )}
 
         {/* Enhanced Header */}

@@ -18,6 +18,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { RecipeDetail, Step, RecipeIngredient, PerIngredientNutritionalInfo } from '../../../../lib/types';
 import Image from 'next/image';
+import { FloatingNavigation } from '../../components/FloatingNavigation';
 
 // Custom hook to track vertical scroll position.
 function useWindowScroll() {
@@ -263,22 +264,37 @@ export default function RecipeDetailPage() {
   };
   
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="card bg-base-100 shadow-xl rounded-xl overflow-hidden">
-        {/* Hero Image Section */}
-        <div className="relative h-64 sm:h-80 md:h-96 w-full">
-          <div className="absolute inset-0">
-            <img
-              src={imageUrl}
-              alt={recipe.title}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = '/default-image.png';
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
-          </div>
+    <div className="min-h-screen relative">
+      {/* Background Image with Parallax Effect */}
+      <div className="fixed inset-0 z-0">
+        <img
+          src={imageUrl}
+          alt={recipe.title}
+          className="w-full h-full object-cover opacity-30 blur-sm scale-110"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = '/default-image.png';
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/40" />
+      </div>
+
+      <div className="container mx-auto px-4 py-8 relative z-10">
+        <div className="card bg-base-100/90 backdrop-blur-xl shadow-2xl rounded-xl overflow-hidden border border-white/30">
+          {/* Hero Image Section */}
+          <div className="relative h-64 sm:h-80 md:h-96 w-full">
+            <div className="absolute inset-0">
+              <img
+                src={imageUrl}
+                alt={recipe.title}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/default-image.png';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
+            </div>
           
           <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white">
             <h2 className="text-2xl sm:text-3xl font-bold mb-2 drop-shadow-lg">{recipe.title}</h2>
@@ -311,7 +327,7 @@ export default function RecipeDetailPage() {
 
           {/* Simplified Nutritional Info - Only Calories and Protein */}
           {scaledNutritionalInfo && (
-            <div className="grid grid-cols-2 gap-4 mb-6 sm:mb-8 p-4 bg-base-200 rounded-xl">
+            <div className="grid grid-cols-2 gap-4 mb-6 sm:mb-8 p-4 bg-base-200/80 backdrop-blur-lg rounded-xl border border-white/20">
               <div className="text-center">
                 <div className="stat-value text-primary text-xl sm:text-2xl">{scaledNutritionalInfo.calories}</div>
                 <div className="stat-title text-xs sm:text-sm">Calories</div>
@@ -324,7 +340,7 @@ export default function RecipeDetailPage() {
           )}
 
           {/* Portion Control Section */}
-          <div className="flex flex-wrap items-center gap-3 mb-6 sm:mb-8 p-4 bg-base-200 rounded-xl">
+          <div className="flex flex-wrap items-center gap-3 mb-6 sm:mb-8 p-4 bg-base-200/80 backdrop-blur-lg rounded-xl border border-white/20">
             <span className="font-semibold text-sm sm:text-base">Adjust Portions:</span>
             <div className="flex items-center">
               <button
@@ -369,7 +385,7 @@ export default function RecipeDetailPage() {
                   );
                 })
               ) : (
-                <div className="col-span-2 text-center p-4 bg-base-200 rounded-lg">
+                <div className="col-span-2 text-center p-4 bg-base-200/80 backdrop-blur-lg rounded-lg border border-white/20">
                   <p className="text-gray-500">No ingredients available for this recipe.</p>
                 </div>
               )}
@@ -384,7 +400,7 @@ export default function RecipeDetailPage() {
             </h3>
             <div className="space-y-4 sm:space-y-6">
               {recipe.steps && recipe.steps.map((step) => (
-                <div key={step.id} className="p-3 sm:p-4 bg-base-200 rounded-xl">
+                <div key={step.id} className="p-3 sm:p-4 bg-base-200/80 backdrop-blur-lg rounded-xl border border-white/20">
                   <div className="flex items-start gap-3 sm:gap-4">
                     <div className="bg-primary text-white rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center flex-shrink-0 text-sm sm:text-base">
                       {step.order}
@@ -454,6 +470,9 @@ export default function RecipeDetailPage() {
       {stepsModalOpen && recipe.steps && (
         <StepsModal steps={recipe.steps} onClose={() => setStepsModalOpen(false)} />
       )}
+
+      {/* Floating Navigation */}
+      <FloatingNavigation router={router} />
     </div>
   );
 }

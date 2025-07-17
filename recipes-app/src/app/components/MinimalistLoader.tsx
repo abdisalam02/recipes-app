@@ -24,26 +24,12 @@ export const MinimalistLoader = ({
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.8 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="glass-panel backdrop-blur-xl border border-white/30 rounded-2xl p-8 shadow-xl text-center max-w-md"
+        className="bg-white/95 border border-gray-200 rounded-2xl p-8 shadow-lg text-center max-w-md"
       >
         {/* Simple Circle Loading */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="w-12 h-12 mx-auto mb-4 relative"
-        >
-          <motion.div
-            className="w-12 h-12 border-2 border-gray-300 rounded-full"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          />
-          <motion.div
-            className="absolute top-0 left-0 w-12 h-12 border-2 border-transparent border-t-orange-500 rounded-full"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          />
-        </motion.div>
+        <div className="w-12 h-12 mx-auto mb-4 relative">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+        </div>
 
         {/* Fade-in Text */}
         <motion.p
@@ -60,7 +46,7 @@ export const MinimalistLoader = ({
   );
 };
 
-// Simple Circle Loader for inline use
+// Simple Circle Loader for inline use - Optimized with CSS animations
 export const CircleLoader = ({
   size = "md",
 }: {
@@ -73,22 +59,11 @@ export const CircleLoader = ({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className={`${sizeMap[size]} relative`}
-    >
-      <motion.div
-        className={`${sizeMap[size]} border-2 border-gray-300 rounded-full`}
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-      />
-      <motion.div
-        className={`absolute top-0 left-0 ${sizeMap[size]} border-2 border-transparent border-t-orange-500 rounded-full`}
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-      />
-    </motion.div>
+    <div className={`${sizeMap[size]} relative`}>
+      <div
+        className={`${sizeMap[size]} animate-spin rounded-full border-b-2 border-orange-500`}
+      ></div>
+    </div>
   );
 };
 
@@ -110,7 +85,7 @@ export const LoadingOverlay = ({
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.8 }}
         transition={{ duration: 0.3 }}
-        className="glass-panel backdrop-blur-xl border border-white/30 p-6 rounded-2xl shadow-xl"
+        className="bg-white/95 border border-gray-200 p-6 rounded-2xl shadow-lg"
       >
         <div className="flex flex-col items-center gap-4">
           <CircleLoader size="md" />
@@ -135,7 +110,7 @@ export const RecipeCardLoader = () => (
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: i * 0.05 }}
-        className="glass-panel backdrop-blur-xl border border-white/20 rounded-xl overflow-hidden"
+        className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm"
       >
         <motion.div
           className="h-40 bg-gradient-to-r from-gray-200/50 to-gray-300/50"

@@ -179,7 +179,7 @@ export default function FavoritesPage() {
               transition={{ delay: 0.2 }}
               className="glass-panel backdrop-blur-xl bg-rose-500/20 border border-rose-400/30 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
             >
-              <IconHeartOff size={40} className="text-rose-500" />
+            <IconHeartOff size={40} className="text-rose-500" />
             </motion.div>
             <h2 className="text-2xl font-bold mb-4 bg-gradient-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
               No Favorite Recipes Yet
@@ -187,7 +187,7 @@ export default function FavoritesPage() {
             <p className="text-gray-600 mb-8">
               Start adding recipes to your favorites by clicking the heart icon
               on any recipe card.
-            </p>
+          </p>
             <Link href="/">
               <motion.div
                 whileHover={{ scale: 1.05 }}
@@ -195,9 +195,9 @@ export default function FavoritesPage() {
                 className="glass-panel backdrop-blur-xl bg-gradient-to-r from-emerald-500 to-blue-500 text-white border border-white/30 rounded-2xl px-8 py-4 font-semibold shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 inline-flex items-center gap-2"
               >
                 <IconHome size={18} />
-                Browse Recipes
+            Browse Recipes
               </motion.div>
-            </Link>
+          </Link>
           </motion.div>
         </div>
         <FloatingNavigation router={router} />
@@ -212,7 +212,7 @@ export default function FavoritesPage() {
 
       {/* Enhanced Toast */}
       <AnimatePresence>
-        {toast.show && (
+      {toast.show && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 50 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -252,9 +252,9 @@ export default function FavoritesPage() {
               </div>
             </div>
           </motion.div>
-        )}
+      )}
       </AnimatePresence>
-
+      
       <div className="container mx-auto py-8 px-4 relative z-10 pb-24 md:pb-8">
         {/* Enhanced Header */}
         <motion.div
@@ -270,9 +270,9 @@ export default function FavoritesPage() {
           >
             <IconHeart size={32} className="text-rose-500 mx-auto" />
           </motion.div>
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
-            My Favorites
-          </h1>
+        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
+          My Favorites
+        </h1>
           <p className="text-gray-600">Your collection of favorite recipes</p>
         </motion.div>
 
@@ -285,7 +285,7 @@ export default function FavoritesPage() {
         >
           {favorites.map((fav, index) => (
             <motion.div
-              key={fav.id}
+              key={fav.id} 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
@@ -306,7 +306,7 @@ export default function FavoritesPage() {
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-
+                
                 {/* Enhanced remove from favorites button */}
                 <motion.button
                   whileHover={{ scale: 1.1 }}
@@ -321,7 +321,7 @@ export default function FavoritesPage() {
                 >
                   <IconHeartOff size={20} className="text-rose-400" />
                 </motion.button>
-
+                
                 {/* Enhanced category badge */}
                 <div className="absolute bottom-4 left-4 z-10">
                   <div className="badge badge-lg bg-gradient-to-r from-emerald-500 to-blue-500 text-white border-none shadow-lg">
@@ -333,7 +333,7 @@ export default function FavoritesPage() {
                   </div>
                 </div>
               </figure>
-
+              
               <div className="p-4">
                 <h2 className="text-xl font-bold mb-2 line-clamp-1 text-gray-800">
                   {fav.recipe.title}
@@ -357,8 +357,8 @@ export default function FavoritesPage() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className="glass-panel backdrop-blur-xl bg-gradient-to-r from-emerald-500 to-blue-500 border border-white/30 text-white rounded-xl px-6 py-3 font-medium shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 text-center"
-                  >
-                    View Recipe
+                >
+                  View Recipe
                   </motion.div>
                 </Link>
               </div>

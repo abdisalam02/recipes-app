@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Favorite } from "../../../lib/types";
 import { FloatingNavigation } from "../components/FloatingNavigation";
 import { MinimalistLoader } from "../components/MinimalistLoader";
+import { useTheme } from "../contexts/ThemeContext";
 
 // Define the Recipe type based on the API response structure
 interface DailyRecipeItem {
@@ -131,6 +132,11 @@ export default function DailyRecipesPage() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const router = useRouter();
   const { scroll, showScrollButton, scrollToTop } = useWindowScroll();
+  const { theme, themes } = useTheme();
+  const currentTheme = useMemo(
+    () => themes.find((t) => t.name === theme) || themes[0],
+    [theme, themes]
+  );
 
   // Toast state
   const [toast, setToast] = useState<{
@@ -255,26 +261,37 @@ export default function DailyRecipesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-r from-purple-400 to-pink-400 opacity-20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-r from-orange-400 to-red-400 opacity-20 rounded-full blur-3xl animate-pulse"></div>
+      <div
+        className="min-h-screen relative overflow-hidden"
+        style={{ backgroundColor: currentTheme.colors.background }}
+      >
         <div className="container mx-auto px-4 py-8 relative z-10">
-          <MinimalistLoader
-            message="Loading daily recipes..."
-            size="lg"
-          />
+          <MinimalistLoader message="Loading daily recipes..." size="lg" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
+    <div
+      className="min-h-screen relative overflow-hidden"
+      style={{ backgroundColor: currentTheme.colors.background }}
+    >
       {/* Enhanced Background decorative elements */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-decorative-1 opacity-20 rounded-full blur-3xl animate-pulse"></div>
       <div
-        className="absolute bottom-0 right-0 w-96 h-96 bg-decorative-2 opacity-20 rounded-full blur-3xl animate-pulse"
-        style={{ animationDelay: "2s" }}
+        className="absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl animate-pulse"
+        style={{
+          background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`,
+          opacity: 0.1,
+        }}
+      ></div>
+      <div
+        className="absolute bottom-0 right-0 w-96 h-96 rounded-full blur-3xl animate-pulse"
+        style={{
+          background: `linear-gradient(135deg, ${currentTheme.colors.secondary}, ${currentTheme.colors.primary})`,
+          opacity: 0.1,
+          animationDelay: "2s",
+        }}
       ></div>
 
       <div className="container mx-auto px-4 py-8 relative z-10 pb-24 md:pb-8">
@@ -313,7 +330,13 @@ export default function DailyRecipesPage() {
           animate={{ opacity: 1, y: 0 }}
           className="relative py-16 px-6 mb-16 rounded-4xl overflow-hidden"
         >
-          <div className="glass-panel backdrop-blur-xl bg-gradient-to-br from-white/30 to-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl">
+          <div
+            className="backdrop-blur-xl border rounded-3xl p-8 shadow-2xl"
+            style={{
+              background: `linear-gradient(135deg, ${currentTheme.colors.surface}f0, ${currentTheme.colors.surface}80)`,
+              borderColor: `${currentTheme.colors.primary}30`,
+            }}
+          >
             <div className="max-w-5xl mx-auto text-center relative z-10">
               {/* Enhanced featured badge */}
               <motion.div
@@ -480,7 +503,11 @@ export default function DailyRecipesPage() {
                   transition={{ delay: index * 0.1 }}
                   whileHover={{ y: -10, scale: 1.02 }}
                   onClick={() => router.push(`/daily-recipes/${recipe.id}`)}
-                  className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 rounded-2xl overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer group"
+                  className="backdrop-blur-xl border rounded-2xl overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer group"
+                  style={{
+                    backgroundColor: `${currentTheme.colors.surface}f0`,
+                    borderColor: `${currentTheme.colors.primary}30`,
+                  }}
                 >
                   <figure className="relative h-56 overflow-hidden">
                     <Image

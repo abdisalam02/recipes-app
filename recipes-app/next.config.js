@@ -66,9 +66,7 @@ const nextConfig = {
     SPOONACULAR_API_KEY: process.env.SPOONACULAR_API_KEY,
     RAPID_API_KEY: process.env.RAPID_API_KEY
   },
-  experimental: {
-    serverComponentsExternalPackages: ['sharp', 'kld-intersections']
-  },
+  serverExternalPackages: ['sharp', 'kld-intersections'],
   async headers() {
     return [
       {

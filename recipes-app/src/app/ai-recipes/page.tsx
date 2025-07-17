@@ -91,9 +91,9 @@ export default function AIRecipesPage() {
             AI-Generated Recipes
           </h1>
           <p className="text-lg text-center max-w-2xl mb-6 text-gray-600">
-            Discover unique recipes created by artificial intelligence
-          </p>
-
+          Discover unique recipes created by artificial intelligence
+        </p>
+        
           {/* Enhanced Navigation buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -106,16 +106,16 @@ export default function AIRecipesPage() {
               whileTap={{ scale: 0.95 }}
               onClick={() => router.push("/AI")}
               className="glass-panel backdrop-blur-xl bg-gradient-to-r from-emerald-500 to-blue-500 text-white border border-white/30 rounded-2xl px-6 py-3 font-semibold shadow-lg hover:shadow-emerald-500/25 transition-all duration-300"
-            >
-              Create New AI Recipe
+          >
+            Create New AI Recipe
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => router.push("/recipes")}
               className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 text-gray-700 hover:bg-white/30 transition-all duration-300 px-6 py-3 rounded-2xl font-medium shadow-lg"
-            >
-              Browse All Recipes
+          >
+            Browse All Recipes
             </motion.button>
           </motion.div>
         </motion.div>
@@ -129,26 +129,26 @@ export default function AIRecipesPage() {
         >
           <div className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 rounded-2xl p-2 shadow-lg">
             <div className="flex items-center">
-              <input
-                type="text"
-                placeholder="Search AI recipes..."
+          <input
+            type="text"
+            placeholder="Search AI recipes..."
                 className="glass-panel backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="glass-panel backdrop-blur-xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-700 p-3 rounded-xl ml-2"
               >
-                <IconSearch size={20} />
+            <IconSearch size={20} />
               </motion.button>
-            </div>
-          </div>
+        </div>
+      </div>
         </motion.div>
 
         {/* Enhanced Loading State */}
-        {loading && (
+      {loading && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -156,10 +156,10 @@ export default function AIRecipesPage() {
           >
             <MinimalistLoader message="Loading AI recipes..." size="lg" />
           </motion.div>
-        )}
+      )}
 
         {/* Enhanced Error State */}
-        {error && (
+      {error && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -167,10 +167,10 @@ export default function AIRecipesPage() {
           >
             <p className="font-medium">{error}</p>
           </motion.div>
-        )}
+      )}
 
         {/* Enhanced No Results */}
-        {!loading && filteredRecipes.length === 0 && (
+      {!loading && filteredRecipes.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -189,13 +189,13 @@ export default function AIRecipesPage() {
                 No recipes found
               </h3>
               <p className="text-gray-600">
-                {searchTerm
-                  ? `No recipes matching "${searchTerm}"`
-                  : "No AI recipes available yet. Create your first one!"}
-              </p>
-            </div>
+            {searchTerm
+              ? `No recipes matching "${searchTerm}"`
+              : "No AI recipes available yet. Create your first one!"}
+          </p>
+        </div>
           </motion.div>
-        )}
+      )}
 
         {/* Enhanced Recipe Grid */}
         <motion.div
@@ -206,31 +206,31 @@ export default function AIRecipesPage() {
         >
           {filteredRecipes.map((recipe, index) => (
             <motion.div
-              key={recipe.id}
+            key={recipe.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
               whileHover={{ y: -5, scale: 1.02 }}
               className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 rounded-2xl overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer"
-              onClick={() => router.push(`/ai-recipes/${recipe.id}`)}
-            >
+            onClick={() => router.push(`/ai-recipes/${recipe.id}`)}
+          >
               {/* Enhanced Card Image */}
-              <figure className="relative h-48">
-                <div className="absolute inset-0">
-                  <img
+            <figure className="relative h-48">
+              <div className="absolute inset-0">
+                <img
                     src={recipe.image || "/default-recipe-image.jpg"}
-                    alt={recipe.title}
+                  alt={recipe.title}
                     className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
                       target.src = "/default-recipe-image.jpg";
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                </div>
-
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+              </div>
+              
                 {/* Enhanced Category Badge */}
-                {recipe.category && (
+              {recipe.category && (
                   <div className="absolute top-4 right-4">
                     <span className="badge badge-lg bg-gradient-to-r from-emerald-500 to-blue-500 text-white border-none shadow-lg">
                       {recipe.category.charAt(0).toUpperCase() +
@@ -245,8 +245,8 @@ export default function AIRecipesPage() {
                     🤖 AI Generated
                   </span>
                 </div>
-              </figure>
-
+            </figure>
+            
               <div className="p-6">
                 <h2 className="text-xl font-bold mb-2 text-gray-800 line-clamp-1">
                   {recipe.title}
@@ -263,22 +263,22 @@ export default function AIRecipesPage() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="glass-panel backdrop-blur-xl bg-gradient-to-r from-emerald-500 to-blue-500 border border-white/30 text-white rounded-xl px-4 py-2 font-medium shadow-lg hover:shadow-emerald-500/25 transition-all duration-300"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/ai-recipes/${recipe.id}`);
-                    }}
-                  >
-                    View Recipe
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/ai-recipes/${recipe.id}`);
+                  }}
+                >
+                  View Recipe
                   </motion.button>
                 </div>
               </div>
             </motion.div>
-          ))}
+        ))}
         </motion.div>
 
         {/* Enhanced Scroll-to-Top Button */}
         <AnimatePresence>
-          {scrollY > 100 && (
+      {scrollY > 100 && (
             <motion.button
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -287,11 +287,11 @@ export default function AIRecipesPage() {
               whileTap={{ scale: 0.9 }}
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 p-3 rounded-full shadow-2xl hover:bg-white/30 transition-all duration-300 fixed bottom-24 left-4 z-40 md:bottom-6"
-              aria-label="Scroll to top"
-            >
+          aria-label="Scroll to top"
+        >
               <IconArrowUp size={24} className="text-gray-700" />
             </motion.button>
-          )}
+      )}
         </AnimatePresence>
       </div>
 
@@ -299,4 +299,4 @@ export default function AIRecipesPage() {
       <FloatingNavigation router={router} />
     </div>
   );
-}
+} 
