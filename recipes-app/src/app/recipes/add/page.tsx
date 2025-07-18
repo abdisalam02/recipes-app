@@ -6,7 +6,6 @@ import React, {
   useRef,
   ChangeEvent,
   FormEvent,
-  useMemo,
 } from "react";
 import { useRouter } from "next/navigation";
 import debounce from "lodash.debounce";
@@ -25,14 +24,10 @@ import {
   IconTrash,
   IconArrowDown,
   IconX,
-  IconSparkles,
-  IconUpload,
-  IconFileText,
 } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FloatingNavigation } from "../../components/FloatingNavigation";
-import { MinimalistLoader } from "../../components/MinimalistLoader";
-import { useTheme } from "../../contexts/ThemeContext";
+import { LoadingOverlay } from "../../components/MinimalistLoader";
 
 // Define a local alias for JSON data
 type JsonData = any;
@@ -83,11 +78,6 @@ function useWindowScroll() {
 
 export default function AddRecipePage() {
   const router = useRouter();
-  const { theme, themes } = useTheme();
-  const currentTheme = useMemo(
-    () => themes.find((t) => t.name === theme) || themes[0],
-    [theme, themes]
-  );
 
   // Tab state: "form" or "json"
   const [activeTab, setActiveTab] = useState<"form" | "json">("form");
@@ -924,25 +914,12 @@ export default function AddRecipePage() {
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   return (
-    <div
-      className="min-h-screen relative overflow-hidden"
-      style={{ backgroundColor: currentTheme.colors.background }}
-    >
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
       {/* Enhanced Background decorative elements */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-decorative-1 opacity-20 rounded-full blur-3xl animate-pulse"></div>
       <div
-        className="absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl animate-pulse"
-        style={{
-          background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`,
-          opacity: 0.1,
-        }}
-      ></div>
-      <div
-        className="absolute bottom-0 right-0 w-96 h-96 rounded-full blur-3xl animate-pulse"
-        style={{
-          background: `linear-gradient(135deg, ${currentTheme.colors.secondary}, ${currentTheme.colors.primary})`,
-          opacity: 0.1,
-          animationDelay: "2s",
-        }}
+        className="absolute bottom-0 right-0 w-96 h-96 bg-decorative-2 opacity-20 rounded-full blur-3xl animate-pulse"
+        style={{ animationDelay: "2s" }}
       ></div>
 
       <div className="container mx-auto py-8 px-2 sm:px-4 relative z-10 pb-24 md:pb-8">
@@ -950,13 +927,9 @@ export default function AddRecipePage() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 shadow-2xl rounded-3xl p-4 sm:p-8 relative overflow-hidden"
-          style={{
-            backgroundColor: `${currentTheme.colors.surface}f0`,
-            borderColor: `${currentTheme.colors.primary}30`,
-          }}
         >
           {/* Loading Overlay */}
-          {loading && <MinimalistLoader message="Loading..." size="lg" />}
+          {loading && <LoadingOverlay message="Loading..." />}
 
           {/* Enhanced Header Section */}
           <motion.div
@@ -998,10 +971,7 @@ export default function AddRecipePage() {
                 }`}
                 onClick={() => setActiveTab("form")}
               >
-                <div className="flex items-center gap-2">
-                  <IconUpload size={16} />
-                  <span>Form Input</span>
-                </div>
+                Form Input
               </motion.button>
               <motion.button
                 whileHover={{ scale: 1.02 }}
@@ -1013,10 +983,7 @@ export default function AddRecipePage() {
                 }`}
                 onClick={() => setActiveTab("json")}
               >
-                <div className="flex items-center gap-2">
-                  <IconFileText size={16} />
-                  <span>JSON Input</span>
-                </div>
+                JSON Input
               </motion.button>
             </div>
           </motion.div>
