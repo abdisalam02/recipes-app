@@ -13,6 +13,8 @@ import {
 } from '../../../../lib/types'; // Corrected import path
 import { getNutritionalInfo } from '../../../../lib/existingNutrition'; // Corrected import path
 
+export const revalidate = 300; // 5 minutes ISR for read requests
+
 /**
  * GET /api/recipes
  * Fetches all recipes, including ingredients, steps, and aggregate nutritional info.
@@ -52,7 +54,14 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(recipes, { status: 200 });
+    // Cache-Control to enable edge caching
+    return new NextResponse(JSON.stringify(recipes ?? []), {
+      status: 200,
+      headers: {
+        'content-type': 'application/json',
+        'cache-control': 'public, s-maxage=300, stale-while-revalidate=86400'
+      }
+    });
   } catch (error: unknown) {
     console.error('Error fetching recipes:', error);
     return NextResponse.json(

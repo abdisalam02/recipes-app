@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import supabase from '../../../../lib/supabaseClient';
 import { fetchGoogleImages } from '../../../../lib/googleSearch';
 
+export const revalidate = 600; // 10 minutes
+
 // Helper to fetch random recipes from Spoonacular
 async function fetchRandomRecipes() {
   const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY;
@@ -81,11 +83,17 @@ export async function GET() {
     
     // If we have recipes for today, return them
     if (existingData) {
-      return NextResponse.json([
+      return new NextResponse(JSON.stringify([
         existingData.recipe_1_data,
         existingData.recipe_2_data,
         existingData.recipe_3_data
-      ]);
+      ]), {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+          'cache-control': 'public, s-maxage=600, stale-while-revalidate=86400'
+        }
+      });
     }
     
     // Otherwise, fetch new recipes
@@ -112,7 +120,13 @@ export async function GET() {
       );
     }
     
-    return NextResponse.json(recipes);
+    return new NextResponse(JSON.stringify(recipes), {
+      status: 200,
+      headers: {
+        'content-type': 'application/json',
+        'cache-control': 'public, s-maxage=600, stale-while-revalidate=86400'
+      }
+    });
   } catch (error) {
     console.error('Error in daily recipes API:', error);
     return NextResponse.json(

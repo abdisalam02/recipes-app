@@ -5,6 +5,8 @@ import { NextRequest } from "next/server";
 import supabase from "../../../../../lib/supabaseClient"; // Corrected import path
 import { RecipeInput } from "../../../../../lib/types"; // Ensure this is correctly imported
 
+export const revalidate = 300; // 5 minutes for item pages
+
 /**
  * GET /api/recipes/[id]
  * Fetches a single recipe by its ID, including ingredients, steps, and per-ingredient nutritional info.
@@ -62,7 +64,13 @@ export async function GET(
       per_ingredient_nutritional_info: perIngredientNutritionalInfo || [],
     };
 
-    return NextResponse.json(detailedRecipe, { status: 200 });
+    return new NextResponse(JSON.stringify(detailedRecipe), {
+      status: 200,
+      headers: {
+        'content-type': 'application/json',
+        'cache-control': 'public, s-maxage=300, stale-while-revalidate=86400'
+      }
+    });
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch recipe." }, { status: 500 });
   }

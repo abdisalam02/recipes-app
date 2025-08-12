@@ -15,6 +15,12 @@
       "src/app/api/analyze-food/route.ts": {
         "maxDuration": 30
       }
-    }
+    },
+    "crons": [
+      {
+        "path": "/api/keep-alive",
+        "schedule": "*/10 * * * *"
+      }
+    ]
   }
   
