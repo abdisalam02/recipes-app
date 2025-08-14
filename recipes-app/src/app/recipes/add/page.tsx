@@ -319,6 +319,104 @@ export default function AddRecipePage() {
     }
   };
 
+  // Helper: normalize AI-generated JSON into the expected shape
+  function normalizeIncomingRecipe(raw: any) {
+    // Unwrap top-level wrappers
+    if (Array.isArray(raw)) raw = raw[0] || {};
+    const wrappers = ["recipe", "data", "result", "payload", "item"];
+    for (const key of wrappers) {
+      if (raw && typeof raw[key] === "object") {
+        raw = raw[key];
+      }
+    }
+
+    const get = (obj: any, paths: string[]): any => {
+      for (const p of paths) {
+        const val = p
+          .split(".")
+          .reduce((o: any, k: string) => (o ? o[k] : undefined), obj);
+        if (val !== undefined) return val;
+      }
+      return undefined;
+    };
+
+    const normalized: any = {
+      title: get(raw, ["title", "name"]) || "",
+      category: (
+        get(raw, ["category", "type", "course", "dishType", "dish_type"]) || ""
+      ).toString(),
+      region: (get(raw, ["region", "cuisine", "origin"]) || "").toString(),
+      description: (
+        get(raw, ["description", "summary", "intro"]) || ""
+      ).toString(),
+      portion:
+        Number(get(raw, ["portion", "servings", "serves", "yield"])) || 1,
+      image:
+        get(raw, [
+          "image",
+          "imageUrl",
+          "imageURL",
+          "image_url",
+          "photo",
+          "thumbnail",
+        ]) || "",
+      ingredients: get(raw, [
+        "ingredients",
+        "ingredient",
+        "ingredients.list",
+        "ingredients.items",
+        "ingredients.data",
+        "ingredientsArray",
+        "ingredients_list",
+      ]),
+      steps: get(raw, [
+        "steps",
+        "instructions",
+        "directions",
+        "method",
+        "procedure",
+        "steps.list",
+        "instructions.list",
+      ]),
+    };
+
+    // Steps normalization
+    if (typeof normalized.steps === "string") {
+      const lines = normalized.steps
+        .split(/\r?\n/)
+        .map((s: string) => s.trim())
+        .filter(Boolean);
+      normalized.steps = lines.map((d: string, i: number) => ({
+        order: i + 1,
+        description: d.replace(/^\d+[\).\s-]*/, ""),
+      }));
+    }
+    if (
+      Array.isArray(normalized.steps) &&
+      normalized.steps.length &&
+      typeof normalized.steps[0] === "string"
+    ) {
+      normalized.steps = (normalized.steps as string[]).map(
+        (d: string, i: number) => ({ order: i + 1, description: d })
+      );
+    }
+
+    // Ingredients normalization
+    if (normalized.ingredients && !Array.isArray(normalized.ingredients)) {
+      const inner = get({ ingredients: normalized.ingredients }, [
+        "ingredients.list",
+        "ingredients.items",
+        "ingredients.data",
+      ]);
+      normalized.ingredients = Array.isArray(inner)
+        ? inner
+        : Object.values(normalized.ingredients);
+    }
+    if (!Array.isArray(normalized.ingredients)) normalized.ingredients = [];
+    if (!Array.isArray(normalized.steps)) normalized.steps = [];
+    return normalized;
+  }
+
   // Submit JSON Form (refactored to not require an event parameter)
   const handleJsonSubmitInternal = async (): Promise<void> => {
     if (!jsonData.trim()) {
@@ -345,6 +443,9 @@ export default function AddRecipePage() {
           );
         }
       }
+
+      // Normalize AI JSON that may include wrappers/synonyms
+      parsedData = normalizeIncomingRecipe(parsedData);
 
       console.log("Parsed data:", parsedData);
 
@@ -390,6 +491,72 @@ export default function AddRecipePage() {
       }
 
       // Process and sanitize ingredients
+      const synonymMap: { [key: string]: string } = {
+        "all-purpose flour": "flour",
+        "ap flour": "flour",
+        "dry yeast": "yeast",
+        "instant yeast": "yeast",
+        "garlic clove": "garlic",
+        "garlic cloves": "garlic",
+        "red pepper": "bell pepper",
+        "green pepper": "bell pepper",
+        "pul biber": "chili flakes",
+        "pul biber (hot chili flakes)": "chili flakes",
+        "warm water": "water",
+        "water (optional, if mixture too thick)": "water",
+      };
+      const normalizeUnit = (u: string | undefined): string => {
+        if (!u) return "g";
+        const unitLower = u.toLowerCase();
+        if (
+          [
+            "medium",
+            "small",
+            "large",
+            "bunch",
+            "packet",
+            "clove",
+            "cloves",
+          ].includes(unitLower)
+        )
+          return "whole";
+        return unitLower;
+      };
+      const cleanName = (n: string | undefined): string => {
+        if (!n) return "";
+        let name = n.toLowerCase();
+        // strip parentheses content and words like optional
+        name = name
+          .replace(/\([^)]*\)/g, "")
+          .replace(/optional/gi, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (synonymMap[name]) return synonymMap[name];
+        return name;
+      };
+      const pickQuantity = (ing: any): number => {
+        if (ing.quantity !== undefined && ing.quantity !== null) {
+          const q =
+            typeof ing.quantity === "number"
+              ? ing.quantity
+              : parseFloat(ing.quantity);
+          return isNaN(q) || q <= 0 ? 1 : q;
+        }
+        if (ing.quantity_min !== undefined || ing.quantity_max !== undefined) {
+          const min =
+            typeof ing.quantity_min === "number"
+              ? ing.quantity_min
+              : parseFloat(ing.quantity_min);
+          const max =
+            typeof ing.quantity_max === "number"
+              ? ing.quantity_max
+              : parseFloat(ing.quantity_max);
+          if (!isNaN(min) && !isNaN(max)) return (min + max) / 2;
+          if (!isNaN(min)) return min;
+          if (!isNaN(max)) return max;
+        }
+        return 1;
+      };
       const sanitizedIngredients = parsedData.ingredients.map(
         (ing: any, index: number) => {
           // Handle case where ingredient might be a string
@@ -398,48 +565,28 @@ export default function AddRecipePage() {
             const match = ing.match(/^(\d+\.?\d*)\s+(\w+)\s+(.+)$/);
             if (match) {
               return {
-                name: match[3].trim(),
+                name: cleanName(match[3]),
                 quantity: parseFloat(match[1]),
-                unit: match[2].trim(),
+                unit: normalizeUnit(match[2]),
               };
             } else {
               // Default values if parsing fails
               return {
-                name: ing.trim(),
+                name: cleanName(ing),
                 quantity: 1,
                 unit: "g",
               };
             }
           }
 
-          // Sanitize ingredient name - remove special characters and limit length
+          // Build from object with potential quantity_min/max and odd units/names
           let sanitizedName = ing.name
-            ? ing.name.trim()
-            : `Ingredient ${index + 1}`;
-
-          // Limit name length to 100 characters
-          if (sanitizedName.length > 100) {
+            ? cleanName(ing.name)
+            : `ingredient ${index + 1}`;
+          if (sanitizedName.length > 100)
             sanitizedName = sanitizedName.substring(0, 100);
-          }
-
-          // Ensure quantity is a valid number
-          let quantity = 1;
-          if (ing.quantity) {
-            quantity =
-              typeof ing.quantity === "number"
-                ? ing.quantity
-                : parseFloat(ing.quantity);
-            if (isNaN(quantity) || quantity <= 0) {
-              console.warn(
-                `Invalid quantity for ingredient "${sanitizedName}". Using default value 1.`
-              );
-              quantity = 1;
-            }
-          }
-
-          // Ensure unit is a string
-          const unit = ing.unit?.trim() || "g";
-
+          const quantity = pickQuantity(ing);
+          const unit = normalizeUnit(ing.unit);
           return {
             name: sanitizedName,
             quantity,
@@ -463,8 +610,8 @@ export default function AddRecipePage() {
       });
 
       // Map ingredients, creating new ones if needed - with better error handling
-      const mappedIngredients = [];
-      const ingredientErrors = [];
+      const mappedIngredients: any[] = [];
+      const ingredientErrors: string[] = [];
 
       // Process ingredients one by one instead of using Promise.all
       for (let i = 0; i < sanitizedIngredients.length; i++) {
@@ -531,6 +678,15 @@ export default function AddRecipePage() {
           );
           continue; // Skip this ingredient but continue with others
         }
+      }
+
+      // If after mapping there are no valid ingredients, stop and alert the user
+      if (mappedIngredients.length === 0) {
+        setPopupMessage(
+          "No valid ingredients were found in the JSON. Please ensure the JSON contains an 'ingredients' array (or synonyms) with name, quantity, and unit."
+        );
+        setShowPopup(true);
+        return;
       }
 
       // Process and sanitize steps
@@ -1412,6 +1568,42 @@ export default function AddRecipePage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Recipe JSON
                 </label>
+                {/* JSON Input Rules */}
+                <div className="glass-panel backdrop-blur-xl bg-white/10 border border-white/20 rounded-xl p-4 mb-3 text-sm text-gray-700">
+                  <strong>JSON rules:</strong> Use an object with these fields:
+                  <ul className="list-disc pl-5 mt-2 space-y-1">
+                    <li>
+                      <code>title</code>, <code>category</code>,{" "}
+                      <code>region</code>, <code>description</code> (strings),{" "}
+                      <code>portion</code> (number)
+                    </li>
+                    <li>
+                      <code>ingredients</code>: array of objects{" "}
+                      <code>{`{"name": string, "quantity": number, "unit": string}`}</code>
+                    </li>
+                    <li>
+                      Prefer units in <code>g</code> or <code>ml</code>.
+                      Allowed: <code>tsp</code>, <code>tbsp</code>,{" "}
+                      <code>cup</code>, <code>whole</code>
+                    </li>
+                    <li>
+                      Standard names (examples): <code>flour</code>,{" "}
+                      <code>yeast</code>, <code>garlic</code>,{" "}
+                      <code>red bell pepper</code>,{" "}
+                      <code>green bell pepper</code>, <code>chili flakes</code>,{" "}
+                      <code>olive oil</code>, <code>ground beef</code>
+                    </li>
+                    <li>
+                      <code>steps</code>: array of objects{" "}
+                      <code>{`{"order": number, "description": string}`}</code>
+                    </li>
+                    <li>
+                      No extra wrappers (e.g., avoid{" "}
+                      <code>{`{recipe: {...}}`}</code>); provide a single
+                      top-level object only
+                    </li>
+                  </ul>
+                </div>
                 <textarea
                   name="jsonData"
                   className="glass-panel backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
@@ -1426,25 +1618,11 @@ export default function AddRecipePage() {
   "ingredients": [
     { "name": "flour", "quantity": 500, "unit": "g" },
     { "name": "water", "quantity": 250, "unit": "ml" },
-    { "name": "salt", "quantity": 5, "unit": "g" },
-    { "name": "oil", "quantity": 60, "unit": "ml" },
-    { "name": "chicken", "quantity": 400, "unit": "g" },
-    { "name": "onion", "quantity": 150, "unit": "g" },
-    { "name": "garlic powder", "quantity": 5, "unit": "g" },
-    { "name": "turmeric", "quantity": 5, "unit": "g" },
-    { "name": "cayenne", "quantity": 3, "unit": "g" },
-    { "name": "parsley", "quantity": 20, "unit": "g" }
+    { "name": "salt", "quantity": 5, "unit": "g" }
   ],
   "steps": [
-    { "order": 1, "description": "In a large bowl, mix the flour and salt. Gradually add water while kneading until you form a smooth, elastic dough." },
-    { "order": 2, "description": "Cover the dough with a damp cloth and let it rest for 30 minutes." },
-    { "order": 3, "description": "Meanwhile, cook the chicken with diced onions, garlic powder, turmeric, and cayenne until fully cooked." },
-    { "order": 4, "description": "Shred the chicken and mix with chopped parsley. Set aside." },
-    { "order": 5, "description": "Divide the dough into golf ball-sized pieces. On an oiled surface, flatten each piece into a thin rectangle." },
-    { "order": 6, "description": "Place a spoonful of the chicken mixture in the center of each rectangle." },
-    { "order": 7, "description": "Fold the edges over the filling to create a square packet, sealing the edges well." },
-    { "order": 8, "description": "Heat a tablespoon of oil in a pan over medium heat. Cook each msemen for 3-4 minutes on each side until golden brown and crispy." },
-    { "order": 9, "description": "Serve hot with a side of honey or mint tea." }
+    { "order": 1, "description": "Mix flour and salt, add water until dough forms." },
+    { "order": 2, "description": "Rest dough 30 minutes." }
   ]
 }`}
                   value={jsonData}

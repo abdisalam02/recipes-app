@@ -22,6 +22,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { FloatingNavigation } from "./components/FloatingNavigation";
 import { useTheme } from "./contexts/ThemeContext";
+import Link from "next/link";
 
 // Memoized Toast Component
 const Toast = memo(
@@ -34,12 +35,12 @@ const Toast = memo(
     type: "success" | "error";
     onClose: () => void;
   }) => {
-    useEffect(() => {
+  useEffect(() => {
       const timer = setTimeout(onClose, 3000);
-      return () => clearTimeout(timer);
-    }, [onClose]);
-
-    return (
+    return () => clearTimeout(timer);
+  }, [onClose]);
+  
+  return (
       <div
         className="fixed bottom-6 right-6 z-50 p-4 rounded-lg shadow-lg max-w-sm"
         style={{
@@ -50,9 +51,9 @@ const Toast = memo(
         <div className="flex items-center gap-2">
           <IconHeart size={16} />
           <span className="text-sm">{message}</span>
-        </div>
       </div>
-    );
+    </div>
+  );
   }
 );
 Toast.displayName = "Toast";
@@ -68,11 +69,25 @@ const HeroSection = memo(
 
     return (
       <section
-        className="text-center py-12 px-4"
+        className="text-center py-12 px-4 relative"
         style={{
           background: `linear-gradient(135deg, ${currentTheme.colors.background}, ${currentTheme.colors.surface})`,
         }}
       >
+        {/* Hidden admin link near header */}
+        <Link
+          href="/admin"
+          aria-label="Admin"
+          title="?"
+          className="absolute top-3 right-3 opacity-40 hover:opacity-90 text-xs rounded-full px-2 py-1"
+          style={{
+            backgroundColor: `${currentTheme.colors.surface}`,
+            color: currentTheme.colors.textSecondary,
+            border: `1px solid ${currentTheme.colors.primary}30`,
+          }}
+        >
+          ?
+        </Link>
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -151,29 +166,29 @@ const RecipeCard = memo(
     isFavorite: boolean;
     onToggleFavorite: (e: React.MouseEvent) => void;
     onClick: () => void;
-  }) => {
+}) => {
     const { theme, themes } = useTheme();
     const currentTheme = useMemo(
       () => themes.find((t) => t.name === theme) || themes[0],
       [theme, themes]
     );
-
-    return (
-      <div
+  
+  return (
+    <div 
         className="rounded-2xl shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-200"
         style={{ backgroundColor: currentTheme.colors.background }}
         onClick={onClick}
       >
         <div className="relative h-48">
-          <Image
+            <Image
             src={recipe.image || "/default-image.png"}
-            alt={recipe.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              alt={recipe.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             loading="lazy"
           />
-          <button
+              <button
             onClick={onToggleFavorite}
             className="absolute top-3 right-3 p-2 rounded-full shadow-sm transition-colors"
             style={{
@@ -181,14 +196,14 @@ const RecipeCard = memo(
             }}
           >
             {isFavorite ? (
-              <IconHeartFilled size={18} className="text-red-500" />
-            ) : (
+                  <IconHeartFilled size={18} className="text-red-500" />
+                ) : (
               <IconHeart
                 size={18}
                 style={{ color: currentTheme.colors.textSecondary }}
               />
-            )}
-          </button>
+                )}
+              </button>
           <div className="absolute bottom-3 left-3">
             <span
               className="px-3 py-1 rounded-full text-xs font-medium text-white"
@@ -197,8 +212,8 @@ const RecipeCard = memo(
               {recipe.category}
             </span>
           </div>
-        </div>
-
+            </div>
+            
         <div className="p-4">
           <h3
             className="text-lg font-bold mb-2 line-clamp-2"
@@ -219,12 +234,12 @@ const RecipeCard = memo(
             <div className="flex items-center gap-1">
               <IconClock size={14} />
               <span>30 min</span>
-            </div>
+                </div>
             <div className="flex items-center gap-1">
               <IconUser size={14} />
               <span>{recipe.portion} servings</span>
-            </div>
-          </div>
+                </div>
+              </div>
         </div>
       </div>
     );
@@ -288,10 +303,10 @@ const DailyRecipeCarousel = memo(
           priority
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
+                
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
             onToggleFavorite(currentRecipe.id);
           }}
           className="absolute top-4 right-4 p-2 rounded-full shadow-sm"
@@ -307,7 +322,7 @@ const DailyRecipeCarousel = memo(
               style={{ color: currentTheme.colors.textSecondary }}
             />
           )}
-        </button>
+                </button>
 
         <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
           <h3 className="text-2xl font-bold mb-2">{currentRecipe.title}</h3>
@@ -318,15 +333,15 @@ const DailyRecipeCarousel = memo(
             <div className="flex items-center gap-1">
               <IconClock size={14} />
               <span>30 min</span>
-            </div>
+              </div>
             <div className="flex items-center gap-1">
               <IconUser size={14} />
               <span>{currentRecipe.portion} servings</span>
             </div>
           </div>
-        </div>
-
-        {recipes.length > 1 && (
+      </div>
+      
+      {recipes.length > 1 && (
           <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex gap-2">
             {recipes.map((_, index) => (
               <button
@@ -342,9 +357,9 @@ const DailyRecipeCarousel = memo(
               />
             ))}
           </div>
-        )}
-      </div>
-    );
+      )}
+    </div>
+  );
   }
 );
 DailyRecipeCarousel.displayName = "DailyRecipeCarousel";
@@ -356,7 +371,7 @@ const QuickActions = memo(({ router }: { router: any }) => {
     () => themes.find((t) => t.name === theme) || themes[0],
     [theme, themes]
   );
-
+  
   return (
     <section
       className="py-12"
@@ -370,7 +385,7 @@ const QuickActions = memo(({ router }: { router: any }) => {
           Quick Actions
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <button
+        <button
             onClick={() => router.push("/recipes/add")}
             className="text-white p-6 rounded-2xl shadow-md hover:shadow-lg transition-shadow text-center"
             style={{
@@ -380,9 +395,9 @@ const QuickActions = memo(({ router }: { router: any }) => {
             <IconPlus size={32} className="mx-auto mb-3" />
             <h3 className="text-lg font-bold mb-2">Add Recipe</h3>
             <p className="text-green-100 text-sm">Share your favorite recipe</p>
-          </button>
+        </button>
 
-          <button
+        <button
             onClick={() => router.push("/AI")}
             className="text-white p-6 rounded-2xl shadow-md hover:shadow-lg transition-shadow text-center"
             style={{
@@ -404,9 +419,9 @@ const QuickActions = memo(({ router }: { router: any }) => {
             <IconCalendarEvent size={32} className="mx-auto mb-3" />
             <h3 className="text-lg font-bold mb-2">Daily Recipes</h3>
             <p className="opacity-90 text-sm">Fresh daily selections</p>
-          </button>
-        </div>
+        </button>
       </div>
+    </div>
     </section>
   );
 });
@@ -555,8 +570,8 @@ export default function HomePage() {
     async (recipeId: number) => {
       try {
         const isFavorited = favorites.some((fav) => fav.recipe_id === recipeId);
-
-        if (isFavorited) {
+      
+      if (isFavorited) {
           await fetch("/api/favorites", {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
@@ -570,23 +585,23 @@ export default function HomePage() {
             message: "Removed from favorites",
             type: "success",
           });
-        } else {
+      } else {
           const res = await fetch("/api/favorites", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ recipe_id: recipeId }),
           });
-          if (res.ok) {
-            const newFavorite = await res.json();
+        if (res.ok) {
+          const newFavorite = await res.json();
             setFavorites((prev) => [...prev, newFavorite]);
             setToast({
               show: true,
               message: "Added to favorites",
               type: "success",
             });
-          }
         }
-      } catch (error) {
+      }
+    } catch (error) {
         console.error("Error toggling favorite:", error);
         setToast({
           show: true,
@@ -658,13 +673,13 @@ export default function HomePage() {
               >
                 <IconCalendarEvent size={16} />
                 Daily Fresh Collection
-              </span>
+                  </span>
               <h2
                 className="text-3xl font-bold mb-4"
                 style={{ color: currentTheme.colors.text }}
               >
-                Today's Culinary Inspirations
-              </h2>
+                    Today's Culinary Inspirations
+                  </h2>
               <p
                 className="max-w-2xl mx-auto"
                 style={{ color: currentTheme.colors.textSecondary }}
@@ -673,16 +688,16 @@ export default function HomePage() {
                 adventure
               </p>
             </div>
-
+            
             <DailyRecipeCarousel
-              recipes={dailyRecipes}
-              favorites={favorites}
+            recipes={dailyRecipes}
+            favorites={favorites}
               onToggleFavorite={toggleFavorite}
               onRecipeClick={(id) => router.push(`/daily-recipes/${id}`)}
             />
 
             <div className="text-center mt-8">
-              <button
+            <button
                 onClick={() => router.push("/daily-recipes")}
                 className="text-white font-semibold px-6 py-3 rounded-xl shadow-md transition-colors"
                 style={{
@@ -691,9 +706,9 @@ export default function HomePage() {
               >
                 <IconTrendingUp size={18} className="inline mr-2" />
                 View All Daily Recipes
-              </button>
-            </div>
+            </button>
           </div>
+        </div>
         </section>
       )}
 
@@ -732,24 +747,24 @@ export default function HomePage() {
                 ? `Found ${filteredRecipes.length} recipes matching "${searchTerm}"`
                 : "Discover our most loved recipes, carefully selected by our community"}
             </p>
-          </div>
+      </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredRecipes.map((recipe) => (
+          {filteredRecipes.map((recipe) => (
               <RecipeCard
-                key={recipe.id}
+              key={recipe.id}
                 recipe={recipe}
                 isFavorite={favorites.some(
                   (fav) => fav.recipe_id === recipe.id
                 )}
                 onToggleFavorite={(e) => {
-                  e.stopPropagation();
+                      e.stopPropagation();
                   toggleFavorite(recipe.id);
                 }}
                 onClick={() => router.push(`/recipes/${recipe.id}`)}
               />
-            ))}
-          </div>
+          ))}
+        </div>
 
           {filteredRecipes.length === 0 && searchTerm && (
             <div className="text-center py-12">
@@ -759,18 +774,18 @@ export default function HomePage() {
               >
                 No recipes found matching "{searchTerm}"
               </p>
-              <button
+                <button
                 onClick={() => setSearchTerm("")}
                 className="font-medium hover:opacity-80 transition-opacity"
                 style={{ color: currentTheme.colors.primary }}
               >
                 Clear search
-              </button>
-            </div>
+                </button>
+              </div>
           )}
 
           <div className="text-center mt-12">
-            <button
+                <button
               onClick={() => setShowAllRecipes(!showAllRecipes)}
               className="text-white font-semibold px-8 py-3 rounded-xl shadow-md transition-colors"
               style={{
@@ -778,9 +793,9 @@ export default function HomePage() {
               }}
             >
               {showAllRecipes ? "View Less" : "View More"}
-            </button>
-          </div>
-        </div>
+                </button>
+              </div>
+            </div>
       </section>
 
       {/* Quick Actions */}

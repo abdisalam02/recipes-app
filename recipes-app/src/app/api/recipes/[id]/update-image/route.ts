@@ -10,9 +10,9 @@ import supabase from "../../../../../../lib/supabaseClient";
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await context.params;
   const { imageUrl } = await request.json();
 
   if (!id) {

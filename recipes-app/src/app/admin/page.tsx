@@ -145,14 +145,14 @@ export default function AdminDashboardPage() {
       setLoading(true);
       const res = await fetch("/api/auth", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           // Prevent browser's default auth popup
           "X-Requested-With": "XMLHttpRequest",
         },
         body: JSON.stringify({ password: passwordInput }),
       });
-      
+
       if (!res.ok) {
         let errorMessage;
         try {
@@ -163,7 +163,7 @@ export default function AdminDashboardPage() {
         }
         throw new Error(errorMessage || "Invalid password");
       }
-      
+
       setIsAuthenticated(true);
       setShowPasswordModal(false);
       setToastMessage({
@@ -187,9 +187,12 @@ export default function AdminDashboardPage() {
   const fetchRecipes = async () => {
     try {
       setLoading(true);
+      const ts = Date.now();
       const endpoint =
-        selectedTab === "recipes" ? "/api/recipes" : "/api/ai-recipes";
-      const response = await fetch(endpoint);
+        selectedTab === "recipes"
+          ? `/api/recipes?nocache=1&ts=${ts}`
+          : `/api/ai-recipes?nocache=1&ts=${ts}`;
+      const response = await fetch(endpoint, { cache: "no-store" });
       if (!response.ok) {
         throw new Error("Failed to fetch recipes");
       }
@@ -222,20 +225,20 @@ export default function AdminDashboardPage() {
       // Use the correct endpoint based on the selected tab
       const endpoint =
         selectedTab === "recipes"
-        ? `/api/recipes/${recipeToDelete.id}` 
-        : `/api/ai-recipes/${recipeToDelete.id}`;
-        
+          ? `/api/recipes/${recipeToDelete.id}`
+          : `/api/ai-recipes/${recipeToDelete.id}`;
+
       console.log(
         `Deleting ${selectedTab} with ID ${recipeToDelete.id} from endpoint: ${endpoint}`
       );
-      
-      const res = await fetch(endpoint, { 
+
+      const res = await fetch(endpoint, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
       });
-      
+
       if (!res.ok) {
         // Handle empty response or invalid JSON
         let errorMessage;
@@ -253,10 +256,10 @@ export default function AdminDashboardPage() {
             }`
         );
       }
-      
+
       // Update UI by removing the deleted recipe
       setRecipes((prev) => prev.filter((r) => r.id !== recipeToDelete.id));
-      
+
       // Show success message
       setToastMessage({
         show: true,
@@ -353,21 +356,21 @@ export default function AdminDashboardPage() {
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-decorative-2 opacity-20 rounded-full blur-3xl animate-pulse"></div>
 
         <div className="container mx-auto px-4 py-8 relative z-10 pb-24 md:pb-8">
-        {/* Toast Notification */}
+          {/* Toast Notification */}
           <AnimatePresence>
-        {toastMessage.show && (
-          <Toast
-            type={toastMessage.type}
-            message={toastMessage.message}
+            {toastMessage.show && (
+              <Toast
+                type={toastMessage.type}
+                message={toastMessage.message}
                 onClose={() =>
                   setToastMessage({ ...toastMessage, show: false })
                 }
-          />
-        )}
+              />
+            )}
           </AnimatePresence>
-        
+
           {/* Enhanced Password Modal */}
-        {showPasswordModal && (
+          {showPasswordModal && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -385,41 +388,41 @@ export default function AdminDashboardPage() {
                   className="flex items-center justify-center mb-6"
                 >
                   <div className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 rounded-full p-4 shadow-lg">
-                <IconLock size={48} className="text-primary" />
-              </div>
+                    <IconLock size={48} className="text-primary" />
+                  </div>
                 </motion.div>
                 <h2 className="text-2xl font-bold text-center mb-6 bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Admin Authentication
                 </h2>
                 <p className="text-gray-600 mb-6 text-center">
-                Please enter the admin password to access the dashboard.
-              </p>
+                  Please enter the admin password to access the dashboard.
+                </p>
                 <div className="space-y-4">
-                <input
-                  type="password"
-                  placeholder="Enter password"
-                  value={passwordInput}
-                  onChange={(e) => setPasswordInput(e.target.value)}
+                  <input
+                    type="password"
+                    placeholder="Enter password"
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
                     className="glass-panel backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                />
+                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                  />
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                  onClick={handleLogin}
+                    onClick={handleLogin}
                     className="glass-panel backdrop-blur-xl bg-gradient-to-r from-emerald-500 to-blue-500 text-white border border-white/30 rounded-xl px-8 py-3 font-semibold shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 w-full"
-                  disabled={loading}
-                >
-                  {loading ? "Authenticating..." : "Login"}
+                    disabled={loading}
+                  >
+                    {loading ? "Authenticating..." : "Login"}
                   </motion.button>
-              </div>
+                </div>
               </motion.div>
             </motion.div>
-        )}
+          )}
 
           {/* Enhanced Delete Confirmation Modal */}
           <AnimatePresence>
-        {deleteModalOpen && recipeToDelete && (
+            {deleteModalOpen && recipeToDelete && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -441,37 +444,37 @@ export default function AdminDashboardPage() {
                       {recipeToDelete.title}
                     </span>
                     ? This action cannot be undone.
-              </p>
+                  </p>
                   <div className="flex gap-4">
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    setDeleteModalOpen(false);
-                    setRecipeToDelete(null);
-                  }}
+                      onClick={() => {
+                        setDeleteModalOpen(false);
+                        setRecipeToDelete(null);
+                      }}
                       className="glass-panel backdrop-blur-xl bg-gray-500/20 border border-gray-400/30 text-gray-700 px-6 py-3 rounded-xl font-medium flex-1"
-                  disabled={loading}
-                >
-                  Cancel
+                      disabled={loading}
+                    >
+                      Cancel
                     </motion.button>
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                  onClick={confirmDelete}
+                      onClick={confirmDelete}
                       className="glass-panel backdrop-blur-xl bg-red-500/20 border border-red-400/30 text-red-700 px-6 py-3 rounded-xl font-medium flex-1"
-                  disabled={loading}
-                >
-                  {loading ? "Deleting..." : "Delete"}
+                      disabled={loading}
+                    >
+                      {loading ? "Deleting..." : "Delete"}
                     </motion.button>
-              </div>
+                  </div>
                 </motion.div>
               </motion.div>
-        )}
+            )}
           </AnimatePresence>
 
-        {isAuthenticated && (
-          <>
+          {isAuthenticated && (
+            <>
               {/* Enhanced Tab Selector */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -483,27 +486,27 @@ export default function AdminDashboardPage() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className={`px-6 py-3 rounded-xl transition-all duration-300 font-medium ${
-                    selectedTab === "recipes" 
+                      selectedTab === "recipes"
                         ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg"
                         : "text-gray-700 hover:bg-white/20"
-                  }`}
-                  onClick={() => setSelectedTab("recipes")}
-                >
-                  Recipes
+                    }`}
+                    onClick={() => setSelectedTab("recipes")}
+                  >
+                    Recipes
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className={`px-6 py-3 rounded-xl transition-all duration-300 font-medium ${
-                    selectedTab === "ai-recipes" 
+                      selectedTab === "ai-recipes"
                         ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg"
                         : "text-gray-700 hover:bg-white/20"
-                  }`}
-                  onClick={() => setSelectedTab("ai-recipes")}
-                >
-                  AI Recipes
+                    }`}
+                    onClick={() => setSelectedTab("ai-recipes")}
+                  >
+                    AI Recipes
                   </motion.button>
-              </div>
+                </div>
               </motion.div>
 
               {/* Enhanced Header with Refresh Button */}
@@ -513,20 +516,20 @@ export default function AdminDashboardPage() {
                 className="flex items-center justify-between mb-6"
               >
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Admin Dashboard
-              </h2>
+                  Admin Dashboard
+                </h2>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                onClick={fetchRecipes} 
+                  onClick={fetchRecipes}
                   className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 text-gray-700 hover:bg-white/30 transition-all duration-300 px-6 py-3 rounded-xl font-medium shadow-lg"
-              >
-                Refresh Data
+                >
+                  Refresh Data
                 </motion.button>
               </motion.div>
 
-            {/* Loading State */}
-            {loading && (
+              {/* Loading State */}
+              {loading && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -534,12 +537,12 @@ export default function AdminDashboardPage() {
                 >
                   <div className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 p-6 rounded-2xl">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
-              </div>
+                  </div>
                 </motion.div>
-            )}
+              )}
 
               {/* Enhanced Recipes Grid */}
-            {!loading && recipes.length === 0 ? (
+              {!loading && recipes.length === 0 ? (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -558,13 +561,13 @@ export default function AdminDashboardPage() {
                       No recipes found
                     </p>
                     <p className="text-gray-500 mt-2">
-                  {selectedTab === "recipes" 
-                    ? "Try adding some recipes first" 
-                    : "Try generating some AI recipes first"}
-                </p>
-              </div>
+                      {selectedTab === "recipes"
+                        ? "Try adding some recipes first"
+                        : "Try generating some AI recipes first"}
+                    </p>
+                  </div>
                 </motion.div>
-            ) : (
+              ) : (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -579,67 +582,67 @@ export default function AdminDashboardPage() {
                       whileHover={{ y: -5, scale: 1.02 }}
                       className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 rounded-2xl overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500"
                     >
-                    <figure className="relative h-48">
-                      <img
-                        src={recipe.image}
-                        alt={recipe.title}
+                      <figure className="relative h-48">
+                        <img
+                          src={recipe.image}
+                          alt={recipe.title}
                           className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
                             target.src =
                               "https://via.placeholder.com/400x300?text=No+Image";
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-                      <div className="absolute bottom-0 left-0 right-0 p-4">
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+                        <div className="absolute bottom-0 left-0 right-0 p-4">
                           <div className="badge badge-lg bg-gradient-to-r from-emerald-500 to-blue-500 text-white border-none">
                             {recipe.category &&
                             typeof recipe.category === "string"
                               ? recipe.category.charAt(0).toUpperCase() +
                                 recipe.category.slice(1)
-                            : "Uncategorized"}
+                              : "Uncategorized"}
+                          </div>
                         </div>
-                      </div>
-                    </figure>
-                    <div className="p-4">
+                      </figure>
+                      <div className="p-4">
                         <h3 className="text-xl font-bold mb-2 line-clamp-1 text-gray-800">
                           {recipe.title}
                         </h3>
                         <p className="text-sm text-gray-600 mb-4 line-clamp-2">
                           {recipe.description}
                         </p>
-                      <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between">
                           <span className="text-sm text-gray-500">
                             Portions: {recipe.portion}
                           </span>
-                        <div className="flex gap-2">
+                          <div className="flex gap-2">
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
-                            onClick={() => handleEdit(recipe)}
+                              onClick={() => handleEdit(recipe)}
                               className="glass-panel backdrop-blur-xl bg-blue-500/20 border border-blue-400/30 text-blue-700 p-2 rounded-full hover:bg-blue-500/30 transition-colors"
-                            title="Edit Recipe"
-                            aria-label={`Edit ${recipe.title}`}
-                          >
-                            <IconEdit size={18} />
+                              title="Edit Recipe"
+                              aria-label={`Edit ${recipe.title}`}
+                            >
+                              <IconEdit size={18} />
                             </motion.button>
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
-                            onClick={() => handleDelete(recipe)}
+                              onClick={() => handleDelete(recipe)}
                               className="glass-panel backdrop-blur-xl bg-red-500/20 border border-red-400/30 text-red-700 p-2 rounded-full hover:bg-red-500/30 transition-colors"
-                            title="Delete Recipe"
-                            aria-label={`Delete ${recipe.title}`}
-                          >
+                              title="Delete Recipe"
+                              aria-label={`Delete ${recipe.title}`}
+                            >
                               <IconTrash size={18} />
                             </motion.button>
                           </div>
                         </div>
                       </div>
                     </motion.div>
-                ))}
+                  ))}
                 </motion.div>
-            )}
+              )}
 
               {/* Enhanced Back to Home Link */}
               <motion.div
@@ -653,12 +656,12 @@ export default function AdminDashboardPage() {
                     whileTap={{ scale: 0.95 }}
                     className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 text-gray-700 hover:bg-white/30 transition-all duration-300 px-8 py-4 rounded-2xl font-medium shadow-lg inline-block"
                   >
-                Back to Home
+                    Back to Home
                   </motion.div>
-              </Link>
+                </Link>
               </motion.div>
-          </>
-        )}
+            </>
+          )}
         </div>
 
         {/* FloatingNavigation */}
@@ -673,223 +676,223 @@ export default function AdminDashboardPage() {
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-r from-orange-400 to-red-400 opacity-20 rounded-full blur-3xl animate-pulse"></div>
 
       <div className="container mx-auto py-8 relative z-10 pb-24 md:pb-8">
-      {/* Tab Slider for Admin: Recipes vs AI Recipes */}
-      <div className="flex justify-center mb-6 gap-4">
-        <button
+        {/* Tab Slider for Admin: Recipes vs AI Recipes */}
+        <div className="flex justify-center mb-6 gap-4">
+          <button
             className={`btn ${
               selectedTab === "recipes" ? "btn-primary" : "btn-outline"
             }`}
-          onClick={() => setSelectedTab("recipes")}
-        >
-          Recipes
-        </button>
-        <button
+            onClick={() => setSelectedTab("recipes")}
+          >
+            Recipes
+          </button>
+          <button
             className={`btn ${
               selectedTab === "ai-recipes" ? "btn-primary" : "btn-outline"
             }`}
-          onClick={() => setSelectedTab("ai-recipes")}
-        >
-          AI Recipes
-        </button>
-      </div>
+            onClick={() => setSelectedTab("ai-recipes")}
+          >
+            AI Recipes
+          </button>
+        </div>
 
-      {/* Refresh Button */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold">Admin Dashboard</h2>
-        <button onClick={fetchRecipes} className="btn btn-primary">
-          Refresh
-        </button>
-      </div>
+        {/* Refresh Button */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold">Admin Dashboard</h2>
+          <button onClick={fetchRecipes} className="btn btn-primary">
+            Refresh
+          </button>
+        </div>
 
-      {/* Recipes Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {recipes.map((recipe) => (
+        {/* Recipes Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {recipes.map((recipe) => (
             <div
               key={recipe.id}
               className="card bg-base-100 shadow-md rounded-lg p-4"
             >
-            <figure>
-              <img
-                src={recipe.image}
-                alt={recipe.title}
-                className="w-full h-40 object-cover rounded-md"
-              />
-            </figure>
-            <div className="mt-4">
-              <h3 className="text-xl font-bold">{recipe.title}</h3>
-              <span className="badge badge-secondary">
+              <figure>
+                <img
+                  src={recipe.image}
+                  alt={recipe.title}
+                  className="w-full h-40 object-cover rounded-md"
+                />
+              </figure>
+              <div className="mt-4">
+                <h3 className="text-xl font-bold">{recipe.title}</h3>
+                <span className="badge badge-secondary">
                   {recipe.category
                     ? recipe.category.charAt(0).toUpperCase() +
                       recipe.category.slice(1)
                     : "Uncategorized"}
-              </span>
-            </div>
+                </span>
+              </div>
               <p className="text-sm text-gray-500 mt-2 line-clamp-3">
                 {recipe.description}
               </p>
-            <div className="flex items-center justify-between mt-4">
-              <span className="text-sm">Portions: {recipe.portion}</span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleEdit(recipe)}
-                  className="btn btn-outline btn-sm"
-                  title="Edit Recipe"
-                  aria-label={`Edit ${recipe.title}`}
-                >
-                  <IconEdit size={18} />
-                </button>
-                <button
-                  onClick={() => handleDelete(recipe)}
-                  className="btn btn-outline btn-sm"
-                  title="Delete Recipe"
-                  aria-label={`Delete ${recipe.title}`}
-                >
-                  <IconTrash size={18} />
-                </button>
+              <div className="flex items-center justify-between mt-4">
+                <span className="text-sm">Portions: {recipe.portion}</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(recipe)}
+                    className="btn btn-outline btn-sm"
+                    title="Edit Recipe"
+                    aria-label={`Edit ${recipe.title}`}
+                  >
+                    <IconEdit size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(recipe)}
+                    className="btn btn-outline btn-sm"
+                    title="Delete Recipe"
+                    aria-label={`Delete ${recipe.title}`}
+                  >
+                    <IconTrash size={18} />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      {/* Confirmation Modal for Deletion */}
-      {deleteModalOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-md">
-            <h3 className="font-bold text-xl mb-4">Confirm Deletion</h3>
-            <p>
+        {/* Confirmation Modal for Deletion */}
+        {deleteModalOpen && (
+          <div className="modal modal-open">
+            <div className="modal-box max-w-md">
+              <h3 className="font-bold text-xl mb-4">Confirm Deletion</h3>
+              <p>
                 Are you sure you want to delete the recipe "
                 <b>{recipeToDelete?.title}</b>"?
-            </p>
-            <div className="modal-action">
+              </p>
+              <div className="modal-action">
                 <button
                   className="btn btn-outline"
                   onClick={() => setDeleteModalOpen(false)}
                 >
-                Cancel
-              </button>
-              <button className="btn btn-error" onClick={confirmDelete}>
-                Delete
-              </button>
+                  Cancel
+                </button>
+                <button className="btn btn-error" onClick={confirmDelete}>
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Edit Recipe Modal */}
-      {currentRecipe && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
+        {/* Edit Recipe Modal */}
+        {currentRecipe && (
+          <div className="fixed inset-0 flex items-center justify-center z-50">
             <div
               className="fixed inset-0 bg-black bg-opacity-50"
               onClick={() => setCurrentRecipe(null)}
             ></div>
-          <div className="bg-base-100 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-            <h3 className="text-xl font-bold mb-4">Edit Recipe</h3>
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="label">Title</label>
-                <input
-                  type="text"
-                  placeholder="Title"
-                  value={currentRecipe.title}
-                  onChange={(e) =>
+            <div className="bg-base-100 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+              <h3 className="text-xl font-bold mb-4">Edit Recipe</h3>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="label">Title</label>
+                  <input
+                    type="text"
+                    placeholder="Title"
+                    value={currentRecipe.title}
+                    onChange={(e) =>
                       setCurrentRecipe({
                         ...currentRecipe,
                         title: e.target.value,
                       })
-                  }
-                  className="input input-bordered w-full"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="label">Category</label>
-                <input
-                  type="text"
-                  placeholder="Category"
-                  value={currentRecipe.category || ""}
-                  onChange={(e) =>
+                    }
+                    className="input input-bordered w-full"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="label">Category</label>
+                  <input
+                    type="text"
+                    placeholder="Category"
+                    value={currentRecipe.category || ""}
+                    onChange={(e) =>
                       setCurrentRecipe({
                         ...currentRecipe,
                         category: e.target.value,
                       })
-                  }
-                  className="input input-bordered w-full"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="label">Description</label>
-                <textarea
-                  placeholder="Description"
-                  value={currentRecipe.description}
-                  onChange={(e) =>
+                    }
+                    className="input input-bordered w-full"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="label">Description</label>
+                  <textarea
+                    placeholder="Description"
+                    value={currentRecipe.description}
+                    onChange={(e) =>
                       setCurrentRecipe({
                         ...currentRecipe,
                         description: e.target.value,
                       })
-                  }
-                  className="textarea textarea-bordered w-full"
-                  rows={4}
-                  required
-                ></textarea>
-              </div>
-              
-              <div>
-                <label className="label">Portions</label>
-                <input
-                  type="number"
-                  placeholder="Portions"
-                  value={currentRecipe.portion}
-                  onChange={(e) =>
+                    }
+                    className="textarea textarea-bordered w-full"
+                    rows={4}
+                    required
+                  ></textarea>
+                </div>
+
+                <div>
+                  <label className="label">Portions</label>
+                  <input
+                    type="number"
+                    placeholder="Portions"
+                    value={currentRecipe.portion}
+                    onChange={(e) =>
                       setCurrentRecipe({
                         ...currentRecipe,
                         portion: Number(e.target.value),
                       })
-                  }
-                  className="input input-bordered w-full"
-                  min="1"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="label">Image URL</label>
-                <input
-                  type="text"
-                  placeholder="Image URL"
-                  value={currentRecipe.image}
-                  onChange={(e) =>
+                    }
+                    className="input input-bordered w-full"
+                    min="1"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="label">Image URL</label>
+                  <input
+                    type="text"
+                    placeholder="Image URL"
+                    value={currentRecipe.image}
+                    onChange={(e) =>
                       setCurrentRecipe({
                         ...currentRecipe,
                         image: e.target.value,
                       })
-                  }
-                  className="input input-bordered w-full"
-                  required
-                />
-              </div>
-              
-              <div className="flex justify-end gap-2 mt-4">
-                <button 
-                  onClick={() => setCurrentRecipe(null)} 
-                  className="btn btn-outline"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleEditSubmit} 
-                  className="btn btn-primary"
-                >
-                  Save Changes
-                </button>
+                    }
+                    className="input input-bordered w-full"
+                    required
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 mt-4">
+                  <button
+                    onClick={() => setCurrentRecipe(null)}
+                    className="btn btn-outline"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleEditSubmit}
+                    className="btn btn-primary"
+                  >
+                    Save Changes
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
 
       {/* FloatingNavigation */}

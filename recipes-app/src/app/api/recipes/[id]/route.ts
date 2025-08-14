@@ -13,9 +13,9 @@ export const revalidate = 300; // 5 minutes for item pages
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await context.params;
 
   if (!id) {
     return NextResponse.json({ error: "Recipe ID is required." }, { status: 400 });
@@ -82,9 +82,9 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await context.params;
   const { title, category, description, portion, image }: RecipeInput = await request.json();
 
   if (!id || !title || !category || !description || !portion || portion < 1) {
@@ -121,9 +121,9 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await context.params;
 
   if (!id) {
     return NextResponse.json({ error: "Recipe ID is required." }, { status: 400 });

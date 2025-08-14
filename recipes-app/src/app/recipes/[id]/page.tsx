@@ -282,7 +282,9 @@ export default function RecipeDetailPage() {
   // Fetch recipe details
   useEffect(() => {
     if (id) {
-      fetch(`/api/recipes/${id}`)
+      fetch(`/api/recipes/${id}?nocache=1&ts=${Date.now()}`, {
+        cache: "no-store",
+      })
         .then((res) => {
           if (!res.ok) {
             return res.json().then((data) => {

@@ -137,6 +137,31 @@ export async function POST(request: NextRequest) {
     const sanitizedDescription = description.trim().substring(0, 1000); // Limit description length
     const sanitizedImage = image ? image.trim() : null;
 
+    // Local helpers to avoid runtime reference issues
+    function standardizeUnit(u: string): string {
+      const unitMap: { [key: string]: string } = {
+        grams: 'g', gram: 'g', g: 'g',
+        kilograms: 'kg', kilogram: 'kg', kg: 'kg',
+        milliliters: 'ml', milliliter: 'ml', ml: 'ml',
+        liters: 'l', liter: 'l', l: 'l',
+        whole: 'whole', piece: 'whole', pieces: 'whole', clove: 'whole', cloves: 'whole', bunch: 'whole', packet: 'whole',
+        tbsp: 'tbsp', tablespoon: 'tbsp', tablespoons: 'tbsp',
+        tsp: 'tsp', teaspoon: 'tsp', teaspoons: 'tsp',
+        cup: 'cup', cups: 'cup'
+      };
+      return unitMap[u.toLowerCase()] || u.toLowerCase();
+    }
+    function convertToStandardUnit(name: string, quantity: number, unit: string): { convertedQuantity: number; finalUnit: string } {
+      const averageWeights: { [key: string]: number } = { egg: 50 };
+      if (unit === 'whole' && averageWeights[name.toLowerCase()]) {
+        return { convertedQuantity: quantity * averageWeights[name.toLowerCase()], finalUnit: 'g' };
+      }
+      return { convertedQuantity: quantity, finalUnit: unit };
+    }
+    function roundToOneDecimal(num: number): number {
+      return Math.round(num * 10) / 10;
+    }
+
     // Insert recipe into Supabase
     try {
       const { data: recipeData, error: recipeError } = await supabase
@@ -161,131 +186,210 @@ export async function POST(request: NextRequest) {
       }
 
       // Handle ingredients: get or create ingredient IDs
-      const processedIngredients: { ingredient_id: number; quantity: number; unit: string }[] = [];
-      const ingredientErrors: string[] = [];
+		const processedIngredients: { ingredient_id: number; quantity: number; unit: string; name: string }[] = [];
+		const ingredientErrors: string[] = [];
 
-      for (const ing of ingredients) {
-        try {
-          if (!ing.name || !ing.quantity || !ing.unit) {
-            console.warn('Incomplete ingredient data:', ing);
-            ingredientErrors.push(`Incomplete data for ingredient: ${ing.name || 'unnamed'}`);
-            continue; // Skip incomplete ingredients
-          }
+		for (const ing of ingredients) {
+			try {
+				// Accept provided ingredient_id if present; otherwise require name
+				const providedId = (ing as any).ingredient_id as number | undefined;
+				const hasId = typeof providedId === 'number' && providedId > 0;
+				const hasName = typeof ing.name === 'string' && ing.name.trim() !== '';
+				const hasQty = typeof ing.quantity === 'number' && ing.quantity > 0;
+				const hasUnit = typeof ing.unit === 'string' && ing.unit.trim() !== '';
 
-          // Sanitize ingredient name
-          const sanitizedName = ing.name.trim().substring(0, 100); // Limit name length
-          
-          if (sanitizedName === '') {
-            ingredientErrors.push('Ingredient name cannot be empty');
-            continue;
-          }
+				if ((!hasId && !hasName) || !hasQty || !hasUnit) {
+					console.warn('Incomplete ingredient data:', ing);
+					ingredientErrors.push(`Incomplete data for ingredient: ${ing.name || 'unnamed'}`);
+					continue; // Skip incomplete ingredients
+				}
 
-          // Standardize unit before processing
-          const standardizedUnit = standardizeUnit(ing.unit.trim());
+				// Sanitize ingredient name if present
+				const sanitizedName = hasName ? ing.name!.trim().substring(0, 100) : '';
 
-          // Convert 'whole' units to grams if necessary
-          const { convertedQuantity, finalUnit } = convertToStandardUnit(
-            sanitizedName,
-            ing.quantity,
-            standardizedUnit
-          );
+				// Standardize unit before processing
+				const standardizedUnit = standardizeUnit(ing.unit.trim());
 
-          // Get or create ingredient with better error handling
-          try {
-            const ingredientId = await getOrCreateIngredient(sanitizedName);
+				// Convert certain 'whole' units if we have mappings (eggs, etc.)
+				const { convertedQuantity, finalUnit } = convertToStandardUnit(
+					hasName ? sanitizedName : '',
+					ing.quantity,
+					standardizedUnit
+				);
 
-            if (!ingredientId) {
-              console.error(`Failed to get or create ingredient: ${sanitizedName}`);
-              ingredientErrors.push(`Failed to process ingredient: ${sanitizedName}`);
-              continue; // Skip this ingredient
-            }
+				let ingredientId: number | null = null;
+				if (hasId) {
+					ingredientId = providedId!;
+				} else {
+					// Get or create ingredient by name
+					try {
+						ingredientId = await getOrCreateIngredient(sanitizedName);
+						if (!ingredientId) {
+							console.error(`Failed to get or create ingredient: ${sanitizedName}`);
+							ingredientErrors.push(`Failed to process ingredient: ${sanitizedName}`);
+							continue; // Skip this ingredient
+						}
+					} catch (ingredientError: any) {
+						console.error(`Error processing ingredient ${sanitizedName}:`, ingredientError);
+						ingredientErrors.push(`Error with ingredient ${sanitizedName}: ${ingredientError.message}`);
+						continue;
+					}
+				}
 
-            processedIngredients.push({
-              ingredient_id: ingredientId,
-              quantity: convertedQuantity,
-              unit: finalUnit, // Use standardized and converted unit
-            });
-          } catch (ingredientError: any) {
-            console.error(`Error processing ingredient ${sanitizedName}:`, ingredientError);
-            ingredientErrors.push(`Error with ingredient ${sanitizedName}: ${ingredientError.message}`);
-            continue;
-          }
-        } catch (ingError: any) {
-          console.error('Error processing ingredient:', ingError);
-          ingredientErrors.push(`Error processing ingredient: ${ingError.message}`);
-          continue;
-        }
-      }
+				processedIngredients.push({
+					ingredient_id: ingredientId!,
+					quantity: convertedQuantity,
+					unit: finalUnit,
+					name: hasName ? sanitizedName : ''
+				});
+			} catch (ingError: any) {
+				console.error('Error processing ingredient:', ingError);
+				ingredientErrors.push(`Error processing ingredient: ${ingError.message}`);
+				continue;
+			}
+		}
 
-      if (processedIngredients.length === 0) {
-        console.warn('No valid ingredients to process.');
-        // Don't return an error if there are no ingredients - just continue with an empty array
-        // This allows recipes to be created without ingredients initially
-      }
+		if (processedIngredients.length === 0) {
+			console.warn('No valid ingredients to process.');
+			// Don't return an error if there are no ingredients - just continue with an empty array
+			// This allows recipes to be created without ingredients initially
+		}
+
+		// Aggregate duplicates by ingredient_id into canonical units to satisfy unique constraint
+		const liquidSet = new Set<string>(['water', 'olive oil', 'vegetable oil', 'sesame oil', 'soy sauce', 'milk']);
+		function toCanonical(name: string, qty: number, unit: string): { quantity: number; unit: string } {
+			const canonicalUnit = liquidSet.has(name.toLowerCase()) ? 'ml' : 'g';
+			let quantity = qty;
+			let from = unit;
+			// Normalize basics
+			if (from === 'kg' && canonicalUnit === 'g') { quantity = qty * 1000; from = 'g'; }
+			if (from === 'l' && canonicalUnit === 'ml') { quantity = qty * 1000; from = 'ml'; }
+			if (from === 'tbsp') { quantity = canonicalUnit === 'ml' ? qty * 15 : qty * 12; from = canonicalUnit; }
+			if (from === 'tsp') { quantity = canonicalUnit === 'ml' ? qty * 5 : qty * 4; from = canonicalUnit; }
+			if (from === 'cup') { quantity = canonicalUnit === 'ml' ? qty * 240 : qty * 120; from = canonicalUnit; }
+			if (from === 'whole') {
+				const avg: Record<string, number> = { egg: 50, onion: 150, tomato: 120, garlic: 3, 'bell pepper': 120, pepper: 120 };
+				const key = Object.keys(avg).find(k => name.toLowerCase().includes(k));
+				if (key && canonicalUnit === 'g') { quantity = qty * avg[key]; from = 'g'; }
+			}
+			// If still not canonical, and from matches canonical, done
+			return { quantity, unit: canonicalUnit };
+		}
+
+		const aggregatedMap = new Map<number, { quantity: number; unit: string; name: string }>();
+		for (const item of processedIngredients) {
+			const { quantity, unit } = toCanonical(item.name || '', item.quantity, item.unit);
+			const existing = aggregatedMap.get(item.ingredient_id);
+			if (existing) {
+				existing.quantity += quantity;
+				aggregatedMap.set(item.ingredient_id, existing);
+			} else {
+				aggregatedMap.set(item.ingredient_id, { quantity, unit, name: item.name || '' });
+			}
+		}
+		const aggregatedIngredients = Array.from(aggregatedMap.entries()).map(([ingredient_id, v]) => ({ ingredient_id, quantity: v.quantity, unit: v.unit }));
 
       // Insert into recipe_ingredients table
-      let recipeIngredientsData = [];
-      if (processedIngredients.length > 0) {
-        try {
-          const { data: insertedIngredients, error: recipeIngredientsError } = await supabase
-            .from('recipe_ingredients')
-            .insert(
-              processedIngredients.map((ing) => ({
-                recipe_id: recipeData.id,
-                ingredient_id: ing.ingredient_id,
-                quantity: ing.quantity,
-                unit: ing.unit,
-              }))
-            )
-            .select('*');
+		let recipeIngredientsData = [];
+		if (aggregatedIngredients.length > 0) {
+			try {
+				const { data: insertedIngredients, error: recipeIngredientsError } = await supabase
+					.from('recipe_ingredients')
+					.insert(
+						aggregatedIngredients.map((ing) => ({
+							recipe_id: recipeData.id,
+							ingredient_id: ing.ingredient_id,
+							quantity: ing.quantity,
+							unit: ing.unit,
+						}))
+					)
+					.select('*');
 
-          if (recipeIngredientsError) {
-            console.error('Error inserting recipe ingredients:', recipeIngredientsError.message);
-            // Continue with steps even if ingredients fail
-          } else if (insertedIngredients) {
-            recipeIngredientsData = insertedIngredients;
-            console.log(`Successfully inserted ${insertedIngredients.length} ingredients`);
-          }
-        } catch (recipeIngError: any) {
-          console.error('Error inserting recipe ingredients:', recipeIngError);
-          // Continue with steps even if ingredients fail
-        }
-      } else {
-        console.warn('No ingredients to insert for recipe:', recipeData.id);
-      }
+				if (recipeIngredientsError) {
+					console.error('Error inserting recipe ingredients:', recipeIngredientsError.message);
+					// Continue with steps even if ingredients fail
+				} else if (insertedIngredients) {
+					recipeIngredientsData = insertedIngredients as any;
+					console.log(`Successfully inserted ${insertedIngredients.length} ingredients`);
+				}
+			} catch (recipeIngError: any) {
+				console.error('Error inserting recipe ingredients:', recipeIngError);
+				// Continue with steps even if ingredients fail
+			}
+		} else {
+			console.warn('No ingredients to insert for recipe:', recipeData.id);
+		}
 
-      // Process and sanitize steps
-      const sanitizedSteps = steps.map((step, index) => {
-        const description = step.description?.trim() || '';
-        if (description === '') {
-          console.warn(`Empty description for step ${index + 1}`);
-        }
-        return {
-          recipe_id: recipeData.id,
-          order: step.order || index + 1,
-          description: description.substring(0, 1000), // Limit description length
-        };
-      }).filter(step => step.description !== '');
+		// Build ingredientId -> name map (bulk fetch) for nutrition
+		const ingredientIds = aggregatedIngredients.map(i => i.ingredient_id);
+		let idToName = new Map<number, string>();
+		if (ingredientIds.length > 0) {
+			const { data: ingredientRows, error: ingredientFetchError } = await supabase
+				.from('ingredients')
+				.select('id,name')
+				.in('id', ingredientIds);
+			if (ingredientFetchError) {
+				console.error('Failed to fetch ingredient names for nutrition:', ingredientFetchError.message);
+			} else if (ingredientRows) {
+				for (const row of ingredientRows as any[]) {
+					idToName.set(row.id, row.name);
+				}
+			}
+		}
 
-      // Insert steps
-      if (sanitizedSteps.length > 0) {
-        try {
-          const { data: stepsData, error: stepsError } = await supabase
-            .from('steps')
-            .insert(sanitizedSteps)
-            .select('*');
+		// Insert per-ingredient nutritional info and aggregate using Promise.all for efficiency
+		const nutritionalPromises = aggregatedIngredients.map(async (ing) => {
+			const ingredient_id = ing.ingredient_id;
+			const name = idToName.get(ingredient_id) || '';
+			if (!name) {
+				console.warn(`Missing ingredient name for ID ${ingredient_id}`);
+				return null;
+			}
+			try {
+				const nutritionalData = await getNutritionalInfo(name, ing.quantity, ing.unit);
+				if (nutritionalData) {
+					const { error: nutritionalError } = await supabase
+						.from('nutritional_info')
+						.insert([
+							{
+								recipe_id: recipeData.id,
+								ingredient_id: ingredient_id,
+								calories: nutritionalData.calories,
+								protein: nutritionalData.protein,
+								fat: nutritionalData.fat,
+								carbohydrates: nutritionalData.carbohydrates,
+								fiber: nutritionalData.fiber,
+								sugar: nutritionalData.sugar,
+								sodium: nutritionalData.sodium,
+								cholesterol: nutritionalData.cholesterol,
+							},
+						]);
+					if (nutritionalError) {
+						console.error('Error inserting nutritional info:', nutritionalError.message);
+						return null;
+					}
+					return nutritionalData;
+				} else {
+					console.warn(`No nutritional data found for ingredient "${name}".`);
+					const defaultNutritionalData = { calories: 0, protein: 0, fat: 0, carbohydrates: 0, fiber: 0, sugar: 0, sodium: 0, cholesterol: 0 };
+					const { error: defaultNutritionalError } = await supabase
+						.from('nutritional_info')
+						.insert([{ recipe_id: recipeData.id, ingredient_id, ...defaultNutritionalData }]);
+					if (defaultNutritionalError) {
+						console.error('Error inserting default nutritional info:', defaultNutritionalError.message);
+					}
+					return null;
+				}
+			} catch (nutritionError: any) {
+				console.error(`Error fetching nutritional info for "${name}":`, nutritionError.message);
+				return null;
+			}
+		});
 
-          if (stepsError) {
-            console.error('Error inserting steps:', stepsError.message);
-            // Continue even if steps fail
-          }
-        } catch (stepsInsertError: any) {
-          console.error('Error inserting steps:', stepsInsertError);
-          // Continue even if steps fail
-        }
-      }
+      // Await all nutritional info fetches
+      const nutritionalResults = await Promise.all(nutritionalPromises);
 
-      // Initialize total nutritional info
+      // Aggregate nutritional information
       let totalNutritionalInfo: NutritionalInfo = {
         calories: 0,
         protein: 0,
@@ -297,111 +401,6 @@ export async function POST(request: NextRequest) {
         cholesterol: 0,
       };
 
-      // Insert per-ingredient nutritional info and aggregate using Promise.all for efficiency
-      const nutritionalPromises = recipeIngredientsData.map(async (ing) => {
-        const ingredient_id = ing.ingredient_id;
-
-        if (!ingredient_id) {
-          console.error('Ingredient ID is missing for ingredient in recipe.');
-          return null;
-        }
-
-        // Fetch ingredient details to get the name
-        const { data: ingredientData, error: ingredientError } = await supabase
-          .from('ingredients')
-          .select('name')
-          .eq('id', ingredient_id)
-          .single();
-
-        if (ingredientError) {
-          console.error(
-            `Failed to fetch ingredient name for ID ${ingredient_id}:`,
-            ingredientError.message
-          );
-          return null;
-        }
-
-        const ingredientName = ingredientData.name;
-
-        try {
-          // Fetch nutritional info via getNutritionalInfo
-          const nutritionalData = await getNutritionalInfo(
-            ingredientName,
-            ing.quantity,
-            ing.unit
-          );
-
-          if (nutritionalData) {
-            // Insert into nutritional_info table
-            const { error: nutritionalError } = await supabase
-              .from('nutritional_info')
-              .insert([
-                {
-                  recipe_id: recipeData.id,
-                  ingredient_id: ingredient_id,
-                  calories: nutritionalData.calories,
-                  protein: nutritionalData.protein,
-                  fat: nutritionalData.fat,
-                  carbohydrates: nutritionalData.carbohydrates,
-                  fiber: nutritionalData.fiber,
-                  sugar: nutritionalData.sugar,
-                  sodium: nutritionalData.sodium,
-                  cholesterol: nutritionalData.cholesterol,
-                },
-              ]);
-
-            if (nutritionalError) {
-              console.error('Error inserting nutritional info:', nutritionalError.message);
-              // Optionally, continue or handle rollback
-              return null;
-            }
-
-            // Return the nutritional data for aggregation
-            return nutritionalData;
-          } else {
-            console.warn(`No nutritional data found for ingredient "${ingredientName}".`);
-            
-            // Create default nutritional info for ingredients without data
-            const defaultNutritionalData = {
-              calories: 0,
-              protein: 0,
-              fat: 0,
-              carbohydrates: 0,
-              fiber: 0,
-              sugar: 0,
-              sodium: 0,
-              cholesterol: 0,
-            };
-            
-            // Insert default nutritional info to ensure the ingredient is associated with the recipe
-            const { error: defaultNutritionalError } = await supabase
-              .from('nutritional_info')
-              .insert([
-                {
-                  recipe_id: recipeData.id,
-                  ingredient_id: ingredient_id,
-                  ...defaultNutritionalData
-                },
-              ]);
-              
-            if (defaultNutritionalError) {
-              console.error('Error inserting default nutritional info:', defaultNutritionalError.message);
-            } else {
-              console.log(`Inserted default nutritional info for "${ingredientName}"`);
-            }
-            
-            return null;
-          }
-        } catch (nutritionError: any) {
-          console.error(`Error fetching nutritional info for "${ingredientName}":`, nutritionError.message);
-          return null;
-        }
-      });
-
-      // Await all nutritional info fetches
-      const nutritionalResults = await Promise.all(nutritionalPromises);
-
-      // Aggregate nutritional information
       nutritionalResults.forEach((nutri) => {
         if (nutri) {
           totalNutritionalInfo.calories += nutri.calories;
@@ -451,6 +450,44 @@ export async function POST(request: NextRequest) {
       }
 
       console.log(`Updating recipe ID ${recipeData.id} with nutritional info:`, totalNutrients);
+
+      // Process and sanitize steps
+		const sanitizedSteps = steps.map((step, index) => {
+			const description = step.description?.trim() || '';
+			if (description === '') {
+				console.warn(`Empty description for step ${index + 1}`);
+			}
+			return {
+				recipe_id: recipeData.id,
+				order: step.order || index + 1,
+				description: description.substring(0, 1000), // Limit description length
+			};
+		}).filter(step => step.description !== '');
+
+		console.log(`Prepared ${sanitizedSteps.length} steps for recipe ${recipeData.id}`);
+		if (sanitizedSteps.length > 0) {
+			console.log('First step preview:', sanitizedSteps[0]);
+		}
+
+		if (sanitizedSteps.length > 0) {
+			try {
+				const { data: stepsData, error: stepsError } = await supabase
+					.from('steps')
+					.insert(sanitizedSteps)
+					.select('*');
+
+				if (stepsError) {
+					console.error('Error inserting steps:', stepsError.message, stepsError);
+					// Continue even if steps fail
+				}
+				if (stepsData && Array.isArray(stepsData)) {
+					console.log(`Successfully inserted ${stepsData.length} steps for recipe ${recipeData.id}`);
+				}
+			} catch (stepsInsertError: any) {
+				console.error('Error inserting steps:', stepsInsertError);
+				// Continue even if steps fail
+			}
+		}
 
       return NextResponse.json(
         { 
@@ -552,105 +589,32 @@ async function getOrCreateIngredient(name: string): Promise<number | null> {
 
           console.log(`Created new ingredient "${sanitizedName}" with ID ${newIngredient.id}`);
           return newIngredient.id;
-        } catch (err: any) {
-          console.error(`Error in supabase operation for "${sanitizedName}":`, err.message);
-          if (attempt < 3) {
-            console.log(`Retrying after exception (attempt ${attempt}/3)`);
-            continue; // Try again
-          }
-          return null;
-        }
-      } else if (error) {
-        console.error(`Error checking for existing ingredient "${sanitizedName}":`, error.message);
-        if (attempt < 3) {
-          console.log(`Retrying after query error (attempt ${attempt}/3)`);
-          continue; // Try again
-        }
-        return null;
-      }
-    } catch (err: any) {
-      console.error(`Unexpected error for ingredient "${sanitizedName}":`, err.message);
-      if (attempt < 3) {
-        console.log(`Retrying after unexpected error (attempt ${attempt}/3)`);
-        continue; // Try again
-      }
-      return null;
-    }
-  }
-  
-  console.error(`All attempts failed for ingredient "${sanitizedName}"`);
-  return null;
-}
-
-/**
- * Helper function to standardize units.
- * Converts various representations to standard abbreviations.
- * @param unit - The unit string to standardize.
- * @returns The standardized unit abbreviation.
- */
-function standardizeUnit(unit: string): string {
-  const unitMap: { [key: string]: string } = {
-    grams: 'g',
-    gram: 'g',
-    g: 'g',
-    kilograms: 'kg',
-    kilogram: 'kg',
-    kg: 'kg',
-    milliliters: 'ml',
-    milliliter: 'ml',
-    ml: 'ml',
-    liters: 'l',
-    liter: 'l',
-    l: 'l',
-    whole: 'whole',
-    pieces: 'whole',
-    piece: 'whole',
-    tbsp: 'tbsp',
-    tablespoon: 'tbsp',
-    tablespoons: 'tbsp',
-    teaspoons: 'tsp',
-    teaspoon: 'tsp',
-    cups: 'cup',
-    cup: 'cup',
-    // Add more mappings as needed
-  };
-
-  const standardized = unitMap[unit.toLowerCase()];
-  return standardized || unit.toLowerCase(); // Return the original unit if not found in the map
-}
-
-/**
- * Helper function to convert units to standard measurements.
- * For example, converting 'whole' eggs to grams based on average weight.
- * @param name - Ingredient name.
- * @param quantity - Quantity of the ingredient.
- * @param unit - Standardized unit.
- * @returns An object containing the converted quantity and final unit.
- */
-function convertToStandardUnit(
-  name: string,
-  quantity: number,
-  unit: string
-): { convertedQuantity: number; finalUnit: string } {
-  const averageWeights: { [key: string]: number } = {
-    egg: 50, // average weight in grams per egg
-    // Add more ingredients as needed
-  };
-
-  if (unit === 'whole' && averageWeights[name.toLowerCase()]) {
-    const convertedQuantity = quantity * averageWeights[name.toLowerCase()];
-    return { convertedQuantity, finalUnit: 'g' };
-  }
-
-  // For units already in grams or milliliters, return as-is
-  return { convertedQuantity: quantity, finalUnit: unit };
-}
-
-/**
- * Helper function to round numbers to one decimal place.
- * @param num - The number to round.
- * @returns The rounded number.
- */
-function roundToOneDecimal(num: number): number {
-  return Math.round(num * 10) / 10;
+				} catch (err: any) {
+					console.error(`Error in supabase operation for "${sanitizedName}":`, err.message);
+					if (attempt < 3) {
+						console.log(`Retrying after exception (attempt ${attempt}/3)`);
+						continue; // Try again
+					}
+					return null;
+				}
+			} else if (error) {
+				console.error(`Error checking for existing ingredient "${sanitizedName}":`, error.message);
+				if (attempt < 3) {
+					console.log(`Retrying after query error (attempt ${attempt}/3)`);
+					continue; // Try again
+				}
+				return null;
+			}
+		} catch (err: any) {
+			console.error(`Unexpected error for ingredient "${sanitizedName}":`, err.message);
+			if (attempt < 3) {
+				console.log(`Retrying after unexpected error (attempt ${attempt}/3)`);
+				continue; // Try again
+			}
+			return null;
+		}
+	}
+	
+	console.error(`All attempts failed for ingredient "${sanitizedName}"`);
+	return null;
 }
