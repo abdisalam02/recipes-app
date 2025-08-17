@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconTrash, IconEdit, IconLock } from "@tabler/icons-react";
+import { IconTrash, IconEdit, IconLock, IconCheck } from "@tabler/icons-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { FloatingNavigation } from "../components/FloatingNavigation";
@@ -16,6 +16,17 @@ interface Recipe {
   image: string;
   description: string;
   portion: number;
+  ingredients?: Array<{
+    id?: number;
+    name: string;
+    quantity: number;
+    unit: string;
+  }>;
+  steps?: Array<{
+    id?: number;
+    order: number;
+    description: string;
+  }>;
 }
 
 export default function AdminDashboardPage() {
@@ -32,7 +43,25 @@ export default function AdminDashboardPage() {
   );
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [success, setSuccess] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
   const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(null);
+  // Edit modal states for ingredients and steps
+  const [editingIngredients, setEditingIngredients] = useState<
+    Array<{
+      id?: number;
+      name: string;
+      quantity: number;
+      unit: string;
+    }>
+  >([]);
+  const [editingSteps, setEditingSteps] = useState<
+    Array<{
+      id?: number;
+      order: number;
+      description: string;
+    }>
+  >([]);
 
   // Deletion Confirmation States
   const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
@@ -196,8 +225,45 @@ export default function AdminDashboardPage() {
       if (!response.ok) {
         throw new Error("Failed to fetch recipes");
       }
-      const data: Recipe[] = await response.json();
-      setRecipes(data);
+      const data: any[] = await response.json();
+
+      console.log("Raw API data:", data);
+      console.log("First recipe sample:", data[0]);
+
+      // Transform the API response to match our Recipe interface
+      const transformedRecipes: Recipe[] = data.map((recipe) => ({
+        id: recipe.id,
+        title: recipe.title,
+        category: recipe.category,
+        image: recipe.image,
+        description: recipe.description,
+        portion: recipe.portion,
+        // Transform recipe_ingredients to ingredients array
+        ingredients:
+          recipe.recipe_ingredients?.map((ri: any) => ({
+            id: ri.ingredient_id,
+            name: ri.ingredient?.name || ri.name || "Unknown ingredient",
+            quantity: ri.quantity,
+            unit: ri.unit,
+          })) || [],
+        // Transform steps array
+        steps:
+          recipe.steps?.map((step: any) => ({
+            id: step.id,
+            order: step.order,
+            description: step.description,
+          })) || [],
+      }));
+
+      console.log("Transformed recipes:", transformedRecipes);
+      console.log("First transformed recipe:", transformedRecipes[0]);
+      console.log(
+        "Ingredients count:",
+        transformedRecipes[0]?.ingredients?.length
+      );
+      console.log("Steps count:", transformedRecipes[0]?.steps?.length);
+
+      setRecipes(transformedRecipes);
     } catch (err: any) {
       alert(err.message || "Failed to fetch recipes");
     } finally {
@@ -289,24 +355,59 @@ export default function AdminDashboardPage() {
 
   // Handle Edit
   const handleEdit = (recipe: Recipe) => {
+    console.log("Editing recipe:", recipe);
+    console.log("Recipe ingredients:", recipe.ingredients);
+    console.log("Recipe steps:", recipe.steps);
+
     setCurrentRecipe(recipe);
+
+    // Ensure we have properly structured ingredients and steps
+    let initialIngredients =
+      recipe.ingredients && recipe.ingredients.length > 0
+        ? recipe.ingredients.map((ing) => ({
+            name: ing.name || "",
+            quantity: ing.quantity || 1,
+            unit: ing.unit || "g",
+          }))
+        : [{ name: "", quantity: 1, unit: "g" }];
+
+    let initialSteps =
+      recipe.steps && recipe.steps.length > 0
+        ? recipe.steps.map((step) => ({
+            order: step.order || 1,
+            description: step.description || "",
+          }))
+        : [{ order: 1, description: "" }];
+
+    console.log("Setting initial ingredients:", initialIngredients);
+    console.log("Setting initial steps:", initialSteps);
+
+    setEditingIngredients(initialIngredients);
+    setEditingSteps(initialSteps);
   };
 
   // Handle Edit Submit
   const handleEditSubmit = async () => {
     if (!currentRecipe) return;
-    if (
-      !currentRecipe.title ||
-      !currentRecipe.category ||
-      !currentRecipe.description ||
-      !currentRecipe.image ||
-      currentRecipe.portion < 1
-    ) {
-      alert("Please fill out all fields correctly.");
-      return;
+
+    // Validate ingredient fields
+    for (let i = 0; i < editingIngredients.length; i++) {
+      const ing = editingIngredients[i];
+      if (!ing.name.trim() || ing.quantity <= 0 || !ing.unit.trim()) {
+        alert(`Please fill out all fields for ingredient ${i + 1}.`);
+        return;
+      }
+    }
+    // Validate step fields
+    for (let i = 0; i < editingSteps.length; i++) {
+      const step = editingSteps[i];
+      if (!step.description.trim()) {
+        alert(`Please fill out the description for step ${i + 1}.`);
+        return;
+      }
     }
     try {
-      setLoading(true);
+      setModalLoading(true);
       const res = await fetch(`/api/recipes/${currentRecipe.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -316,6 +417,8 @@ export default function AdminDashboardPage() {
           description: currentRecipe.description,
           portion: currentRecipe.portion,
           image: currentRecipe.image,
+          ingredients: editingIngredients,
+          steps: editingSteps,
         }),
       });
       if (!res.ok) {
@@ -323,16 +426,96 @@ export default function AdminDashboardPage() {
         throw new Error(errorData.error || "Failed to update recipe");
       }
       const updatedRecipe: Recipe = await res.json();
+
+      // Transform the updated recipe to ensure it has the correct structure
+      const transformedRecipe: Recipe = {
+        ...updatedRecipe,
+        ingredients: editingIngredients, // Use the editing state which has the correct format
+        steps: editingSteps, // Use the editing state which has the correct format
+      };
+
+      // Update the recipes list with the transformed data
       setRecipes((prev) =>
-        prev.map((r) => (r.id === updatedRecipe.id ? updatedRecipe : r))
+        prev.map((r) => (r.id === transformedRecipe.id ? transformedRecipe : r))
       );
-      alert("Recipe updated");
-      setCurrentRecipe(null);
+
+      // Show success message
+      setToastMessage({
+        show: true,
+        type: "success",
+        message: "Recipe updated successfully!",
+      });
+
+      // Show success animation
+      setSuccess(true);
+
+      // Close modal after showing success animation
+      setTimeout(() => {
+        setSuccess(false);
+        closeEditModal();
+      }, 1500);
     } catch (err: any) {
-      alert(err.message || "Failed to update recipe");
+      setToastMessage({
+        show: true,
+        type: "error",
+        message: err.message || "Failed to update recipe",
+      });
     } finally {
-      setLoading(false);
+      setModalLoading(false);
     }
+  };
+
+  // Helper functions for managing ingredients and steps
+  const addIngredient = () => {
+    setEditingIngredients([
+      ...editingIngredients,
+      { name: "", quantity: 1, unit: "g" },
+    ]);
+  };
+
+  const removeIngredient = (index: number) => {
+    setEditingIngredients(editingIngredients.filter((_, i) => i !== index));
+  };
+
+  const updateIngredient = (
+    index: number,
+    field: string,
+    value: string | number
+  ) => {
+    const updated = [...editingIngredients];
+    updated[index] = { ...updated[index], [field]: value };
+    setEditingIngredients(updated);
+  };
+
+  const addStep = () => {
+    setEditingSteps([
+      ...editingSteps,
+      { order: editingSteps.length + 1, description: "" },
+    ]);
+  };
+
+  const removeStep = (index: number) => {
+    const updated = editingSteps.filter((_, i) => i !== index);
+    // Reorder remaining steps
+    updated.forEach((step, i) => {
+      step.order = i + 1;
+    });
+    setEditingSteps(updated);
+  };
+
+  const updateStep = (index: number, field: string, value: string | number) => {
+    const updated = [...editingSteps];
+    updated[index] = { ...updated[index], [field]: value };
+    setEditingSteps(updated);
+  };
+
+  // Close edit modal and clear editing states
+  const closeEditModal = () => {
+    setCurrentRecipe(null);
+    setEditingIngredients([]);
+    setEditingSteps([]);
+    setSuccess(false);
+    setModalLoading(false);
   };
 
   if (loading) {
@@ -615,6 +798,12 @@ export default function AdminDashboardPage() {
                           <span className="text-sm text-gray-500">
                             Portions: {recipe.portion}
                           </span>
+                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                            <span>
+                              Ingredients: {recipe.ingredients?.length || 0}
+                            </span>
+                            <span>Steps: {recipe.steps?.length || 0}</span>
+                          </div>
                           <div className="flex gap-2">
                             <motion.button
                               whileHover={{ scale: 1.1 }}
@@ -780,119 +969,372 @@ export default function AdminDashboardPage() {
         )}
 
         {/* Edit Recipe Modal */}
-        {currentRecipe && (
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50"
-              onClick={() => setCurrentRecipe(null)}
-            ></div>
-            <div className="bg-base-100 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-              <h3 className="text-xl font-bold mb-4">Edit Recipe</h3>
-              <div className="flex flex-col gap-4">
-                <div>
-                  <label className="label">Title</label>
-                  <input
-                    type="text"
-                    placeholder="Title"
-                    value={currentRecipe.title}
-                    onChange={(e) =>
-                      setCurrentRecipe({
-                        ...currentRecipe,
-                        title: e.target.value,
-                      })
-                    }
-                    className="input input-bordered w-full"
-                    required
-                  />
+        <AnimatePresence>
+          {currentRecipe && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+                onClick={closeEditModal}
+              />
+
+              {/* Modal Container */}
+              <div
+                className={`relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ${
+                  success ? "ring-4 ring-green-400/50 scale-[1.02]" : ""
+                }`}
+              >
+                {/* Header */}
+                <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold text-white">
+                      {success ? (
+                        <div className="flex items-center gap-2">
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="w-6 h-6 bg-green-400 rounded-full flex items-center justify-center"
+                          >
+                            <IconCheck size={16} className="text-white" />
+                          </motion.div>
+                          Recipe Updated Successfully!
+                        </div>
+                      ) : (
+                        `Edit Recipe: ${currentRecipe.title}`
+                      )}
+                    </h2>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handleEditSubmit}
+                        disabled={modalLoading || success}
+                        className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all duration-300 font-medium border border-white/30 hover:border-white/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {success ? (
+                          <>
+                            <IconCheck size={16} />
+                            Saved!
+                          </>
+                        ) : modalLoading ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            Saving...
+                          </>
+                        ) : (
+                          <>💾 Save</>
+                        )}
+                      </button>
+                      <button
+                        onClick={closeEditModal}
+                        className="text-white hover:text-gray-200 p-2 rounded-full hover:bg-white/20 transition-colors"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="label">Category</label>
-                  <input
-                    type="text"
-                    placeholder="Category"
-                    value={currentRecipe.category || ""}
-                    onChange={(e) =>
-                      setCurrentRecipe({
-                        ...currentRecipe,
-                        category: e.target.value,
-                      })
-                    }
-                    className="input input-bordered w-full"
-                    required
-                  />
+                {/* Content - Scrollable */}
+                <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
+                  <div className="space-y-6">
+                    {/* Basic Info Section */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
+                        Basic Information
+                      </h3>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Title
+                          </label>
+                          <input
+                            type="text"
+                            value={currentRecipe.title}
+                            onChange={(e) =>
+                              setCurrentRecipe({
+                                ...currentRecipe,
+                                title: e.target.value,
+                              })
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Category
+                          </label>
+                          <input
+                            type="text"
+                            value={currentRecipe.category || ""}
+                            onChange={(e) =>
+                              setCurrentRecipe({
+                                ...currentRecipe,
+                                category: e.target.value,
+                              })
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Description
+                        </label>
+                        <textarea
+                          value={currentRecipe.description}
+                          onChange={(e) =>
+                            setCurrentRecipe({
+                              ...currentRecipe,
+                              description: e.target.value,
+                            })
+                          }
+                          rows={3}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Portions
+                          </label>
+                          <input
+                            type="number"
+                            value={currentRecipe.portion}
+                            onChange={(e) =>
+                              setCurrentRecipe({
+                                ...currentRecipe,
+                                portion: Number(e.target.value),
+                              })
+                            }
+                            min="1"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Image URL
+                          </label>
+                          <input
+                            type="text"
+                            value={currentRecipe.image}
+                            onChange={(e) =>
+                              setCurrentRecipe({
+                                ...currentRecipe,
+                                image: e.target.value,
+                              })
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Ingredients Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between border-b pb-2">
+                        <h3 className="text-lg font-semibold text-gray-800">
+                          Ingredients ({editingIngredients.length})
+                        </h3>
+                        <button
+                          onClick={addIngredient}
+                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                        >
+                          + Add Ingredient
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {editingIngredients.map((ingredient, index) => (
+                          <div
+                            key={index}
+                            className="flex gap-3 items-end p-4 bg-gray-50 rounded-lg border"
+                          >
+                            <div className="flex-1">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Name
+                              </label>
+                              <input
+                                type="text"
+                                value={ingredient.name}
+                                onChange={(e) =>
+                                  updateIngredient(
+                                    index,
+                                    "name",
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Ingredient name"
+                              />
+                            </div>
+
+                            <div className="w-20">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Qty
+                              </label>
+                              <input
+                                type="number"
+                                value={ingredient.quantity}
+                                onChange={(e) =>
+                                  updateIngredient(
+                                    index,
+                                    "quantity",
+                                    Number(e.target.value)
+                                  )
+                                }
+                                min="0.1"
+                                step="0.1"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              />
+                            </div>
+
+                            <div className="w-20">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Unit
+                              </label>
+                              <select
+                                value={ingredient.unit}
+                                onChange={(e) =>
+                                  updateIngredient(
+                                    index,
+                                    "unit",
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              >
+                                <option value="g">g</option>
+                                <option value="kg">kg</option>
+                                <option value="ml">ml</option>
+                                <option value="l">l</option>
+                                <option value="tsp">tsp</option>
+                                <option value="tbsp">tbsp</option>
+                                <option value="cup">cup</option>
+                                <option value="whole">whole</option>
+                              </select>
+                            </div>
+
+                            <button
+                              onClick={() => removeIngredient(index)}
+                              disabled={editingIngredients.length === 1}
+                              className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Steps Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between border-b pb-2">
+                        <h3 className="text-lg font-semibold text-gray-800">
+                          Steps ({editingSteps.length})
+                        </h3>
+                        <button
+                          onClick={addStep}
+                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                        >
+                          + Add Step
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {editingSteps.map((step, index) => (
+                          <div
+                            key={index}
+                            className="flex gap-3 items-start p-4 bg-gray-50 rounded-lg border"
+                          >
+                            <div className="w-16">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Order
+                              </label>
+                              <input
+                                type="number"
+                                value={step.order}
+                                onChange={(e) =>
+                                  updateStep(
+                                    index,
+                                    "order",
+                                    Number(e.target.value)
+                                  )
+                                }
+                                min="1"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              />
+                            </div>
+
+                            <div className="flex-1">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Description
+                              </label>
+                              <textarea
+                                value={step.description}
+                                onChange={(e) =>
+                                  updateStep(
+                                    index,
+                                    "description",
+                                    e.target.value
+                                  )
+                                }
+                                rows={2}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Step description"
+                              />
+                            </div>
+
+                            <button
+                              onClick={() => removeStep(index)}
+                              disabled={editingSteps.length === 1}
+                              className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="label">Description</label>
-                  <textarea
-                    placeholder="Description"
-                    value={currentRecipe.description}
-                    onChange={(e) =>
-                      setCurrentRecipe({
-                        ...currentRecipe,
-                        description: e.target.value,
-                      })
-                    }
-                    className="textarea textarea-bordered w-full"
-                    rows={4}
-                    required
-                  ></textarea>
-                </div>
-
-                <div>
-                  <label className="label">Portions</label>
-                  <input
-                    type="number"
-                    placeholder="Portions"
-                    value={currentRecipe.portion}
-                    onChange={(e) =>
-                      setCurrentRecipe({
-                        ...currentRecipe,
-                        portion: Number(e.target.value),
-                      })
-                    }
-                    className="input input-bordered w-full"
-                    min="1"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="label">Image URL</label>
-                  <input
-                    type="text"
-                    placeholder="Image URL"
-                    value={currentRecipe.image}
-                    onChange={(e) =>
-                      setCurrentRecipe({
-                        ...currentRecipe,
-                        image: e.target.value,
-                      })
-                    }
-                    className="input input-bordered w-full"
-                    required
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 mt-4">
-                  <button
-                    onClick={() => setCurrentRecipe(null)}
-                    className="btn btn-outline"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleEditSubmit}
-                    className="btn btn-primary"
-                  >
-                    Save Changes
-                  </button>
+                {/* Footer */}
+                <div className="border-t bg-gray-50 px-6 py-4">
+                  <div className="flex justify-end">
+                    <button
+                      onClick={closeEditModal}
+                      className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+                    >
+                      Close
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* FloatingNavigation */}
