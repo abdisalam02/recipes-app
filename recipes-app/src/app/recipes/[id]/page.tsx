@@ -256,6 +256,7 @@ export default function RecipeDetailPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPortions, setCurrentPortions] = useState<number>(1);
+  const [portionsInput, setPortionsInput] = useState<string>("1");
   const [availableIngredients, setAvailableIngredients] = useState<{
     [key: number]: boolean;
   }>({});
@@ -296,6 +297,7 @@ export default function RecipeDetailPage() {
         .then((data: RecipeDetail) => {
           setRecipe(data);
           setCurrentPortions(Number(data.portion));
+          setPortionsInput(Number(data.portion).toString());
           const initialAvailability: { [key: number]: boolean } = {};
           data.recipe_ingredients.forEach((ri) => {
             initialAvailability[ri.ingredient_id] = false;
@@ -522,12 +524,12 @@ export default function RecipeDetailPage() {
       </div>
 
       {/* Content Section */}
-      <div className="container mx-auto px-4 py-12 relative z-10">
+      <div className="container mx-auto px-2 py-12 relative z-10">
         <div
-          className="rounded-3xl p-8 md:p-12 shadow-2xl backdrop-blur-xl bg-white/90 border border-white/30"
+          className="rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-xl bg-white/90 border border-white/30"
           style={{ backgroundColor: `${currentTheme.colors.surface}f5` }}
         >
-          {/* Nutritional Info Cards */}
+          {/* Nutritional Info Cards - Total for Current Portions */}
           {scaledNutritionalInfo && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -557,6 +559,43 @@ export default function RecipeDetailPage() {
             </motion.div>
           )}
 
+          {/* Compact Per-Portion Section */}
+          {recipe.nutritional_info && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="mb-8"
+            >
+              <div className="flex items-center justify-center gap-8 p-4 rounded-2xl backdrop-blur-lg bg-white/40 border border-white/20">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-gray-800">
+                    {(
+                      parseFloat(recipe.nutritional_info.calories.toString()) /
+                      recipe.portion
+                    ).toFixed(1)}
+                  </div>
+                  <div className="text-xs text-gray-600 uppercase tracking-wide">
+                    Calories per portion
+                  </div>
+                </div>
+                <div className="w-px h-12 bg-gray-300"></div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-gray-800">
+                    {(
+                      parseFloat(recipe.nutritional_info.protein.toString()) /
+                      recipe.portion
+                    ).toFixed(1)}
+                    g
+                  </div>
+                  <div className="text-xs text-gray-600 uppercase tracking-wide">
+                    Protein per portion
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {/* Portion Control Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -578,9 +617,11 @@ export default function RecipeDetailPage() {
               </span>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() =>
-                    setCurrentPortions(Math.max(1, currentPortions - 1))
-                  }
+                  onClick={() => {
+                    const newValue = Math.max(1, currentPortions - 1);
+                    setCurrentPortions(newValue);
+                    setPortionsInput(newValue.toString());
+                  }}
                   className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
                   style={{
                     backgroundColor: `${currentTheme.colors.primary}20`,
@@ -590,14 +631,44 @@ export default function RecipeDetailPage() {
                 >
                   <span className="text-lg font-bold">-</span>
                 </button>
-                <span
-                  className="text-xl font-bold min-w-[3rem] text-center"
-                  style={{ color: currentTheme.colors.text }}
-                >
-                  {currentPortions}
-                </span>
+                <input
+                  type="number"
+                  min="1"
+                  value={portionsInput}
+                  onChange={(e) => setPortionsInput(e.target.value)}
+                  onBlur={() => {
+                    const value = parseInt(portionsInput);
+                    if (value > 0) {
+                      setCurrentPortions(value);
+                    } else {
+                      setCurrentPortions(1);
+                      setPortionsInput("1");
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const value = parseInt(portionsInput);
+                      if (value > 0) {
+                        setCurrentPortions(value);
+                      } else {
+                        setCurrentPortions(1);
+                        setPortionsInput("1");
+                      }
+                    }
+                  }}
+                  className="w-16 h-10 text-center text-xl font-bold rounded-lg border-2 transition-colors focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: `${currentTheme.colors.surface}`,
+                    borderColor: `${currentTheme.colors.primary}30`,
+                    color: currentTheme.colors.text,
+                  }}
+                />
                 <button
-                  onClick={() => setCurrentPortions(currentPortions + 1)}
+                  onClick={() => {
+                    const newValue = currentPortions + 1;
+                    setCurrentPortions(newValue);
+                    setPortionsInput(newValue.toString());
+                  }}
                   className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
                   style={{
                     backgroundColor: `${currentTheme.colors.primary}20`,
