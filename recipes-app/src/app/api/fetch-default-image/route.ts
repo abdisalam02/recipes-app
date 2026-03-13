@@ -7,15 +7,40 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("query") || "food";  // Default to "food" if no query is provided
 
-    // Fetch 1 random(ish) image matching the query
-    const images = await fetchGoogleImages(query, 1);
+    console.log("[API][fetch-default-image] Incoming query:", query);
+
+    // Fetch multiple images so we can pick a random one for more variety
+    const count = 8;
+    const images = await fetchGoogleImages(query, count);
+
+    console.log(
+      "[API][fetch-default-image] Images result length:",
+      Array.isArray(images) ? images.length : "not-array"
+    );
 
     if (!images || images.length === 0) {
+      console.warn(
+        "[API][fetch-default-image] No images found for query:",
+        query
+      );
       return NextResponse.json({ error: "No images found for the given query" }, { status: 404 });
     }
 
-    // Return the first image
-    return NextResponse.json({ imageUrl: images[0] }, { status: 200 });
+    // Pick a random image from the list to avoid always returning the same one
+    const index = Math.floor(Math.random() * images.length);
+    const chosen = images[index];
+
+    console.log(
+      "[API][fetch-default-image] Returning image URL (index",
+      index,
+      "):",
+      chosen
+    );
+    console.log(
+      "[API][fetch-default-image] Returning image URL:",
+      images[0]
+    );
+    return NextResponse.json({ imageUrl: chosen }, { status: 200 });
   } catch (error: unknown) {
     if (error instanceof Error) {
       console.error("Error fetching default image:", error.message);

@@ -11,6 +11,11 @@ import {
   IconStar,
   IconMoon2,
   IconChefHat,
+  IconHome,
+  IconPlus,
+  IconHeart,
+  IconRobot,
+  IconCalendarEvent,
 } from "@tabler/icons-react";
 import { ThemeType, useTheme } from "./contexts/ThemeContext";
 
@@ -71,7 +76,7 @@ export default function Navbar({ currentTheme, changeTheme }: NavbarProps) {
       }}
     >
       <div className="container mx-auto px-4 py-3">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center gap-4">
           {/* Logo / Brand */}
           <Link
             href="/"
@@ -89,28 +94,94 @@ export default function Navbar({ currentTheme, changeTheme }: NavbarProps) {
             Recipes App
           </Link>
 
-          {/* Theme Toggle Button */}
-          <button
-            onClick={toggleToNextTheme}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 hover:scale-105"
-            style={{
-              backgroundColor: `${currentThemeInfo.colors.primary}15`,
-              border: `1px solid ${currentThemeInfo.colors.primary}30`,
-              color: currentThemeInfo.colors.text,
-            }}
-          >
-            <div
-              className="p-1 rounded-lg"
+          <div className="flex items-center gap-3">
+            {/* Desktop navigation links (mirror floating nav) */}
+            <div className="hidden md:flex items-center gap-2 text-sm font-medium">
+              <Link
+                href="/"
+                className="px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                style={{
+                  color: currentThemeInfo.colors.text,
+                }}
+              >
+                <IconHome size={16} />
+                <span>Home</span>
+              </Link>
+              <Link
+                href="/recipes/add"
+                className="px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                style={{
+                  color: currentThemeInfo.colors.text,
+                }}
+              >
+                <IconPlus size={16} />
+                <span>Add</span>
+              </Link>
+              <Link
+                href="/favorites"
+                className="px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                style={{
+                  color: currentThemeInfo.colors.text,
+                }}
+              >
+                <IconHeart size={16} />
+                <span>Favorites</span>
+              </Link>
+              <Link
+                href="/tinder"
+                className="px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                style={{
+                  color: currentThemeInfo.colors.text,
+                }}
+              >
+                <IconFlame size={16} />
+                <span>Tinder</span>
+              </Link>
+              <Link
+                href="/AI"
+                className="px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                style={{
+                  color: currentThemeInfo.colors.text,
+                }}
+              >
+                <IconRobot size={16} />
+                <span>AI</span>
+              </Link>
+              <Link
+                href="/daily-recipes"
+                className="px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                style={{
+                  color: currentThemeInfo.colors.text,
+                }}
+              >
+                <IconCalendarEvent size={16} />
+                <span>Daily</span>
+              </Link>
+            </div>
+
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleToNextTheme}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 hover:scale-105"
               style={{
-                backgroundColor: `${currentThemeInfo.colors.primary}20`,
+                backgroundColor: `${currentThemeInfo.colors.primary}15`,
+                border: `1px solid ${currentThemeInfo.colors.primary}30`,
+                color: currentThemeInfo.colors.text,
               }}
             >
-              {getThemeIcon(currentTheme)}
-            </div>
-            <span className="hidden sm:inline font-medium">
-              {currentThemeInfo.label}
-            </span>
-          </button>
+              <div
+                className="p-1 rounded-lg"
+                style={{
+                  backgroundColor: `${currentThemeInfo.colors.primary}20`,
+                }}
+              >
+                {getThemeIcon(currentTheme)}
+              </div>
+              <span className="hidden sm:inline font-medium">
+                {currentThemeInfo.label}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </nav>

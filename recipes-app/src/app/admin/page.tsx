@@ -63,6 +63,11 @@ export default function AdminDashboardPage() {
     }>
   >([]);
 
+  // Image change / preview states inside the edit modal
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+
   // Deletion Confirmation States
   const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
   const [recipeToDelete, setRecipeToDelete] = useState<Recipe | null>(null);
@@ -359,6 +364,9 @@ export default function AdminDashboardPage() {
     console.log("Recipe ingredients:", recipe.ingredients);
     console.log("Recipe steps:", recipe.steps);
 
+    // Reset any image preview/error when opening a new edit session
+    setImagePreview(null);
+    setImageError(null);
     setCurrentRecipe(recipe);
 
     // Ensure we have properly structured ingredients and steps
@@ -516,6 +524,83 @@ export default function AdminDashboardPage() {
     setEditingSteps([]);
     setSuccess(false);
     setModalLoading(false);
+    setImagePreview(null);
+    setImageError(null);
+  };
+
+  // Fetch a new suggested image using the existing Google image API
+  const handleFetchNewImage = async () => {
+    if (!currentRecipe) return;
+    try {
+      setImageLoading(true);
+      setImageError(null);
+
+      const query =
+        currentRecipe.title?.trim() ||
+        currentRecipe.category?.trim() ||
+        currentRecipe.description?.slice(0, 50) ||
+        "food";
+
+      console.log(
+        "[ADMIN][ChangeImage] Fetching new image with query:",
+        query
+      );
+
+      const url = `/api/fetch-default-image?query=${encodeURIComponent(query)}`;
+      console.log("[ADMIN][ChangeImage] Request URL:", url);
+
+      const res = await fetch(url);
+
+      console.log(
+        "[ADMIN][ChangeImage] Response status:",
+        res.status,
+        res.statusText
+      );
+
+      if (!res.ok) {
+        let errorMessage = `Failed to fetch a new image. (${res.status})`;
+        try {
+          const errJson = await res.json();
+          if (errJson?.error) {
+            errorMessage += ` ${errJson.error}`;
+          }
+          console.log("[ADMIN][ChangeImage] Error payload:", errJson);
+        } catch {
+          console.log(
+            "[ADMIN][ChangeImage] Could not parse error JSON from response"
+          );
+        }
+        throw new Error(errorMessage);
+      }
+      const data = await res.json();
+      console.log("[ADMIN][ChangeImage] Parsed JSON:", data);
+
+      if (!data.imageUrl) {
+        throw new Error("No image returned from the image service.");
+      }
+
+      console.log(
+        "[ADMIN][ChangeImage] Setting imagePreview to:",
+        data.imageUrl
+      );
+      setImagePreview(data.imageUrl);
+    } catch (err: any) {
+      console.error("Error fetching new image:", err);
+      setImageError(err.message || "Could not fetch image.");
+    } finally {
+      setImageLoading(false);
+    }
+  };
+
+  // Apply the previewed image to the current recipe (persisted when clicking Save)
+  const handleApplyPreviewImage = () => {
+    if (!currentRecipe || !imagePreview) return;
+    setCurrentRecipe({
+      ...currentRecipe,
+      image: imagePreview,
+    });
+    // Keep preview visible so the user knows what's applied, but clear errors
+    setImageError(null);
   };
 
   if (loading) {
@@ -898,7 +983,7 @@ export default function AdminDashboardPage() {
           {recipes.map((recipe) => (
             <div
               key={recipe.id}
-              className="card bg-base-100 shadow-md rounded-lg p-4"
+              className="glass-panel backdrop-blur-xl bg-white/15 border border-white/30 rounded-2xl p-4 shadow-2xl hover:shadow-3xl transition-all duration-300"
             >
               <figure>
                 <img
@@ -907,38 +992,51 @@ export default function AdminDashboardPage() {
                   className="w-full h-40 object-cover rounded-md"
                 />
               </figure>
-              <div className="mt-4">
-                <h3 className="text-xl font-bold">{recipe.title}</h3>
-                <span className="badge badge-secondary">
+              <div className="mt-4 flex items-start justify-between gap-2">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+                    {recipe.title}
+                  </h3>
+                  <span className="inline-flex items-center mt-1 px-3 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-700 border border-blue-500/30">
                   {recipe.category
                     ? recipe.category.charAt(0).toUpperCase() +
                       recipe.category.slice(1)
                     : "Uncategorized"}
+                  </span>
+                </div>
+                <span className="text-xs text-gray-500">
+                  ID: {recipe.id}
                 </span>
               </div>
-              <p className="text-sm text-gray-500 mt-2 line-clamp-3">
+              <p className="text-sm text-gray-600 mt-2 line-clamp-3">
                 {recipe.description}
               </p>
-              <div className="flex items-center justify-between mt-4">
-                <span className="text-sm">Portions: {recipe.portion}</span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleEdit(recipe)}
-                    className="btn btn-outline btn-sm"
-                    title="Edit Recipe"
-                    aria-label={`Edit ${recipe.title}`}
-                  >
-                    <IconEdit size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(recipe)}
-                    className="btn btn-outline btn-sm"
-                    title="Delete Recipe"
-                    aria-label={`Delete ${recipe.title}`}
-                  >
-                    <IconTrash size={18} />
-                  </button>
-                </div>
+              <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
+                <span>Portions: {recipe.portion}</span>
+                <span>
+                  Ingredients: {recipe.ingredients?.length || 0} · Steps:{" "}
+                  {recipe.steps?.length || 0}
+                </span>
+              </div>
+              <div className="flex items-center justify-end mt-3 gap-2">
+                <button
+                  onClick={() => handleEdit(recipe)}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors flex items-center gap-1"
+                  title="Edit Recipe"
+                  aria-label={`Edit ${recipe.title}`}
+                >
+                  <IconEdit size={16} />
+                  <span>Edit</span>
+                </button>
+                <button
+                  onClick={() => handleDelete(recipe)}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-600 border border-red-500/40 hover:bg-red-500/20 transition-colors flex items-center gap-1"
+                  title="Delete Recipe"
+                  aria-label={`Delete ${recipe.title}`}
+                >
+                  <IconTrash size={16} />
+                  <span>Delete</span>
+                </button>
               </div>
             </div>
           ))}
@@ -975,7 +1073,7 @@ export default function AdminDashboardPage() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
             >
               {/* Backdrop */}
@@ -986,52 +1084,59 @@ export default function AdminDashboardPage() {
 
               {/* Modal Container */}
               <div
-                className={`relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ${
-                  success ? "ring-4 ring-green-400/50 scale-[1.02]" : ""
+                className={`relative w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.45)] overflow-hidden transition-all duration-500 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 ${
+                  success ? "ring-4 ring-emerald-400/60 scale-[1.01]" : ""
                 }`}
               >
                 {/* Header */}
-                <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
+                <div className="px-6 py-4 border-b border-white/10 bg-gradient-to-r from-emerald-500/20 via-blue-500/10 to-purple-500/20 backdrop-blur-md">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-white">
+                    <h2 className="text-base sm:text-lg font-semibold text-slate-50 tracking-tight">
                       {success ? (
                         <div className="flex items-center gap-2">
                           <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            className="w-6 h-6 bg-green-400 rounded-full flex items-center justify-center"
+                            className="w-6 h-6 bg-emerald-400 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40"
                           >
                             <IconCheck size={16} className="text-white" />
                           </motion.div>
                           Recipe Updated Successfully!
                         </div>
                       ) : (
-                        `Edit Recipe: ${currentRecipe.title}`
+                        <>
+                          <span className="uppercase tracking-[0.15em] text-[11px] text-emerald-300/80 block mb-0.5">
+                            Edit recipe
+                          </span>
+                          <span className="line-clamp-1 text-sm sm:text-base text-slate-50">
+                            {currentRecipe.title}
+                          </span>
+                        </>
                       )}
                     </h2>
                     <div className="flex items-center gap-3">
                       <button
                         onClick={handleEditSubmit}
                         disabled={modalLoading || success}
-                        className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all duration-300 font-medium border border-white/30 hover:border-white/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="px-4 py-1.5 rounded-full text-xs font-medium text-slate-900 bg-emerald-400 hover:bg-emerald-300 border border-emerald-300/70 shadow-md shadow-emerald-500/40 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1.5"
                       >
                         {success ? (
                           <>
                             <IconCheck size={16} />
-                            Saved!
+                            Saved
                           </>
                         ) : modalLoading ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            Saving...
+                            <div className="w-3 h-3 border-2 border-emerald-800/40 border-t-emerald-900 rounded-full animate-spin" />
+                            Saving
                           </>
                         ) : (
-                          <>💾 Save</>
+                          <>Save</>
                         )}
                       </button>
                       <button
                         onClick={closeEditModal}
-                        className="text-white hover:text-gray-200 p-2 rounded-full hover:bg-white/20 transition-colors"
+                        className="text-slate-200/80 hover:text-white p-2 rounded-full hover:bg-slate-800/60 transition-colors border border-white/10"
                       >
                         <svg
                           className="w-5 h-5"
@@ -1052,17 +1157,18 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* Content - Scrollable */}
-                <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
-                  <div className="space-y-6">
+                <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6 bg-slate-900/60 backdrop-blur-sm">
+                  <div className="space-y-6 text-slate-100">
                     {/* Basic Info Section */}
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
-                        Basic Information
+                      <h3 className="text-sm font-semibold text-slate-100 border-b border-slate-700/60 pb-2 flex items-center gap-2">
+                        <span className="w-1.5 h-4 rounded-full bg-emerald-400" />
+                        Basic information
                       </h3>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
                             Title
                           </label>
                           <input
@@ -1074,12 +1180,12 @@ export default function AdminDashboardPage() {
                                 title: e.target.value,
                               })
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2.5 rounded-xl bg-slate-900/80 border border-slate-600/70 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-slate-500"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
                             Category
                           </label>
                           <input
@@ -1091,13 +1197,13 @@ export default function AdminDashboardPage() {
                                 category: e.target.value,
                               })
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2.5 rounded-xl bg-slate-900/80 border border-slate-600/70 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-slate-500"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
                           Description
                         </label>
                         <textarea
@@ -1109,13 +1215,13 @@ export default function AdminDashboardPage() {
                             })
                           }
                           rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2.5 rounded-xl bg-slate-900/80 border border-slate-600/70 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-slate-500"
                         />
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
                             Portions
                           </label>
                           <input
@@ -1128,38 +1234,97 @@ export default function AdminDashboardPage() {
                               })
                             }
                             min="1"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2.5 rounded-xl bg-slate-900/80 border border-slate-600/70 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Image URL
+                          <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
+                            Image
                           </label>
-                          <input
-                            type="text"
-                            value={currentRecipe.image}
-                            onChange={(e) =>
-                              setCurrentRecipe({
-                                ...currentRecipe,
-                                image: e.target.value,
-                              })
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
+                          <div className="space-y-3">
+                            <input
+                              type="text"
+                              value={currentRecipe.image}
+                              onChange={(e) =>
+                                setCurrentRecipe({
+                                  ...currentRecipe,
+                                  image: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2.5 rounded-xl bg-slate-900/80 border border-slate-600/70 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-slate-500"
+                              placeholder="Image URL"
+                            />
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={handleFetchNewImage}
+                                disabled={imageLoading}
+                                className="px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500 text-slate-900 hover:bg-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-sm shadow-emerald-600/40"
+                              >
+                                {imageLoading ? (
+                                  <>
+                                    <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                    <span>Finding image...</span>
+                                  </>
+                                ) : (
+                                  <>Change image</>
+                                )}
+                              </button>
+                              {imagePreview && (
+                                <button
+                                  type="button"
+                                  onClick={handleApplyPreviewImage}
+                                    className="px-3 py-1.5 rounded-full text-xs font-medium bg-sky-500 text-slate-900 hover:bg-sky-400 transition-colors shadow-sm shadow-sky-600/40"
+                                >
+                                  Use this image
+                                </button>
+                              )}
+                            </div>
+                            {imageError && (
+                              <p className="text-xs text-red-400">{imageError}</p>
+                            )}
+                            {(imagePreview || currentRecipe.image) && (
+                              <div className="mt-1">
+                                <p className="text-xs text-slate-400 mb-1">
+                                  Preview
+                                </p>
+                                <div className="w-full h-32 rounded-xl overflow-hidden border border-slate-700/70 bg-slate-900">
+                                  <img
+                                    src={imagePreview || currentRecipe.image}
+                                    alt={currentRecipe.title}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.src =
+                                        "https://via.placeholder.com/400x300?text=No+Image";
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            <p className="text-[11px] text-slate-400/90">
+                              Tip: Use &quot;Change image&quot; to fetch a new image
+                              suggestion based on the recipe, then click{" "}
+                              <span className="font-semibold">Use this image</span>{" "}
+                              and finally <span className="font-semibold">Save</span>{" "}
+                              to persist it.
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
 
                     {/* Ingredients Section */}
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between border-b pb-2">
-                        <h3 className="text-lg font-semibold text-gray-800">
+                      <div className="flex items-center justify-between border-b border-slate-700/60 pb-2">
+                        <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+                          <span className="w-1.5 h-4 rounded-full bg-sky-400" />
                           Ingredients ({editingIngredients.length})
                         </h3>
                         <button
                           onClick={addIngredient}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                          className="px-3 py-1.5 bg-sky-500 text-slate-900 rounded-full hover:bg-sky-400 transition-colors text-xs font-medium shadow-sm shadow-sky-600/40"
                         >
                           + Add Ingredient
                         </button>
@@ -1169,10 +1334,10 @@ export default function AdminDashboardPage() {
                         {editingIngredients.map((ingredient, index) => (
                           <div
                             key={index}
-                            className="flex gap-3 items-end p-4 bg-gray-50 rounded-lg border"
+                            className="flex gap-3 items-end p-4 bg-slate-900/80 rounded-xl border border-slate-700/80"
                           >
                             <div className="flex-1">
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
                                 Name
                               </label>
                               <input
@@ -1185,13 +1350,13 @@ export default function AdminDashboardPage() {
                                     e.target.value
                                   )
                                 }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                                 placeholder="Ingredient name"
                               />
                             </div>
 
                             <div className="w-20">
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
                                 Qty
                               </label>
                               <input
@@ -1206,12 +1371,12 @@ export default function AdminDashboardPage() {
                                 }
                                 min="0.1"
                                 step="0.1"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                               />
                             </div>
 
                             <div className="w-20">
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
                                 Unit
                               </label>
                               <select
@@ -1223,7 +1388,7 @@ export default function AdminDashboardPage() {
                                     e.target.value
                                   )
                                 }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                               >
                                 <option value="g">g</option>
                                 <option value="kg">kg</option>
@@ -1239,7 +1404,7 @@ export default function AdminDashboardPage() {
                             <button
                               onClick={() => removeIngredient(index)}
                               disabled={editingIngredients.length === 1}
-                              className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              className="px-3 py-2 bg-red-500/80 text-white rounded-full hover:bg-red-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs"
                             >
                               ×
                             </button>
@@ -1250,13 +1415,14 @@ export default function AdminDashboardPage() {
 
                     {/* Steps Section */}
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between border-b pb-2">
-                        <h3 className="text-lg font-semibold text-gray-800">
+                      <div className="flex items-center justify-between border-b border-slate-700/60 pb-2">
+                        <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+                          <span className="w-1.5 h-4 rounded-full bg-violet-400" />
                           Steps ({editingSteps.length})
                         </h3>
                         <button
                           onClick={addStep}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                          className="px-3 py-1.5 bg-violet-500 text-slate-900 rounded-full hover:bg-violet-400 transition-colors text-xs font-medium shadow-sm shadow-violet-600/40"
                         >
                           + Add Step
                         </button>
@@ -1266,10 +1432,10 @@ export default function AdminDashboardPage() {
                         {editingSteps.map((step, index) => (
                           <div
                             key={index}
-                            className="flex gap-3 items-start p-4 bg-gray-50 rounded-lg border"
+                            className="flex gap-3 items-start p-4 bg-slate-900/80 rounded-xl border border-slate-700/80"
                           >
                             <div className="w-16">
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
                                 Order
                               </label>
                               <input
@@ -1283,12 +1449,12 @@ export default function AdminDashboardPage() {
                                   )
                                 }
                                 min="1"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                               />
                             </div>
 
                             <div className="flex-1">
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
                                 Description
                               </label>
                               <textarea
@@ -1301,7 +1467,7 @@ export default function AdminDashboardPage() {
                                   )
                                 }
                                 rows={2}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                                 placeholder="Step description"
                               />
                             </div>
@@ -1309,7 +1475,7 @@ export default function AdminDashboardPage() {
                             <button
                               onClick={() => removeStep(index)}
                               disabled={editingSteps.length === 1}
-                              className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              className="px-3 py-2 bg-red-500/80 text-white rounded-full hover:bg-red-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs"
                             >
                               ×
                             </button>
@@ -1321,11 +1487,11 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* Footer */}
-                <div className="border-t bg-gray-50 px-6 py-4">
+                <div className="border-t border-slate-800 bg-slate-950/80 px-6 py-3">
                   <div className="flex justify-end">
                     <button
                       onClick={closeEditModal}
-                      className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+                      className="px-5 py-1.5 border border-slate-600 text-slate-200 rounded-full hover:bg-slate-800 transition-colors font-medium text-xs"
                     >
                       Close
                     </button>

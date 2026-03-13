@@ -176,7 +176,7 @@ export const FloatingNavigation = ({ router }: FloatingNavigationProps) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 100 }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 left-0 right-0 w-full z-50"
+            className="fixed bottom-0 left-0 right-0 w-full z-50 md:hidden"
           >
             <div
               className="px-4 py-4 shadow-lg backdrop-blur-sm"
@@ -260,7 +260,7 @@ export const FloatingNavigation = ({ router }: FloatingNavigationProps) => {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0 }}
-            className="fixed bottom-6 left-1/2 z-50 transform -translate-x-1/2"
+            className="fixed bottom-6 left-1/2 z-50 transform -translate-x-1/2 md:hidden"
           >
             <motion.button
               whileHover={{ scale: 1.1 }}
