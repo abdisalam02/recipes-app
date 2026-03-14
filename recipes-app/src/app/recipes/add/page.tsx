@@ -1070,19 +1070,12 @@ export default function AddRecipePage() {
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
-      {/* Enhanced Background decorative elements */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-decorative-1 opacity-20 rounded-full blur-3xl animate-pulse"></div>
-      <div
-        className="absolute bottom-0 right-0 w-96 h-96 bg-decorative-2 opacity-20 rounded-full blur-3xl animate-pulse"
-        style={{ animationDelay: "2s" }}
-      ></div>
-
-      <div className="container mx-auto py-8 px-2 sm:px-4 relative z-10 pb-24 md:pb-8">
+    <div className="min-h-screen bg-base-100">
+      <div className="max-w-3xl mx-auto py-8 px-4 pb-32 md:pb-16">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 shadow-2xl rounded-3xl p-4 sm:p-8 relative overflow-hidden"
+          className="bg-base-100 border border-base-200 shadow-lg rounded-3xl p-6 sm:p-8 relative"
         >
           {/* Loading Overlay */}
           {loading && <LoadingOverlay message="Loading..." />}
@@ -1093,56 +1086,38 @@ export default function AddRecipePage() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center mb-6 gap-4"
           >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 rounded-full p-4 shadow-2xl"
-            >
-              <IconChefHat size={48} className="text-primary" />
-            </motion.div>
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Add New Recipe
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-600 text-center">
-              Share your culinary masterpiece with the world
-            </p>
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <IconChefHat size={40} className="text-primary" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-base-content">Add New Recipe</h1>
+            <p className="text-sm text-base-content/50 text-center">Share your culinary masterpiece</p>
           </motion.div>
 
           {/* Enhanced Tabs for Form vs JSON Input */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="flex justify-center mb-6"
-          >
-            <div className="glass-panel backdrop-blur-xl bg-white/10 border border-white/20 p-1 rounded-2xl inline-flex shadow-lg">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`px-6 py-3 rounded-xl transition-all duration-300 font-medium ${
+          <div className="flex justify-center mb-6">
+            <div className="bg-base-200 border border-base-300 p-1 rounded-2xl inline-flex">
+              <button
+                className={`px-6 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm ${
                   activeTab === "form"
-                    ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg"
-                    : "text-gray-700 hover:bg-white/20"
+                    ? "bg-base-100 text-primary shadow-sm"
+                    : "text-base-content/50 hover:text-base-content"
                 }`}
                 onClick={() => setActiveTab("form")}
               >
                 Form Input
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`px-6 py-3 rounded-xl transition-all duration-300 font-medium ${
+              </button>
+              <button
+                className={`px-6 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm ${
                   activeTab === "json"
-                    ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg"
-                    : "text-gray-700 hover:bg-white/20"
+                    ? "bg-base-100 text-primary shadow-sm"
+                    : "text-base-content/50 hover:text-base-content"
                 }`}
                 onClick={() => setActiveTab("json")}
               >
                 JSON Input
-              </motion.button>
+              </button>
             </div>
-          </motion.div>
+          </div>
 
           {activeTab === "form" ? (
             <motion.form
@@ -1159,7 +1134,7 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="glass-panel backdrop-blur-xl bg-white/10 border border-white/20 p-6 rounded-2xl shadow-lg"
+                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Recipe Title
@@ -1174,7 +1149,7 @@ export default function AddRecipePage() {
                         title: e.target.value,
                       })
                     }
-                    className="glass-panel backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                    className="bg-base-200 border border-base-300 rounded-xl w-full px-4 py-3 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-base-100 transition-all"
                     placeholder="Enter recipe title..."
                   />
                 </motion.div>
@@ -1184,7 +1159,7 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="glass-panel backdrop-blur-xl bg-white/10 border border-white/20 p-6 rounded-2xl shadow-lg"
+                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Category
@@ -1198,7 +1173,7 @@ export default function AddRecipePage() {
                         category: e.target.value,
                       })
                     }
-                    className="glass-panel backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                    className="bg-base-200 border border-base-300 rounded-xl w-full px-4 py-3 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-base-100 transition-all"
                   >
                     <option disabled value="">
                       Select Category
@@ -1216,7 +1191,7 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="glass-panel backdrop-blur-xl bg-white/10 border border-white/20 p-6 rounded-2xl shadow-lg"
+                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Region
@@ -1230,7 +1205,7 @@ export default function AddRecipePage() {
                         region: e.target.value,
                       })
                     }
-                    className="glass-panel backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                    className="bg-base-200 border border-base-300 rounded-xl w-full px-4 py-3 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-base-100 transition-all"
                   >
                     <option disabled value="">
                       Select Region
@@ -1248,7 +1223,7 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.4 }}
-                  className="glass-panel backdrop-blur-xl bg-white/10 border border-white/20 p-6 rounded-2xl shadow-lg"
+                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Description
@@ -1262,7 +1237,7 @@ export default function AddRecipePage() {
                         description: e.target.value,
                       })
                     }
-                    className="glass-panel backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                    className="bg-base-200 border border-base-300 rounded-xl w-full px-4 py-3 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-base-100 transition-all"
                     rows={3}
                     placeholder="Enter recipe description..."
                   ></textarea>
@@ -1273,7 +1248,7 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5 }}
-                  className="glass-panel backdrop-blur-xl bg-white/10 border border-white/20 p-6 rounded-2xl shadow-lg"
+                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Image URL (optional)
@@ -1289,7 +1264,7 @@ export default function AddRecipePage() {
                             image: e.target.value,
                           })
                         }
-                        className="glass-panel backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                        className="bg-base-200 border border-base-300 rounded-xl w-full px-4 py-3 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-base-100 transition-all"
                         placeholder="https://example.com/image.jpg"
                       />
                     </div>
@@ -1311,7 +1286,7 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="glass-panel backdrop-blur-xl bg-white/10 border border-white/20 p-6 rounded-2xl shadow-lg"
+                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Automatically fetch default image if none provided
@@ -1336,7 +1311,7 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.7 }}
-                  className="glass-panel backdrop-blur-xl bg-white/10 border border-white/20 p-6 rounded-2xl shadow-lg"
+                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Portions
@@ -1353,7 +1328,7 @@ export default function AddRecipePage() {
                     }
                     min="1"
                     max="20"
-                    className="glass-panel backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                    className="bg-base-200 border border-base-300 rounded-xl w-full px-4 py-3 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-base-100 transition-all"
                   />
                 </motion.div>
 
@@ -1362,7 +1337,7 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.8 }}
-                  className="glass-panel backdrop-blur-xl bg-white/10 border border-white/20 p-6 rounded-2xl shadow-lg"
+                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
                 >
                   <div className="flex items-end gap-2 mb-2">
                     <label className="label">Ingredients</label>
@@ -1438,7 +1413,7 @@ export default function AddRecipePage() {
                                 return { ...prev, ingredients: updated };
                               })
                             }
-                            className="glass-panel backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                            className="bg-base-200 border border-base-300 rounded-xl w-full px-4 py-3 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-base-100 transition-all"
                             placeholder="Type or select ingredient"
                             list={`ingredients-list-${index}`}
                             aria-label={`Ingredient ${index + 1} Name`}
@@ -1477,7 +1452,7 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.9 }}
-                  className="glass-panel backdrop-blur-xl bg-white/10 border border-white/20 p-6 rounded-2xl shadow-lg"
+                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
                 >
                   <div className="flex items-end gap-2 mb-2">
                     <label className="label">Steps</label>
@@ -1509,7 +1484,7 @@ export default function AddRecipePage() {
                           onChange={(e) =>
                             handleStepChange(index, e.target.value)
                           }
-                          className="glass-panel backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                          className="bg-base-200 border border-base-300 rounded-xl w-full px-4 py-3 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-base-100 transition-all"
                           rows={2}
                           placeholder="Step description"
                           aria-label={`Step ${index + 1} Description`}

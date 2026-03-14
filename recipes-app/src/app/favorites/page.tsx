@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { IconHeartOff, IconHome, IconHeart, IconX } from "@tabler/icons-react";
+import { IconHeartOff, IconHeart, IconX, IconChefHat, IconClock, IconUsers } from "@tabler/icons-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { FloatingNavigation } from "../components/FloatingNavigation";
-import { MinimalistLoader } from "../components/MinimalistLoader";
 import { useRouter } from "next/navigation";
+import { useTheme } from "../contexts/ThemeContext";
+import { useMemo } from "react";
 
-// Recipe Interface
 export interface Recipe {
   id: number;
   title: string;
@@ -19,7 +19,6 @@ export interface Recipe {
   portion: number;
 }
 
-// Favorite Interface
 export interface Favorite {
   id: number;
   recipe_id: number;
@@ -27,90 +26,32 @@ export interface Favorite {
   created_at: string;
 }
 
-// Toast component
-const Toast = ({
-  message,
-  type,
-  onClose,
-}: {
-  message: string;
-  type: "success" | "error";
-  onClose: () => void;
-}) => {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-    <div className="fixed bottom-4 right-4 z-50">
-      <div
-        className={`${
-          type === "success" ? "bg-green-500" : "bg-red-500"
-        } text-white px-4 py-3 rounded-lg shadow-lg flex items-center`}
-      >
-        <div className="flex items-center">
-          {type === "success" ? (
-            <IconHeart size={18} className="mr-2" />
-          ) : (
-            <IconX size={18} className="mr-2" />
-          )}
-          <span>{message}</span>
-        </div>
-        <button
-          onClick={onClose}
-          className="ml-4 text-white hover:text-gray-200"
-        >
-          <IconX size={16} />
-        </button>
-      </div>
-    </div>
-  );
-};
-
 export default function FavoritesPage() {
   const router = useRouter();
+  const { theme, themes } = useTheme();
+  const currentTheme = useMemo(() => themes.find((t) => t.name === theme) || themes[0], [theme, themes]);
+
   const [favorites, setFavorites] = useState<Favorite[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({
-    show: false,
-    message: "",
-    type: "success",
-  });
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" }>({ show: false, message: "", type: "success" });
 
   useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        const response = await fetch("/api/favorites");
+        if (!response.ok) throw new Error("Failed to fetch favorites");
+        const data: Favorite[] = await response.json();
+        setFavorites(data);
+      } catch {
+        setToast({ show: true, message: "Failed to load favorites", type: "error" });
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchFavorites();
   }, []);
 
-  const fetchFavorites = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/favorites");
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch favorites");
-      }
-      const data: Favorite[] = await response.json();
-      setFavorites(data);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unknown error occurred.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const removeFavorite = async (recipe_id: number) => {
+  const removeFavorite = useCallback(async (recipe_id: number) => {
     try {
       const response = await fetch("/api/favorites", {
         method: "DELETE",
@@ -118,87 +59,30 @@ export default function FavoritesPage() {
         body: JSON.stringify({ recipe_id }),
       });
       if (response.ok) {
-        setFavorites((prev) =>
-          prev.filter((fav) => fav.recipe_id !== recipe_id)
-        );
-        setToast({
-          show: true,
-          message: "Recipe removed from favorites",
-          type: "success",
-        });
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to remove favorite");
+        setFavorites((prev) => prev.filter((fav) => fav.recipe_id !== recipe_id));
+        setToast({ show: true, message: "Removed from favorites", type: "success" });
       }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setToast({
-          show: true,
-          message: err.message || "Failed to remove from favorites",
-          type: "error",
-        });
-        setError(err.message);
-      } else {
-        setToast({
-          show: true,
-          message: "An unknown error occurred",
-          type: "error",
-        });
-        setError("An unknown error occurred.");
-      }
+    } catch {
+      setToast({ show: true, message: "Failed to remove favorite", type: "error" });
     }
-  };
+  }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-decorative-1 opacity-20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-decorative-2 opacity-20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="container mx-auto py-8 flex items-center justify-center min-h-screen relative z-10">
-          <MinimalistLoader message="Loading favorites..." size="lg" />
-        </div>
-        <FloatingNavigation router={router} />
-      </div>
-    );
-  }
-
-  if (error || favorites.length === 0) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-decorative-1 opacity-20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-decorative-2 opacity-20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="container mx-auto py-8 flex items-center justify-center min-h-screen p-4 relative z-10 pb-24 md:pb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 rounded-3xl p-8 text-center max-w-md w-full shadow-2xl"
-          >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className="glass-panel backdrop-blur-xl bg-rose-500/20 border border-rose-400/30 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
-            >
-            <IconHeartOff size={40} className="text-rose-500" />
-            </motion.div>
-            <h2 className="text-2xl font-bold mb-4 bg-gradient-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
-              No Favorite Recipes Yet
-            </h2>
-            <p className="text-gray-600 mb-8">
-              Start adding recipes to your favorites by clicking the heart icon
-              on any recipe card.
-          </p>
-            <Link href="/">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="glass-panel backdrop-blur-xl bg-gradient-to-r from-emerald-500 to-blue-500 text-white border border-white/30 rounded-2xl px-8 py-4 font-semibold shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 inline-flex items-center gap-2"
-              >
-                <IconHome size={18} />
-            Browse Recipes
-              </motion.div>
-          </Link>
-          </motion.div>
+      <div className="min-h-screen bg-base-100">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="h-24 bg-base-200 rounded-3xl animate-pulse mb-8" />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="rounded-3xl overflow-hidden bg-base-100 border border-base-200 animate-pulse">
+                <div className="h-48 bg-base-200" />
+                <div className="p-4 space-y-2">
+                  <div className="h-5 bg-base-200 rounded-lg w-3/4" />
+                  <div className="h-3 bg-base-200 rounded-lg w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
         <FloatingNavigation router={router} />
       </div>
@@ -206,168 +90,104 @@ export default function FavoritesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-96 h-96 bg-decorative-1 opacity-20 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-decorative-2 opacity-20 rounded-full blur-3xl animate-pulse"></div>
-
-      {/* Enhanced Toast */}
-      <AnimatePresence>
-      {toast.show && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 50 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 50 }}
-            className="fixed bottom-24 left-4 right-4 z-50 md:bottom-6 md:right-6 md:left-auto md:w-96"
-          >
-            <div
-              className={`glass-panel backdrop-blur-xl rounded-2xl p-4 shadow-2xl border ${
-                toast.type === "success"
-                  ? "bg-emerald-500/20 border-emerald-400/30"
-                  : "bg-red-500/20 border-red-400/30"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className={`p-2 rounded-full ${
-                    toast.type === "success"
-                      ? "bg-emerald-500/30"
-                      : "bg-red-500/30"
-                  }`}
-                >
-                  {toast.type === "success" ? (
-                    <IconHeart size={18} className="text-emerald-100" />
-                  ) : (
-                    <IconX size={18} className="text-red-100" />
-                  )}
-                </div>
-                <span className="font-medium text-white flex-1">
-                  {toast.message}
-                </span>
-                <button
-                  onClick={() => setToast({ ...toast, show: false })}
-                  className="p-1 rounded-full hover:bg-white/20 transition-colors"
-                >
-                  <IconX size={16} className="text-white/70" />
-                </button>
-              </div>
-            </div>
-          </motion.div>
-      )}
-      </AnimatePresence>
-      
-      <div className="container mx-auto py-8 px-4 relative z-10 pb-24 md:pb-8">
-        {/* Enhanced Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-2xl"
-          >
-            <IconHeart size={32} className="text-rose-500 mx-auto" />
-          </motion.div>
-        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
-          My Favorites
-        </h1>
-          <p className="text-gray-600">Your collection of favorite recipes</p>
-        </motion.div>
-
-        {/* Enhanced Grid */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-        >
-          {favorites.map((fav, index) => (
-            <motion.div
-              key={fav.id} 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ y: -5, scale: 1.02 }}
-              className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 rounded-2xl overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500"
-            >
-              <figure className="relative h-48">
-                <Image
-                  src={fav.recipe.image}
-                  alt={fav.recipe.title}
-                  fill
-                  className="object-cover transition-transform duration-500 hover:scale-110"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src =
-                      "https://via.placeholder.com/400x300?text=No+Image";
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-                
-                {/* Enhanced remove from favorites button */}
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="absolute top-4 right-4 glass-panel backdrop-blur-xl bg-white/20 border border-white/30 rounded-full p-3 shadow-2xl hover:bg-white/30 transition-all duration-300 z-10"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    removeFavorite(fav.recipe_id);
-                  }}
-                  aria-label="Remove from favorites"
-                >
-                  <IconHeartOff size={20} className="text-rose-400" />
-                </motion.button>
-                
-                {/* Enhanced category badge */}
-                <div className="absolute bottom-4 left-4 z-10">
-                  <div className="badge badge-lg bg-gradient-to-r from-emerald-500 to-blue-500 text-white border-none shadow-lg">
-                    {fav.recipe.category &&
-                    typeof fav.recipe.category === "string"
-                      ? fav.recipe.category.charAt(0).toUpperCase() +
-                        fav.recipe.category.slice(1)
-                      : "Uncategorized"}
-                  </div>
-                </div>
-              </figure>
-              
-              <div className="p-4">
-                <h2 className="text-xl font-bold mb-2 line-clamp-1 text-gray-800">
-                  {fav.recipe.title}
-                </h2>
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {fav.recipe.description}
-                </p>
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs text-gray-500">
-                    {fav.recipe.portion}{" "}
-                    {parseInt(fav.recipe.portion.toString()) === 1
-                      ? "serving"
-                      : "servings"}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    Added {new Date(fav.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-                <Link href={`/recipes/${fav.recipe.id}`}>
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="glass-panel backdrop-blur-xl bg-gradient-to-r from-emerald-500 to-blue-500 border border-white/30 text-white rounded-xl px-6 py-3 font-medium shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 text-center"
-                >
-                  View Recipe
-                  </motion.div>
-                </Link>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+    <div className="min-h-screen bg-base-100">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-base-100 via-base-200 to-base-100 border-b border-base-200 px-4 py-10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-10 blur-3xl bg-red-400" />
+        <div className="max-w-6xl mx-auto text-center">
+          <div className="w-16 h-16 rounded-3xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+            <IconHeart size={32} className="text-red-500" />
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-base-content">My Favourites</h1>
+          <p className="text-base-content/50 mt-2 text-sm">{favorites.length} saved recipe{favorites.length !== 1 ? "s" : ""}</p>
+        </div>
       </div>
 
-      {/* FloatingNavigation */}
+      {/* Content */}
+      <div className="max-w-6xl mx-auto px-4 py-8 pb-32 md:pb-16">
+        {favorites.length === 0 ? (
+          // Empty State
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="text-7xl mb-6">💔</div>
+            <h2 className="text-2xl font-bold text-base-content mb-3">No favourites yet</h2>
+            <p className="text-base-content/50 mb-8 max-w-xs">Start adding recipes to your favourites by tapping the heart icon on any recipe card.</p>
+            <Link href="/" className="px-7 py-3.5 rounded-2xl text-white font-semibold shadow-lg shadow-primary/20 transition-all hover:opacity-90" style={{ background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})` }}>
+              Browse Recipes
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <AnimatePresence>
+              {favorites.map((fav, index) => (
+                <motion.div
+                  key={fav.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="group relative rounded-3xl overflow-hidden bg-base-100 border border-base-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                >
+                  <Link href={`/recipes/${fav.recipe.id}`} prefetch={true} className="block">
+                    {/* Image */}
+                    <div className="relative h-44">
+                      <Image
+                        src={fav.recipe.image || "/default-image.png"}
+                        alt={fav.recipe.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        onError={(e) => { (e.target as HTMLImageElement).src = "/default-image.png"; }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                      {fav.recipe.category && (
+                        <div className="absolute bottom-3 left-3">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: currentTheme.colors.primary }}>
+                            {fav.recipe.category}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="p-4">
+                      <h3 className="text-sm font-bold text-base-content line-clamp-1 mb-1">{fav.recipe.title}</h3>
+                      <p className="text-xs text-base-content/50 line-clamp-2 leading-relaxed mb-3">{fav.recipe.description}</p>
+                      <div className="flex items-center gap-3 text-xs text-base-content/40">
+                        <span className="flex items-center gap-1"><IconUsers size={11} />{fav.recipe.portion} serv.</span>
+                        <span className="flex items-center gap-1"><IconClock size={11} />30 min</span>
+                      </div>
+                    </div>
+                  </Link>
+
+                  {/* Remove button */}
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeFavorite(fav.recipe_id); }}
+                    className="absolute top-3 right-3 p-2 rounded-full bg-base-100/90 backdrop-blur-sm shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-500"
+                  >
+                    <IconHeartOff size={14} className="text-red-400" />
+                  </button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
+
+      {/* Toast */}
+      <AnimatePresence>
+        {toast.show && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className={`fixed bottom-28 md:bottom-8 right-4 z-50 px-4 py-3 rounded-2xl shadow-xl text-white text-sm font-medium flex items-center gap-2 ${toast.type === "success" ? "bg-success" : "bg-error"}`}
+          >
+            {toast.type === "success" ? <IconHeart size={16} /> : <IconX size={16} />}
+            <span>{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <FloatingNavigation router={router} />
     </div>
   );

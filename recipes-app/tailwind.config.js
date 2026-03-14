@@ -253,7 +253,6 @@ module.exports = {
           "error": "#ef4444",
         },
       },
-      "cupcake", "cyberpunk", "valentine", "synthwave", "autumn"
     ],
   },
 };

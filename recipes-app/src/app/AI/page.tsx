@@ -985,10 +985,7 @@ Format the answer as JSON with the following structure:
   };
 
   return (
-    <div
-      className="min-h-screen relative overflow-hidden"
-      style={{ backgroundColor: currentTheme.colors.background }}
-    >
+    <div className="min-h-screen bg-base-100 relative overflow-hidden">
       {/* Enhanced Background decorative elements */}
       <div
         className="absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl animate-pulse"
@@ -1031,7 +1028,7 @@ Format the answer as JSON with the following structure:
               ? "AI Recipe Generator"
               : "Calorie Counter"}
           </h1>
-          <p className="text-base sm:text-lg text-center max-w-2xl text-gray-600">
+          <p className="text-base sm:text-lg text-center max-w-2xl text-base-content/60">
             {activeMode === "recipe-generator"
               ? "Create custom recipes with AI using your available ingredients and preferences"
               : "Track your food intake and calculate nutritional information with AI assistance"}
@@ -1051,10 +1048,10 @@ Format the answer as JSON with the following structure:
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={`glass-panel backdrop-blur-xl border border-white/30 px-6 py-3 rounded-xl shadow-lg transition-all duration-300 ${
+            className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-colors ${
               activeMode === "recipe-generator"
-                ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white"
-                : "bg-white/20 text-gray-700 hover:bg-white/30"
+                ? "bg-primary text-white"
+                : "bg-base-200 text-base-content/70 hover:bg-base-300"
             }`}
             onClick={() => setActiveMode("recipe-generator")}
           >
@@ -1069,10 +1066,10 @@ Format the answer as JSON with the following structure:
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={`glass-panel backdrop-blur-xl border border-white/30 px-6 py-3 rounded-xl shadow-lg transition-all duration-300 ${
+            className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-colors ${
               activeMode === "calorie-counter"
-                ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white"
-                : "bg-white/20 text-gray-700 hover:bg-white/30"
+                ? "bg-primary text-white"
+                : "bg-base-200 text-base-content/70 hover:bg-base-300"
             }`}
             onClick={() => setActiveMode("calorie-counter")}
           >
@@ -1087,7 +1084,7 @@ Format the answer as JSON with the following structure:
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 text-gray-700 hover:bg-white/30 transition-all duration-300 px-6 py-3 rounded-xl shadow-lg"
+            className="px-5 py-2.5 rounded-xl bg-base-200 text-base-content/70 hover:bg-base-300 transition-colors text-sm font-medium"
             onClick={() => router.push("/ai-recipes")}
           >
             <span className="text-xs sm:text-sm font-medium">
@@ -1104,7 +1101,7 @@ Format the answer as JSON with the following structure:
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 rounded-3xl overflow-hidden mb-8 shadow-2xl"
+              className="bg-base-100 border border-base-200 rounded-3xl overflow-hidden mb-8 shadow-sm"
             >
               <div className="p-6 sm:p-8">
                 <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
@@ -1112,13 +1109,13 @@ Format the answer as JSON with the following structure:
                 </h2>
 
                 <div className="mb-4">
-                  <label className="label font-medium text-gray-700">
+                  <label className="block text-sm font-semibold text-base-content mb-2">
                     Ingredients (comma separated):
                   </label>
                   <input
                     type="text"
                     placeholder="e.g., Chicken, Basil, Garlic"
-                    className="input input-bordered w-full glass-panel backdrop-blur-xl bg-white/30 border-white/20"
+                    className="w-full px-4 py-3 rounded-xl border border-base-300 bg-base-200 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-base-100 transition-all"
                     value={ingredientsInput}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
                       setIngredientsInput(e.target.value)
@@ -1127,13 +1124,13 @@ Format the answer as JSON with the following structure:
                 </div>
 
                 <div className="mb-6">
-                  <label className="label font-bold text-gray-700">
+                  <label className="block text-sm font-semibold text-base-content mb-2">
                     Any dietary or flavor preferences?
                   </label>
                   <input
                     type="text"
                     placeholder="e.g., low-carb, spicy, vegan"
-                    className="input input-bordered w-full glass-panel backdrop-blur-xl bg-white/30 border-white/20"
+                    className="w-full px-4 py-3 rounded-xl border border-base-300 bg-base-200 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-base-100 transition-all"
                     value={preferences}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
                       setPreferences(e.target.value)
@@ -1144,7 +1141,7 @@ Format the answer as JSON with the following structure:
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="btn w-full bg-gradient-to-r from-emerald-500 to-blue-500 text-white border-none shadow-lg hover:shadow-emerald-500/25 transition-all duration-300"
+                  className="w-full py-3.5 rounded-2xl bg-primary text-white font-bold text-center hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                   onClick={generateRecipe}
                   disabled={loading || !ingredientsInput.trim()}
                 >
@@ -1158,7 +1155,7 @@ Format the answer as JSON with the following structure:
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 rounded-3xl overflow-hidden shadow-2xl"
+                className="bg-base-100 border border-base-200 rounded-3xl overflow-hidden shadow-md"
               >
                 {/* Hero Image Section */}
                 <div className="relative h-64 sm:h-80 md:h-96 w-full">
@@ -1211,13 +1208,13 @@ Format the answer as JSON with the following structure:
                     )}
 
                   {/* Description Section */}
-                  <p className="text-base sm:text-lg mb-6 sm:mb-8 text-gray-700">
+                  <p className="text-base sm:text-lg mb-6 sm:mb-8 text-base-content/70">
                     {generatedRecipe.description}
                   </p>
 
                   {/* Enhanced Nutritional Info */}
                   {scaledNutritionalInfo && (
-                    <div className="grid grid-cols-2 gap-4 mb-6 sm:mb-8 p-6 glass-panel backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl">
+                    <div className="grid grid-cols-2 gap-4 mb-6 sm:mb-8 p-5 bg-base-200 border border-base-300 rounded-2xl">
                       <div className="text-center">
                         <div className="stat-value text-emerald-600 text-xl sm:text-2xl font-bold">
                           {scaledNutritionalInfo.calories.toFixed(2)}
@@ -1238,8 +1235,8 @@ Format the answer as JSON with the following structure:
                   )}
 
                   {/* Enhanced Portion Control Section */}
-                  <div className="flex flex-wrap items-center gap-3 mb-6 sm:mb-8 p-4 glass-panel backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl">
-                    <span className="font-semibold text-sm sm:text-base text-gray-700">
+                  <div className="flex flex-wrap items-center gap-3 mb-6 sm:mb-8 p-4 bg-base-200 border border-base-300 rounded-2xl">
+                    <span className="font-semibold text-sm sm:text-base text-base-content">
                       Adjust Portions:
                     </span>
                     <div className="flex items-center">

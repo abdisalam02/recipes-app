@@ -5,6 +5,7 @@ import { Metadata } from "next";
 import { registerServiceWorker } from "./worker";
 import { FadeInWrapper } from "./components/FadeInWrapper";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { PWARouteTracker } from "./components/PWARouteTracker";
 
 // Register service worker
 if (typeof window !== "undefined") {
@@ -56,6 +57,7 @@ export default function RootLayout({
       </head>
       <body className="bg-base-200">
         <ThemeProvider>
+          <PWARouteTracker />
           <NavbarWrapper />
           <main className="min-h-screen container mx-auto px-4 py-8">
             <FadeInWrapper>{children}</FadeInWrapper>

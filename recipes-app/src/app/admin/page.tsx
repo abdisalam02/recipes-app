@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconTrash, IconEdit, IconLock, IconCheck } from "@tabler/icons-react";
+import { IconTrash, IconEdit, IconLock, IconCheck, IconHome, IconChefHat, IconRobot, IconRefresh, IconPlus } from "@tabler/icons-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { FloatingNavigation } from "../components/FloatingNavigation";
@@ -945,566 +945,476 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-r from-purple-400 to-pink-400 opacity-20 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-r from-orange-400 to-red-400 opacity-20 rounded-full blur-3xl animate-pulse"></div>
-
-      <div className="container mx-auto py-8 relative z-10 pb-24 md:pb-8">
-        {/* Tab Slider for Admin: Recipes vs AI Recipes */}
-        <div className="flex justify-center mb-6 gap-4">
+    <div className="min-h-screen bg-base-200 flex flex-col md:flex-row font-sans selection:bg-primary/20 text-base-content">
+      {/* Sidebar Navigation (Desktop) */}
+      <aside className="hidden md:flex flex-col w-64 bg-base-100 border-r border-base-300 h-screen sticky top-0 shadow-sm z-20 shrink-0">
+        <div className="p-6">
+          <h1 className="text-2xl font-extrabold bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">
+            Admin Panel
+          </h1>
+        </div>
+        <nav className="flex-1 px-4 space-y-2 mt-4">
           <button
-            className={`btn ${
-              selectedTab === "recipes" ? "btn-primary" : "btn-outline"
-            }`}
             onClick={() => setSelectedTab("recipes")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+              selectedTab === "recipes"
+                ? "bg-primary/10 text-primary shadow-sm border border-primary/20"
+                : "text-base-content/70 hover:bg-base-200/50 hover:text-base-content"
+            }`}
           >
-            Recipes
+            <IconChefHat size={20} stroke={selectedTab === "recipes" ? 2 : 1.5} /> Core Recipes
           </button>
           <button
-            className={`btn ${
-              selectedTab === "ai-recipes" ? "btn-primary" : "btn-outline"
-            }`}
             onClick={() => setSelectedTab("ai-recipes")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+              selectedTab === "ai-recipes"
+                ? "bg-secondary/10 text-secondary shadow-sm border border-secondary/20"
+                : "text-base-content/70 hover:bg-base-200/50 hover:text-base-content"
+            }`}
           >
-            AI Recipes
+            <IconRobot size={20} stroke={selectedTab === "ai-recipes" ? 2 : 1.5} /> AI Generated
           </button>
+        </nav>
+        <div className="p-4 border-t border-base-300">
+          <Link href="/">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-base-content/70 hover:bg-base-200/50 hover:text-base-content transition-all font-medium group cursor-pointer">
+              <IconHome size={20} className="group-hover:text-primary transition-colors" /> Back to App
+            </div>
+          </Link>
         </div>
+      </aside>
 
-        {/* Refresh Button */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold">Admin Dashboard</h2>
-          <button onClick={fetchRecipes} className="btn btn-primary">
-            Refresh
-          </button>
-        </div>
-
-        {/* Recipes Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {recipes.map((recipe) => (
-            <div
-              key={recipe.id}
-              className="glass-panel backdrop-blur-xl bg-white/15 border border-white/30 rounded-2xl p-4 shadow-2xl hover:shadow-3xl transition-all duration-300"
+      {/* Main Content Area */}
+      <main className="flex-1 shrink flex flex-col min-w-0 min-h-screen relative pb-24 md:pb-8">
+        {/* Mobile Header Menu */}
+        <div className="md:hidden bg-base-100 px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-20">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Admin</h1>
+          <div className="flex gap-1.5 bg-base-200 p-1.5 rounded-xl">
+            <button
+              onClick={() => setSelectedTab("recipes")}
+              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                selectedTab === "recipes" ? "bg-base-100 text-primary shadow-sm" : "text-base-content/60"
+              }`}
             >
-              <figure>
-                <img
-                  src={recipe.image}
-                  alt={recipe.title}
-                  className="w-full h-40 object-cover rounded-md"
-                />
-              </figure>
-              <div className="mt-4 flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
-                    {recipe.title}
-                  </h3>
-                  <span className="inline-flex items-center mt-1 px-3 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-700 border border-blue-500/30">
-                  {recipe.category
-                    ? recipe.category.charAt(0).toUpperCase() +
-                      recipe.category.slice(1)
-                    : "Uncategorized"}
-                  </span>
-                </div>
-                <span className="text-xs text-gray-500">
-                  ID: {recipe.id}
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 mt-2 line-clamp-3">
-                {recipe.description}
-              </p>
-              <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
-                <span>Portions: {recipe.portion}</span>
-                <span>
-                  Ingredients: {recipe.ingredients?.length || 0} · Steps:{" "}
-                  {recipe.steps?.length || 0}
-                </span>
-              </div>
-              <div className="flex items-center justify-end mt-3 gap-2">
-                <button
-                  onClick={() => handleEdit(recipe)}
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors flex items-center gap-1"
-                  title="Edit Recipe"
-                  aria-label={`Edit ${recipe.title}`}
-                >
-                  <IconEdit size={16} />
-                  <span>Edit</span>
-                </button>
-                <button
-                  onClick={() => handleDelete(recipe)}
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-600 border border-red-500/40 hover:bg-red-500/20 transition-colors flex items-center gap-1"
-                  title="Delete Recipe"
-                  aria-label={`Delete ${recipe.title}`}
-                >
-                  <IconTrash size={16} />
-                  <span>Delete</span>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Confirmation Modal for Deletion */}
-        {deleteModalOpen && (
-          <div className="modal modal-open">
-            <div className="modal-box max-w-md">
-              <h3 className="font-bold text-xl mb-4">Confirm Deletion</h3>
-              <p>
-                Are you sure you want to delete the recipe "
-                <b>{recipeToDelete?.title}</b>"?
-              </p>
-              <div className="modal-action">
-                <button
-                  className="btn btn-outline"
-                  onClick={() => setDeleteModalOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button className="btn btn-error" onClick={confirmDelete}>
-                  Delete
-                </button>
-              </div>
-            </div>
+              Recipes
+            </button>
+            <button
+              onClick={() => setSelectedTab("ai-recipes")}
+              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                selectedTab === "ai-recipes" ? "bg-base-100 text-secondary shadow-sm" : "text-base-content/60"
+              }`}
+            >
+              AI
+            </button>
           </div>
-        )}
+        </div>
 
-        {/* Edit Recipe Modal */}
-        <AnimatePresence>
-          {currentRecipe && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            >
-              {/* Backdrop */}
-              <div
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-                onClick={closeEditModal}
-              />
+        {/* Dynamic Top Bar */}
+        <div className="px-6 py-8 md:px-10 max-w-7xl mx-auto w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-extrabold text-base-content tracking-tight">
+              {selectedTab === "recipes" ? "Core Recipes" : "AI Generated Recipes"}
+            </h2>
+            <p className="text-base-content/60 mt-1 font-medium">
+              Manage, edit, and curate your collection.
+            </p>
+          </div>
+          <button
+            onClick={fetchRecipes}
+            disabled={loading}
+            className="self-start sm:self-auto px-5 py-2.5 rounded-xl bg-base-100 border border-base-300 text-base-content/80 font-semibold hover:bg-base-200 shadow-sm hover:shadow transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
+          >
+            <IconRefresh size={18} className={loading ? "animate-spin text-primary" : ""} /> Refresh Data
+          </button>
+        </div>
 
-              {/* Modal Container */}
-              <div
-                className={`relative w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.45)] overflow-hidden transition-all duration-500 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 ${
-                  success ? "ring-4 ring-emerald-400/60 scale-[1.01]" : ""
-                }`}
-              >
-                {/* Header */}
-                <div className="px-6 py-4 border-b border-white/10 bg-gradient-to-r from-emerald-500/20 via-blue-500/10 to-purple-500/20 backdrop-blur-md">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-base sm:text-lg font-semibold text-slate-50 tracking-tight">
-                      {success ? (
-                        <div className="flex items-center gap-2">
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="w-6 h-6 bg-emerald-400 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40"
-                          >
-                            <IconCheck size={16} className="text-white" />
-                          </motion.div>
-                          Recipe Updated Successfully!
-                        </div>
-                      ) : (
-                        <>
-                          <span className="uppercase tracking-[0.15em] text-[11px] text-emerald-300/80 block mb-0.5">
-                            Edit recipe
-                          </span>
-                          <span className="line-clamp-1 text-sm sm:text-base text-slate-50">
-                            {currentRecipe.title}
-                          </span>
-                        </>
-                      )}
-                    </h2>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={handleEditSubmit}
-                        disabled={modalLoading || success}
-                        className="px-4 py-1.5 rounded-full text-xs font-medium text-slate-900 bg-emerald-400 hover:bg-emerald-300 border border-emerald-300/70 shadow-md shadow-emerald-500/40 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1.5"
-                      >
-                        {success ? (
-                          <>
-                            <IconCheck size={16} />
-                            Saved
-                          </>
-                        ) : modalLoading ? (
-                          <>
-                            <div className="w-3 h-3 border-2 border-emerald-800/40 border-t-emerald-900 rounded-full animate-spin" />
-                            Saving
-                          </>
-                        ) : (
-                          <>Save</>
-                        )}
-                      </button>
-                      <button
-                        onClick={closeEditModal}
-                        className="text-slate-200/80 hover:text-white p-2 rounded-full hover:bg-slate-800/60 transition-colors border border-white/10"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </button>
+        {/* Recipes Grid Layout */}
+        <div className="px-6 md:px-10 max-w-7xl mx-auto w-full flex-1">
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+               {[...Array(6)].map((_, i) => (
+                 <div key={i} className="bg-base-100 rounded-3xl border border-base-300 shadow-sm overflow-hidden animate-pulse">
+                   <div className="aspect-[4/3] bg-base-300 w-full" />
+                   <div className="p-5 space-y-3">
+                     <div className="h-6 bg-base-300 rounded-md w-3/4" />
+                     <div className="h-4 bg-base-300 rounded-md w-full" />
+                     <div className="h-4 bg-base-300 rounded-md w-5/6" />
+                     <div className="h-10 bg-base-300 rounded-xl w-full mt-4" />
+                   </div>
+                 </div>
+               ))}
+            </div>
+          ) : recipes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 bg-base-100 rounded-3xl border border-base-300 shadow-sm mx-auto max-w-2xl">
+              <div className="w-20 h-20 bg-base-200 rounded-full flex items-center justify-center mb-4">
+                <IconChefHat size={40} className="text-base-content/20" />
+              </div>
+              <h3 className="text-xl font-bold text-base-content/80">No recipes found</h3>
+              <p className="text-base-content/60 mt-2">Generate or add some recipes to start managing them here.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recipes.map((recipe) => (
+                <div
+                  key={recipe.id}
+                  className="group bg-base-100 rounded-3xl border border-base-300 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden transition-all duration-300 flex flex-col relative"
+                >
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-base-200">
+                    <img
+                      src={recipe.image || "https://via.placeholder.com/400x300?text=No+Image"}
+                      alt={recipe.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "https://via.placeholder.com/400x300?text=No+Image&bg=f1f5f9&text=Missing";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent mix-blend-multiply opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute top-3 inset-x-3 flex justify-between items-start">
+                      <span className="px-3 py-1 bg-base-100/90 backdrop-blur-md text-base-content text-xs font-bold rounded-full shadow-sm">
+                        {recipe.category ? recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1) : "Uncategorized"}
+                      </span>
+                      <span className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white text-xs font-mono font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        #{recipe.id}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="p-5 flex-1 flex flex-col bg-base-100 z-10">
+                    <h3 className="text-lg font-bold text-base-content line-clamp-1 mb-1.5" title={recipe.title}>
+                      {recipe.title}
+                    </h3>
+                    <p className="text-sm text-base-content/60 line-clamp-2 leading-relaxed mb-4 flex-1">
+                      {recipe.description}
+                    </p>
+                    
+                    <div className="flex items-center text-xs font-medium text-base-content/50 mb-5 gap-3">
+                      <span className="flex items-center gap-1.5 bg-base-200 px-2.5 py-1 rounded-lg border border-base-300">
+                        👨‍🍳 {recipe.portion} Pts
+                      </span>
+                      <span className="flex items-center gap-1.5 bg-base-200 px-2.5 py-1 rounded-lg border border-base-300">
+                        🛒 {recipe.ingredients?.length || 0} Ingreds
+                      </span>
+                      <span className="flex items-center gap-1.5 bg-base-200 px-2.5 py-1 rounded-lg border border-base-300">
+                        📝 {recipe.steps?.length || 0} Steps
+                      </span>
+                    </div>
+
+                    <div className="flex gap-2 w-full mt-auto">
+                       <button
+                         onClick={() => handleEdit(recipe)}
+                         className="flex-1 py-2.5 bg-base-200 text-base-content/80 text-sm font-bold rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all border border-base-300 flex items-center justify-center gap-2 group/edit"
+                       >
+                         <IconEdit size={16} className="text-base-content/40 group-hover/edit:text-primary" /> Edit
+                       </button>
+                       <button
+                         onClick={() => handleDelete(recipe)}
+                         className="px-3 bg-error/10 text-error rounded-xl hover:bg-error hover:text-error-content transition-all flex items-center justify-center cursor-pointer border border-error/20"
+                         aria-label="Delete"
+                         title="Delete Recipe"
+                       >
+                         <IconTrash size={18} />
+                       </button>
                     </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
 
-                {/* Content - Scrollable */}
-                <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6 bg-slate-900/60 backdrop-blur-sm">
-                  <div className="space-y-6 text-slate-100">
-                    {/* Basic Info Section */}
+      {/* Confirmation Modal for Deletion - Minimalist & Centered */}
+      <AnimatePresence>
+        {deleteModalOpen && recipeToDelete && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-base-300/80 backdrop-blur-md" 
+              onClick={() => setDeleteModalOpen(false)} 
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-base-100 rounded-[2rem] p-8 shadow-2xl flex flex-col items-center text-center border border-base-300"
+            >
+              <div className="w-16 h-16 rounded-full bg-error/10 text-error flex items-center justify-center mb-5 shadow-inner">
+                <IconTrash size={32} />
+              </div>
+              <h3 className="text-2xl font-extrabold text-base-content mb-2 tracking-tight">Delete Recipe?</h3>
+              <p className="text-base-content/60 text-sm mb-8 leading-relaxed px-2">
+                You're about to delete <strong className="text-base-content font-bold">"{recipeToDelete.title}"</strong>. This action is permanent and cannot be undone.
+              </p>
+              <div className="flex flex-col gap-3 w-full">
+                <button
+                  onClick={confirmDelete} disabled={loading}
+                  className="w-full py-3.5 bg-error text-error-content font-bold rounded-xl hover:bg-error/80 transition-colors shadow-[0_4px_14px_0_rgba(239,68,68,0.39)] disabled:opacity-50"
+                >
+                  {loading ? "Deleting..." : "Yes, delete recipe"}
+                </button>
+                <button
+                  onClick={() => setDeleteModalOpen(false)} disabled={loading}
+                  className="w-full py-3.5 bg-base-200 text-base-content font-bold rounded-xl hover:bg-base-300 transition-colors border border-base-300 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Sleek Edit Drawer Modal */}
+      <AnimatePresence>
+        {currentRecipe && (
+          <div className="fixed inset-0 z-[70] flex justify-end">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-base-300/80 backdrop-blur-sm"
+              onClick={closeEditModal}
+            />
+
+            <motion.div
+              initial={{ x: "100%", boxShadow: "-30px 0 60px rgba(0,0,0,0)" }}
+              animate={{ x: 0, boxShadow: "-30px 0 60px rgba(0,0,0,0.15)" }}
+              exit={{ x: "100%", boxShadow: "-30px 0 60px rgba(0,0,0,0)" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="relative w-full max-w-xl h-full bg-base-100 flex flex-col z-[71] border-l border-base-300"
+            >
+              {/* Drawer Header */}
+              <div className="px-6 py-5 border-b border-base-300 bg-base-100/80 backdrop-blur-xl sticky top-0 z-10 flex items-center justify-between">
+                <div>
+                   <h2 className="text-xs font-bold uppercase tracking-widest text-primary mb-1">Editing Recipe</h2>
+                   <h3 className="text-xl font-extrabold text-base-content line-clamp-1 pr-4">{currentRecipe.title}</h3>
+                </div>
+                <button
+                  onClick={closeEditModal}
+                  className="w-10 h-10 rounded-full bg-base-200 hover:bg-base-300 flex items-center justify-center text-base-content/60 transition-colors shrink-0"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              {/* Drawer Content */}
+              <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                <div className="space-y-8 max-w-full pb-8">
+                  
+                  {/* Basic Details Section */}
+                  <section>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-6 h-6 rounded-md bg-primary/20 flex items-center justify-center text-primary"><IconEdit size={14} /></div>
+                      <h4 className="text-sm font-bold tracking-wide text-base-content uppercase">Basic Details</h4>
+                    </div>
+                    
                     <div className="space-y-4">
-                      <h3 className="text-sm font-semibold text-slate-100 border-b border-slate-700/60 pb-2 flex items-center gap-2">
-                        <span className="w-1.5 h-4 rounded-full bg-emerald-400" />
-                        Basic information
-                      </h3>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
-                            Title
-                          </label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="col-span-2">
+                          <label className="block text-xs font-bold text-base-content/60 mb-1.5 ml-1">Title</label>
                           <input
-                            type="text"
-                            value={currentRecipe.title}
-                            onChange={(e) =>
-                              setCurrentRecipe({
-                                ...currentRecipe,
-                                title: e.target.value,
-                              })
-                            }
-                            className="w-full px-3 py-2.5 rounded-xl bg-slate-900/80 border border-slate-600/70 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-slate-500"
+                            type="text" value={currentRecipe.title}
+                            onChange={(e) => setCurrentRecipe({ ...currentRecipe, title: e.target.value })}
+                            className="w-full px-4 py-3 rounded-xl bg-base-200 border border-base-300 text-sm font-medium text-base-content focus:bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                           />
                         </div>
-
                         <div>
-                          <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
-                            Category
-                          </label>
+                          <label className="block text-xs font-bold text-base-content/60 mb-1.5 ml-1">Category</label>
                           <input
-                            type="text"
-                            value={currentRecipe.category || ""}
-                            onChange={(e) =>
-                              setCurrentRecipe({
-                                ...currentRecipe,
-                                category: e.target.value,
-                              })
-                            }
-                            className="w-full px-3 py-2.5 rounded-xl bg-slate-900/80 border border-slate-600/70 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-slate-500"
+                            type="text" value={currentRecipe.category || ""}
+                            onChange={(e) => setCurrentRecipe({ ...currentRecipe, category: e.target.value })}
+                            className="w-full px-4 py-3 rounded-xl bg-base-200 border border-base-300 text-sm font-medium text-base-content focus:bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-base-content/60 mb-1.5 ml-1">Portions</label>
+                          <input
+                            type="number" value={currentRecipe.portion} min="1"
+                            onChange={(e) => setCurrentRecipe({ ...currentRecipe, portion: Number(e.target.value) })}
+                            className="w-full px-4 py-3 rounded-xl bg-base-200 border border-base-300 text-sm font-medium text-base-content focus:bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary transition-all selection:bg-primary/20"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
-                          Description
-                        </label>
+                        <label className="block text-xs font-bold text-base-content/60 mb-1.5 ml-1">Description</label>
                         <textarea
-                          value={currentRecipe.description}
-                          onChange={(e) =>
-                            setCurrentRecipe({
-                              ...currentRecipe,
-                              description: e.target.value,
-                            })
-                          }
-                          rows={3}
-                          className="w-full px-3 py-2.5 rounded-xl bg-slate-900/80 border border-slate-600/70 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-slate-500"
+                          value={currentRecipe.description} rows={3}
+                          onChange={(e) => setCurrentRecipe({ ...currentRecipe, description: e.target.value })}
+                          className="w-full px-4 py-3 rounded-xl bg-base-200 border border-base-300 text-sm font-medium text-base-content focus:bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary transition-all resize-none leading-relaxed"
                         />
                       </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
-                            Portions
-                          </label>
+                      
+                      <div>
+                        <label className="block text-xs font-bold text-base-content/60 mb-1.5 ml-1">Image Presentation</label>
+                        <div className="p-4 bg-base-200 rounded-2xl border border-base-300 space-y-4">
                           <input
-                            type="number"
-                            value={currentRecipe.portion}
-                            onChange={(e) =>
-                              setCurrentRecipe({
-                                ...currentRecipe,
-                                portion: Number(e.target.value),
-                              })
-                            }
-                            min="1"
-                            className="w-full px-3 py-2.5 rounded-xl bg-slate-900/80 border border-slate-600/70 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                            type="text" value={currentRecipe.image}
+                            onChange={(e) => setCurrentRecipe({ ...currentRecipe, image: e.target.value })}
+                            className="w-full px-3 py-2.5 rounded-lg bg-base-100 border border-base-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-mono text-base-content/80"
+                            placeholder="https://example.com/image.jpg"
                           />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
-                            Image
-                          </label>
-                          <div className="space-y-3">
-                            <input
-                              type="text"
-                              value={currentRecipe.image}
-                              onChange={(e) =>
-                                setCurrentRecipe({
-                                  ...currentRecipe,
-                                  image: e.target.value,
-                                })
-                              }
-                              className="w-full px-3 py-2.5 rounded-xl bg-slate-900/80 border border-slate-600/70 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-slate-500"
-                              placeholder="Image URL"
-                            />
-                            <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap gap-2 items-center justify-between">
+                            <button
+                              type="button" onClick={handleFetchNewImage} disabled={imageLoading}
+                              className="px-4 py-2 rounded-xl text-sm font-bold bg-neutral text-neutral-content hover:bg-neutral/80 disabled:opacity-60 transition-colors flex items-center gap-2"
+                            >
+                              {imageLoading ? <div className="w-4 h-4 rounded-full border-2 border-base-content/30 border-t-base-content animate-spin"/> : "Generate AI Image Idea"}
+                            </button>
+                            {imagePreview && (
                               <button
-                                type="button"
-                                onClick={handleFetchNewImage}
-                                disabled={imageLoading}
-                                className="px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500 text-slate-900 hover:bg-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-sm shadow-emerald-600/40"
+                                type="button" onClick={handleApplyPreviewImage}
+                                className="px-4 py-2 rounded-xl text-sm font-bold text-primary bg-primary/20 hover:bg-primary/30 transition-colors"
                               >
-                                {imageLoading ? (
-                                  <>
-                                    <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                                    <span>Finding image...</span>
-                                  </>
-                                ) : (
-                                  <>Change image</>
-                                )}
+                                Replace Image
                               </button>
-                              {imagePreview && (
-                                <button
-                                  type="button"
-                                  onClick={handleApplyPreviewImage}
-                                    className="px-3 py-1.5 rounded-full text-xs font-medium bg-sky-500 text-slate-900 hover:bg-sky-400 transition-colors shadow-sm shadow-sky-600/40"
-                                >
-                                  Use this image
-                                </button>
-                              )}
-                            </div>
-                            {imageError && (
-                              <p className="text-xs text-red-400">{imageError}</p>
                             )}
-                            {(imagePreview || currentRecipe.image) && (
-                              <div className="mt-1">
-                                <p className="text-xs text-slate-400 mb-1">
-                                  Preview
-                                </p>
-                                <div className="w-full h-32 rounded-xl overflow-hidden border border-slate-700/70 bg-slate-900">
-                                  <img
-                                    src={imagePreview || currentRecipe.image}
-                                    alt={currentRecipe.title}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.src =
-                                        "https://via.placeholder.com/400x300?text=No+Image";
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                            <p className="text-[11px] text-slate-400/90">
-                              Tip: Use &quot;Change image&quot; to fetch a new image
-                              suggestion based on the recipe, then click{" "}
-                              <span className="font-semibold">Use this image</span>{" "}
-                              and finally <span className="font-semibold">Save</span>{" "}
-                              to persist it.
-                            </p>
                           </div>
+                          {(imagePreview || currentRecipe.image) && (
+                            <div className="h-40 w-full rounded-xl overflow-hidden shadow-inner border border-base-300 bg-base-200 relative">
+                               {imagePreview && <div className="absolute top-2 left-2 z-10 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] text-white font-bold uppercase tracking-wider">Preview Generated</div>}
+                               <img
+                                 src={imagePreview || currentRecipe.image}
+                                 className="w-full h-full object-cover"
+                                 onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/400x300?text=Preview+Error" }}
+                               />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
+                  </section>
 
-                    {/* Ingredients Section */}
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between border-b border-slate-700/60 pb-2">
-                        <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
-                          <span className="w-1.5 h-4 rounded-full bg-sky-400" />
-                          Ingredients ({editingIngredients.length})
-                        </h3>
-                        <button
-                          onClick={addIngredient}
-                          className="px-3 py-1.5 bg-sky-500 text-slate-900 rounded-full hover:bg-sky-400 transition-colors text-xs font-medium shadow-sm shadow-sky-600/40"
-                        >
-                          + Add Ingredient
-                        </button>
+                  <hr className="border-slate-100" />
+
+                  {/* Ingredients Section */}
+                  <section>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                         <div className="w-6 h-6 rounded-md bg-info/20 flex items-center justify-center text-info"><IconPlus size={14} /></div>
+                         <h4 className="text-sm font-bold tracking-wide text-base-content uppercase">Ingredients <span className="text-base-content/50 ml-1">({editingIngredients.length})</span></h4>
                       </div>
-
-                      <div className="space-y-3">
-                        {editingIngredients.map((ingredient, index) => (
-                          <div
-                            key={index}
-                            className="flex gap-3 items-end p-4 bg-slate-900/80 rounded-xl border border-slate-700/80"
-                          >
-                            <div className="flex-1">
-                              <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
-                                Name
-                              </label>
-                              <input
-                                type="text"
-                                value={ingredient.name}
-                                onChange={(e) =>
-                                  updateIngredient(
-                                    index,
-                                    "name",
-                                    e.target.value
-                                  )
-                                }
-                                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                placeholder="Ingredient name"
-                              />
-                            </div>
-
-                            <div className="w-20">
-                              <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
-                                Qty
-                              </label>
-                              <input
-                                type="number"
-                                value={ingredient.quantity}
-                                onChange={(e) =>
-                                  updateIngredient(
-                                    index,
-                                    "quantity",
-                                    Number(e.target.value)
-                                  )
-                                }
-                                min="0.1"
-                                step="0.1"
-                                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                              />
-                            </div>
-
-                            <div className="w-20">
-                              <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
-                                Unit
-                              </label>
-                              <select
-                                value={ingredient.unit}
-                                onChange={(e) =>
-                                  updateIngredient(
-                                    index,
-                                    "unit",
-                                    e.target.value
-                                  )
-                                }
-                                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                              >
-                                <option value="g">g</option>
-                                <option value="kg">kg</option>
-                                <option value="ml">ml</option>
-                                <option value="l">l</option>
-                                <option value="tsp">tsp</option>
-                                <option value="tbsp">tbsp</option>
-                                <option value="cup">cup</option>
-                                <option value="whole">whole</option>
-                              </select>
-                            </div>
-
-                            <button
-                              onClick={() => removeIngredient(index)}
-                              disabled={editingIngredients.length === 1}
-                              className="px-3 py-2 bg-red-500/80 text-white rounded-full hover:bg-red-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
+                      <button onClick={addIngredient} className="text-xs font-bold text-info bg-info/10 px-3 py-1.5 rounded-lg hover:bg-info/20 transition-colors">
+                        Add New
+                      </button>
                     </div>
 
-                    {/* Steps Section */}
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between border-b border-slate-700/60 pb-2">
-                        <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
-                          <span className="w-1.5 h-4 rounded-full bg-violet-400" />
-                          Steps ({editingSteps.length})
-                        </h3>
-                        <button
-                          onClick={addStep}
-                          className="px-3 py-1.5 bg-violet-500 text-slate-900 rounded-full hover:bg-violet-400 transition-colors text-xs font-medium shadow-sm shadow-violet-600/40"
-                        >
-                          + Add Step
-                        </button>
-                      </div>
-
-                      <div className="space-y-3">
-                        {editingSteps.map((step, index) => (
-                          <div
-                            key={index}
-                            className="flex gap-3 items-start p-4 bg-slate-900/80 rounded-xl border border-slate-700/80"
-                          >
-                            <div className="w-16">
-                              <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
-                                Order
-                              </label>
-                              <input
-                                type="number"
-                                value={step.order}
-                                onChange={(e) =>
-                                  updateStep(
-                                    index,
-                                    "order",
-                                    Number(e.target.value)
-                                  )
-                                }
-                                min="1"
-                                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                              />
-                            </div>
-
-                            <div className="flex-1">
-                              <label className="block text-xs font-medium text-slate-300 mb-1.5 uppercase tracking-wide">
-                                Description
-                              </label>
-                              <textarea
-                                value={step.description}
-                                onChange={(e) =>
-                                  updateStep(
-                                    index,
-                                    "description",
-                                    e.target.value
-                                  )
-                                }
-                                rows={2}
-                                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                placeholder="Step description"
-                              />
-                            </div>
-
-                            <button
-                              onClick={() => removeStep(index)}
-                              disabled={editingSteps.length === 1}
-                              className="px-3 py-2 bg-red-500/80 text-white rounded-full hover:bg-red-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs"
-                            >
-                              ×
-                            </button>
+                    <div className="space-y-3">
+                      {editingIngredients.map((ingredient, index) => (
+                        <div key={index} className="flex gap-2 p-3 bg-base-200 border border-base-300 rounded-xl items-end relative group">
+                          <button onClick={() => removeIngredient(index)} disabled={editingIngredients.length === 1} className="absolute -top-2 -right-2 bg-error/20 text-error w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:hidden shadow-sm scale-90 hover:scale-110">
+                             <IconTrash size={12}/>
+                          </button>
+                          
+                          <div className="flex-1">
+                            <label className="block text-[10px] font-bold text-base-content/50 uppercase tracking-wider mb-1">Name</label>
+                            <input
+                              type="text" value={ingredient.name}
+                              onChange={(e) => updateIngredient(index, "name", e.target.value)}
+                              className="w-full px-3 py-2 rounded-lg border border-base-300 bg-base-100 text-sm focus:outline-none focus:ring-2 focus:ring-info focus:border-transparent font-medium text-base-content/80"
+                            />
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Footer */}
-                <div className="border-t border-slate-800 bg-slate-950/80 px-6 py-3">
-                  <div className="flex justify-end">
-                    <button
-                      onClick={closeEditModal}
-                      className="px-5 py-1.5 border border-slate-600 text-slate-200 rounded-full hover:bg-slate-800 transition-colors font-medium text-xs"
-                    >
-                      Close
-                    </button>
-                  </div>
+                          <div className="w-20">
+                            <label className="block text-[10px] font-bold text-base-content/50 uppercase tracking-wider mb-1">Qty</label>
+                            <input
+                              type="number" value={ingredient.quantity} min="0.1" step="0.1"
+                              onChange={(e) => updateIngredient(index, "quantity", Number(e.target.value))}
+                              className="w-full px-3 py-2 rounded-lg border border-base-300 bg-base-100 text-sm focus:outline-none focus:ring-2 focus:ring-info font-medium text-base-content/80"
+                            />
+                          </div>
+
+                          <div className="w-24">
+                            <label className="block text-[10px] font-bold text-base-content/50 uppercase tracking-wider mb-1">Unit</label>
+                            <select
+                              value={ingredient.unit}
+                              onChange={(e) => updateIngredient(index, "unit", e.target.value)}
+                              className="w-full px-2 py-2 rounded-lg border border-base-300 bg-base-100 text-sm focus:outline-none focus:ring-2 focus:ring-info font-medium text-base-content/80 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:10px_10px] bg-[right_10px_center] bg-no-repeat pr-8"
+                            >
+                              <option value="g">g</option>
+                              <option value="kg">kg</option>
+                              <option value="ml">ml</option>
+                              <option value="l">l</option>
+                              <option value="tsp">tsp</option>
+                              <option value="tbsp">tbsp</option>
+                              <option value="cup">cup</option>
+                              <option value="whole">whole</option>
+                            </select>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <hr className="border-slate-100" />
+
+                  {/* Steps Section */}
+                  <section>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                         <div className="w-6 h-6 rounded-md bg-accent/20 flex items-center justify-center text-accent"><IconRefresh size={14} /></div>
+                         <h4 className="text-sm font-bold tracking-wide text-base-content uppercase">Preparation Steps <span className="text-base-content/50 ml-1">({editingSteps.length})</span></h4>
+                      </div>
+                      <button onClick={addStep} className="text-xs font-bold text-accent bg-accent/10 px-3 py-1.5 rounded-lg hover:bg-accent/20 transition-colors">
+                        Add Step
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {editingSteps.map((step, index) => (
+                        <div key={index} className="flex gap-3 p-4 bg-base-200 border border-base-300 rounded-xl relative group">
+                          <button onClick={() => removeStep(index)} disabled={editingSteps.length === 1} className="absolute -top-2 -right-2 bg-error/20 text-error w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:hidden shadow-sm scale-90 hover:scale-110">
+                             <IconTrash size={12}/>
+                          </button>
+                          
+                          <div className="w-10 flex flex-col justify-start pt-1">
+                             <span className="w-8 h-8 rounded-full bg-base-100 border border-base-300 text-base-content/70 font-bold flex items-center justify-center text-sm shadow-sm">{step.order}</span>
+                          </div>
+                          
+                          <div className="flex-1">
+                            <textarea
+                              value={step.description} rows={2}
+                              onChange={(e) => updateStep(index, "description", e.target.value)}
+                              className="w-full px-3 py-2.5 rounded-lg border border-base-300 bg-base-100 text-sm focus:outline-none focus:ring-2 focus:ring-accent font-medium text-base-content/80 resize-none leading-relaxed"
+                              placeholder="Describe this step..."
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
                 </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
 
-      {/* FloatingNavigation */}
+              {/* Drawer Footer Actions */}
+              <div className="p-5 border-t border-base-300 bg-base-100 sticky bottom-0 z-10 flex gap-3 shadow-xl">
+                <button
+                  onClick={closeEditModal} disabled={modalLoading || success}
+                  className="flex-1 py-3.5 rounded-xl text-base-content/70 font-bold bg-base-200 border border-base-300 hover:bg-base-300 transition-colors"
+                >
+                  Discard Changes
+                </button>
+                <button
+                  onClick={handleEditSubmit} disabled={modalLoading || success}
+                  className={`flex-[2] py-3.5 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 transition-all ${
+                    success ? "bg-success shadow-success/20 text-success-content" : "bg-neutral hover:bg-neutral/80 shadow-neutral/10 text-neutral-content"
+                  }`}
+                >
+                  {success ? (
+                    <><IconCheck size={20} className="animate-bounce" /> Saved Successfully</>
+                  ) : modalLoading ? (
+                    <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Saving changes...</>
+                  ) : (
+                     "Save Complete Recipe"
+                  )}
+                </button>
+              </div>
+
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <FloatingNavigation router={router} />
     </div>
   );
 }
+
