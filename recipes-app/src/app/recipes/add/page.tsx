@@ -1749,7 +1749,7 @@ export default function AddRecipePage() {
                 {
                   label: "Carbohydrates",
                   value: `${nutritionalInfo.carbohydrates.toFixed(2)} g`,
-                  color: "text-orange-600",
+                  color: "text-indigo-600",
                 },
               ].map((item, index) => (
                 <div

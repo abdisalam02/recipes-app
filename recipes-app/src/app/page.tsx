@@ -309,7 +309,7 @@ export default function HomePage() {
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
             onClick={scrollToRecipes}
             className="px-8 py-4 rounded-2xl text-white font-semibold shadow-lg shadow-primary/25 transition-all text-base"
-            style={{ background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})` }}
+            style={{ backgroundColor: currentTheme.colors.primary }}
           >
             Explore Recipes ↓
           </motion.button>
@@ -433,7 +433,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setVisibleCount((prev) => prev + 12)}
                   className="flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-white shadow-lg shadow-primary/20 transition-all"
-                  style={{ background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})` }}
+                  style={{ backgroundColor: currentTheme.colors.primary }}
                 >
                   <span>Load More Recipes</span>
                   <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">{allFiltered.length - visibleCount} more</span>

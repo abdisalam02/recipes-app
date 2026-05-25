@@ -125,7 +125,7 @@ const StepsModal = ({
   const bgColors = [
     "from-blue-500 to-purple-600",
     "from-green-500 to-teal-600",
-    "from-orange-500 to-red-600",
+    "from-indigo-500 to-violet-600",
     "from-pink-500 to-rose-600",
     "from-indigo-500 to-blue-600",
   ];
@@ -444,11 +444,50 @@ export default function DailyRecipeDetailPage() {
 
   if (loading) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: currentTheme.colors.background }}
-      >
-        <MinimalistLoader message="Loading Recipe..." size="lg" />
+      <div className="min-h-screen bg-base-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-32">
+          {/* Hero Image Skeleton */}
+          <div className="skeleton w-full h-[40vh] md:h-[50vh] rounded-3xl mb-8"></div>
+          
+          {/* Header Skeleton */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+            <div className="flex-1 w-full">
+              <div className="skeleton h-10 w-3/4 mb-4"></div>
+              <div className="skeleton h-6 w-1/2"></div>
+            </div>
+            <div className="flex gap-4">
+              <div className="skeleton w-12 h-12 rounded-2xl"></div>
+              <div className="skeleton w-12 h-12 rounded-2xl"></div>
+            </div>
+          </div>
+
+          {/* Quick Info Skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="skeleton h-24 w-full rounded-2xl"></div>
+            ))}
+          </div>
+
+          {/* Content Skeleton */}
+          <div className="flex flex-col md:flex-row gap-8">
+            <div className="w-full md:w-1/3">
+              <div className="skeleton h-8 w-32 mb-6"></div>
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="skeleton h-16 w-full rounded-2xl"></div>
+                ))}
+              </div>
+            </div>
+            <div className="w-full md:w-2/3">
+              <div className="skeleton h-8 w-32 mb-6"></div>
+              <div className="space-y-6">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="skeleton h-24 w-full rounded-2xl"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

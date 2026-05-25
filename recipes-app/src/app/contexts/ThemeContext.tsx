@@ -27,9 +27,9 @@ const themes = [
     name: "light" as ThemeType,
     label: "Light",
     colors: {
-      primary: "#f97316",
-      secondary: "#10b981",
-      accent: "#ec4899",
+      primary: "#6366f1", // Indigo
+      secondary: "#14b8a6", // Teal
+      accent: "#8b5cf6", // Violet
       background: "#ffffff",
       surface: "#f8fafc",
       text: "#1f2937",
@@ -40,9 +40,9 @@ const themes = [
     name: "dark" as ThemeType,
     label: "Dark",
     colors: {
-      primary: "#f97316",
-      secondary: "#10b981",
-      accent: "#ec4899",
+      primary: "#6366f1", // Indigo
+      secondary: "#14b8a6", // Teal
+      accent: "#8b5cf6", // Violet
       background: "#1f2937",
       surface: "#111827",
       text: "#e2e8f0",

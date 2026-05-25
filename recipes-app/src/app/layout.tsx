@@ -71,7 +71,7 @@ export default function RootLayout({
               </p>
             </div>
           </footer>
-
+          <FloatingNavigation />
         </ThemeProvider>
       </body>
     </html>

@@ -256,7 +256,7 @@ const StepsModal: React.FC<{
   const bgColors = [
     "from-blue-500 to-purple-600",
     "from-green-500 to-teal-600",
-    "from-orange-500 to-red-600",
+    "from-indigo-500 to-violet-600",
     "from-pink-500 to-rose-600",
     "from-indigo-500 to-blue-600",
   ];
@@ -990,7 +990,7 @@ Format the answer as JSON with the following structure:
       <div
         className="absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl animate-pulse"
         style={{
-          background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`,
+          backgroundColor: currentTheme.colors.primary,
           opacity: 0.1,
         }}
       ></div>

@@ -80,7 +80,7 @@ export default function AIRecipesPage() {
           <p className="text-base-content/50 text-sm mb-6">Unique recipes created by artificial intelligence ✨</p>
 
           <div className="flex flex-wrap gap-3 justify-center">
-            <Link href="/AI" className="px-5 py-2.5 rounded-2xl text-white font-semibold shadow-md shadow-primary/20 hover:opacity-90 transition-opacity text-sm" style={{ background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})` }}>
+            <Link href="/AI" className="px-5 py-2.5 rounded-2xl text-white font-semibold shadow-md shadow-primary/20 hover:opacity-90 transition-opacity text-sm" style={{ backgroundColor: currentTheme.colors.primary }}>
               <IconSparkles size={14} className="inline mr-1.5" />
               Create New AI Recipe
             </Link>

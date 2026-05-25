@@ -9,16 +9,16 @@ module.exports = {
       colors: {
         // Modern food-inspired color palette
         'royal-orange': {
-          50: '#fff7ed',
-          100: '#ffedd5',
-          200: '#fed7aa',
-          300: '#fdba74',
-          400: '#fb923c',
-          500: '#f97316',
-          600: '#ea580c',
-          700: '#c2410c',
-          800: '#9a3412',
-          900: '#7c2d12',
+          50: '#eef2ff',
+          100: '#e0e7ff',
+          200: '#c7d2fe',
+          300: '#a5b4fc',
+          400: '#818cf8',
+          500: '#6366f1',
+          600: '#4f46e5',
+          700: '#4338ca',
+          800: '#3730a3',
+          900: '#312e81',
         },
         'emerald-fresh': {
           50: '#ecfdf5',
@@ -225,9 +225,9 @@ module.exports = {
     themes: [
       {
         light: {
-          "primary": "#f97316",
-          "secondary": "#10b981", 
-          "accent": "#ec4899",
+          "primary": "#6366f1",
+          "secondary": "#14b8a6", 
+          "accent": "#8b5cf6",
           "neutral": "#3d4451",
           "base-100": "#ffffff",
           "base-200": "#f8fafc",
@@ -240,9 +240,9 @@ module.exports = {
       },
       {
         dark: {
-          "primary": "#f97316",
-          "secondary": "#10b981",
-          "accent": "#ec4899", 
+          "primary": "#6366f1",
+          "secondary": "#14b8a6",
+          "accent": "#8b5cf6", 
           "neutral": "#2a2e37",
           "base-100": "#1f2937",
           "base-200": "#111827",

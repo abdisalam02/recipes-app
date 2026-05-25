@@ -48,7 +48,7 @@ const StepsModal: React.FC<{ steps: Step[]; onClose: () => void }> = ({
   const bgColors = [
     "from-blue-500 to-purple-600",
     "from-green-500 to-teal-600",
-    "from-orange-500 to-red-600",
+    "from-indigo-500 to-violet-600",
     "from-pink-500 to-rose-600",
     "from-indigo-500 to-blue-600",
   ];

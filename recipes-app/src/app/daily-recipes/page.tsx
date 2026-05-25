@@ -281,7 +281,7 @@ export default function DailyRecipesPage() {
       <div
         className="absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl animate-pulse"
         style={{
-          background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`,
+          backgroundColor: currentTheme.colors.primary,
           opacity: 0.1,
         }}
       ></div>
@@ -359,7 +359,7 @@ export default function DailyRecipesPage() {
                   Today's Culinary
                 </span>
                 <br />
-                <span className="bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent display-font">
+                <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent display-font">
                   Inspirations
                 </span>
               </motion.h1>
@@ -385,7 +385,7 @@ export default function DailyRecipesPage() {
                 className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto"
               >
                 <div className="glass-panel backdrop-blur-xl bg-white/20 border border-white/20 p-6 rounded-2xl text-center shadow-lg">
-                  <div className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                  <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-2">
                     {dailyRecipes.length}
                   </div>
                   <div className="text-sm text-gray-600 uppercase tracking-wide">
@@ -414,7 +414,7 @@ export default function DailyRecipesPage() {
             {/* Decorative elements */}
             <div className="absolute -top-4 -left-4 w-24 h-24 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 rounded-full blur-xl animate-pulse"></div>
             <div
-              className="absolute -bottom-8 -right-8 w-32 h-32 bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-full blur-xl animate-pulse"
+              className="absolute -bottom-8 -right-8 w-32 h-32 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full blur-xl animate-pulse"
               style={{ animationDelay: "1s" }}
             ></div>
           </div>
@@ -432,7 +432,7 @@ export default function DailyRecipesPage() {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2 }}
-                className="w-24 h-24 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6"
+                className="w-24 h-24 bg-gradient-to-r from-primary to-accent rounded-full flex items-center justify-center mx-auto mb-6"
               >
                 <IconChefHat size={48} className="text-white" />
               </motion.div>
@@ -446,7 +446,7 @@ export default function DailyRecipesPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => router.push("/")}
-                className="bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-orange-500/25 transition-all duration-300"
+                className="bg-gradient-to-r from-primary to-accent text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-primary/25 transition-all duration-300"
               >
                 Explore All Recipes
               </motion.button>
@@ -650,7 +650,7 @@ export default function DailyRecipesPage() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => router.push("/")}
-            className="bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-orange-500/25 transition-all duration-300 flex items-center gap-2"
+            className="bg-gradient-to-r from-primary to-accent text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-primary/25 transition-all duration-300 flex items-center gap-2"
           >
             <IconChefHat size={18} />
             <span>All Recipes</span>

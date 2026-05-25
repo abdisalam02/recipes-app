@@ -111,7 +111,7 @@ export default function FavoritesPage() {
             <div className="text-7xl mb-6">💔</div>
             <h2 className="text-2xl font-bold text-base-content mb-3">No favourites yet</h2>
             <p className="text-base-content/50 mb-8 max-w-xs">Start adding recipes to your favourites by tapping the heart icon on any recipe card.</p>
-            <Link href="/" className="px-7 py-3.5 rounded-2xl text-white font-semibold shadow-lg shadow-primary/20 transition-all hover:opacity-90" style={{ background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})` }}>
+            <Link href="/" className="px-7 py-3.5 rounded-2xl text-white font-semibold shadow-lg shadow-primary/20 transition-all hover:opacity-90" style={{ backgroundColor: currentTheme.colors.primary }}>
               Browse Recipes
             </Link>
           </div>
