@@ -2196,7 +2196,7 @@ Format the answer as JSON with the following structure:
       </div>
 
       {/* FloatingNavigation */}
-      <FloatingNavigation router={router} />
+
     </div>
   );
 }

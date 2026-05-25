@@ -611,7 +611,7 @@ export default function AdminDashboardPage() {
         <div className="container mx-auto py-8 flex flex-col items-center relative z-10">
           <MinimalistLoader message="Loading..." size="lg" />
         </div>
-        <FloatingNavigation router={router} />
+
       </div>
     );
   }
@@ -939,7 +939,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* FloatingNavigation */}
-        <FloatingNavigation router={router} />
+
       </div>
     );
   }
@@ -1413,7 +1413,7 @@ export default function AdminDashboardPage() {
         )}
       </AnimatePresence>
 
-      <FloatingNavigation router={router} />
+
     </div>
   );
 }

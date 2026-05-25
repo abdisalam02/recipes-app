@@ -668,7 +668,7 @@ export default function DailyRecipesPage() {
       </div>
 
       {/* New Floating Navigation */}
-      <FloatingNavigation router={router} />
+
     </div>
   );
 }

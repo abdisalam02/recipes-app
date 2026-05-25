@@ -871,7 +871,7 @@ export default function RecipeDetailPage() {
       )}
 
       {/* Floating Navigation */}
-      <FloatingNavigation router={router} />
+
     </div>
   );
 }

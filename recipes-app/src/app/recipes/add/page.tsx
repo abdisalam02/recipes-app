@@ -1784,7 +1784,7 @@ export default function AddRecipePage() {
       </div>
 
       {/* FloatingNavigation */}
-      <FloatingNavigation router={router} />
+
     </div>
   );
 }

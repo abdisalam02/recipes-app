@@ -168,7 +168,7 @@ export default function RecipeTinderPage() {
           <div className="text-5xl animate-bounce">🍽️</div>
           <p className="text-base-content/50 font-medium">Loading recipes...</p>
         </div>
-        <FloatingNavigation router={router} />
+
       </div>
     );
   }
@@ -302,7 +302,7 @@ export default function RecipeTinderPage() {
         )}
       </AnimatePresence>
 
-      <FloatingNavigation router={router} />
+
     </div>
   );
 }

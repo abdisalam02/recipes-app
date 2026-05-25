@@ -84,7 +84,7 @@ export default function FavoritesPage() {
             ))}
           </div>
         </div>
-        <FloatingNavigation router={router} />
+
       </div>
     );
   }
@@ -188,7 +188,7 @@ export default function FavoritesPage() {
         )}
       </AnimatePresence>
 
-      <FloatingNavigation router={router} />
+
     </div>
   );
 }

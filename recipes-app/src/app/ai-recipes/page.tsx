@@ -62,7 +62,7 @@ export default function AIRecipesPage() {
             ))}
           </div>
         </div>
-        <FloatingNavigation router={router} />
+
       </div>
     );
   }
@@ -161,7 +161,7 @@ export default function AIRecipesPage() {
         )}
       </div>
 
-      <FloatingNavigation router={router} />
+
     </div>
   );
 }

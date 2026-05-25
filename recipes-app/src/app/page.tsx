@@ -51,13 +51,16 @@ const RecipeCard = memo(({
   recipe,
   isFavorite,
   onToggleFavorite,
+  onClick,
   viewMode = "grid",
+  priority = false,
 }: {
   recipe: Recipe;
   isFavorite: boolean;
   onToggleFavorite: (e: React.MouseEvent) => void;
   onClick: () => void;
   viewMode?: "grid" | "list";
+  priority?: boolean;
 }) => {
   const { theme, themes } = useTheme();
   const currentTheme = useMemo(() => themes.find((t) => t.name === theme) || themes[0], [theme, themes]);
@@ -66,7 +69,15 @@ const RecipeCard = memo(({
     return (
       <div className="flex flex-row h-36 rounded-2xl overflow-hidden bg-base-100 border border-base-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
         <div className="relative w-36 shrink-0">
-          <Image src={recipe.image || "/default-image.png"} alt={recipe.title} fill className="object-cover" sizes="144px" loading="lazy" />
+          <Image 
+            src={recipe.image || "/default-image.png"} 
+            alt={recipe.title} 
+            fill 
+            className="object-cover" 
+            sizes="144px" 
+            priority={priority}
+            loading={priority ? undefined : "lazy"}
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/10" />
           <button
             onClick={onToggleFavorite}
@@ -97,7 +108,15 @@ const RecipeCard = memo(({
   return (
     <div className="flex flex-col rounded-3xl overflow-hidden bg-base-100 border border-base-200 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer">
       <div className="relative aspect-[4/3] w-full">
-        <Image src={recipe.image || "/default-image.png"} alt={recipe.title} fill className="object-cover" sizes="(max-width: 768px) 50vw, 33vw" loading="lazy" />
+        <Image 
+          src={recipe.image || "/default-image.png"} 
+          alt={recipe.title} 
+          fill 
+          className="object-cover" 
+          sizes="(max-width: 768px) 50vw, 33vw" 
+          priority={priority}
+          loading={priority ? undefined : "lazy"}
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         <button
           onClick={onToggleFavorite}
@@ -389,11 +408,10 @@ export default function HomePage() {
           </div>
         ) : (
           <>
-            <motion.div
-              layout
+            <div
               className={viewMode === "list" ? "flex flex-col gap-3" : "grid grid-cols-2 md:grid-cols-3 gap-4"}
             >
-              {filteredRecipes.map((recipe) => (
+              {filteredRecipes.map((recipe, index) => (
                 <Link key={recipe.id} href={`/recipes/${recipe.id}`} prefetch={true} className="block">
                   <RecipeCard
                     viewMode={viewMode}
@@ -401,10 +419,11 @@ export default function HomePage() {
                     isFavorite={favorites.some((fav) => fav.recipe_id === recipe.id)}
                     onToggleFavorite={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(recipe.id); }}
                     onClick={() => {}}
+                    priority={index < 4}
                   />
                 </Link>
               ))}
-            </motion.div>
+            </div>
 
             {/* View More */}
             {hasMore && (
@@ -446,7 +465,7 @@ export default function HomePage() {
       </AnimatePresence>
 
       {/* Floating Navigation */}
-      <FloatingNavigation router={router} />
+
     </div>
   );
 }

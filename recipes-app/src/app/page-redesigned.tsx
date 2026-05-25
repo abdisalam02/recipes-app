@@ -416,7 +416,7 @@ export default function HomePage() {
       )}
 
       {/* Floating Navigation */}
-      <FloatingNavigation router={router} />
+
     </div>
   );
 }

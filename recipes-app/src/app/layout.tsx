@@ -6,6 +6,7 @@ import { registerServiceWorker } from "./worker";
 import { FadeInWrapper } from "./components/FadeInWrapper";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { PWARouteTracker } from "./components/PWARouteTracker";
+import { FloatingNavigation } from "./components/FloatingNavigation";
 
 // Register service worker
 if (typeof window !== "undefined") {
@@ -70,6 +71,7 @@ export default function RootLayout({
               </p>
             </div>
           </footer>
+
         </ThemeProvider>
       </body>
     </html>
