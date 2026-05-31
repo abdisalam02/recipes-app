@@ -605,9 +605,7 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-decorative-1 opacity-20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-decorative-2 opacity-20 rounded-full blur-3xl animate-pulse"></div>
+      <div className="min-h-screen bg-base-100 relative overflow-hidden">
         <div className="container mx-auto py-8 flex flex-col items-center relative z-10">
           <MinimalistLoader message="Loading..." size="lg" />
         </div>
@@ -619,9 +617,7 @@ export default function AdminDashboardPage() {
   // If not authenticated, render the password modal exclusively.
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-decorative-1 opacity-20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-decorative-2 opacity-20 rounded-full blur-3xl animate-pulse"></div>
+      <div className="min-h-screen bg-base-100 relative overflow-hidden">
 
         <div className="container mx-auto px-4 py-8 relative z-10 pb-24 md:pb-8">
           {/* Toast Notification */}
@@ -647,7 +643,7 @@ export default function AdminDashboardPage() {
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="glass-panel backdrop-blur-xl bg-white/90 border border-white/30 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl"
+                className="neo-card p-8 max-w-md w-full mx-4 bg-base-100 border-4"
               >
                 <motion.div
                   initial={{ scale: 0 }}
@@ -655,11 +651,11 @@ export default function AdminDashboardPage() {
                   transition={{ delay: 0.2 }}
                   className="flex items-center justify-center mb-6"
                 >
-                  <div className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 rounded-full p-4 shadow-lg">
-                    <IconLock size={48} className="text-primary" />
+                  <div className="w-20 h-20 bg-accent border-4 border-base-content rounded-xl shadow-neo flex items-center justify-center">
+                    <IconLock size={40} className="text-base-content" stroke={2.5} />
                   </div>
                 </motion.div>
-                <h2 className="text-2xl font-bold text-center mb-6 bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h2 className="text-3xl font-black text-center mb-6 uppercase tracking-wider text-base-content">
                   Admin Authentication
                 </h2>
                 <p className="text-gray-600 mb-6 text-center">
@@ -671,18 +667,16 @@ export default function AdminDashboardPage() {
                     placeholder="Enter password"
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
-                    className="glass-panel backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                    className="neo-input w-full px-4 py-3 bg-base-200 text-lg"
                     onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                   />
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                  <button
                     onClick={handleLogin}
-                    className="glass-panel backdrop-blur-xl bg-gradient-to-r from-emerald-500 to-blue-500 text-white border border-white/30 rounded-xl px-8 py-3 font-semibold shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 w-full"
+                    className="neo-button w-full px-8 py-4 bg-primary text-base-content text-xl font-black uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={loading}
                   >
                     {loading ? "Authenticating..." : "Login"}
-                  </motion.button>
+                  </button>
                 </div>
               </motion.div>
             </motion.div>
@@ -701,7 +695,7 @@ export default function AdminDashboardPage() {
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.9, opacity: 0 }}
-                  className="glass-panel backdrop-blur-xl bg-white/90 border border-white/30 rounded-3xl p-6 max-w-md w-full mx-4 shadow-2xl"
+                  className="neo-card p-6 max-w-md w-full mx-4 bg-base-100 border-4"
                 >
                   <h3 className="text-xl font-bold mb-4 text-gray-800">
                     Confirm Deletion
@@ -714,27 +708,23 @@ export default function AdminDashboardPage() {
                     ? This action cannot be undone.
                   </p>
                   <div className="flex gap-4">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                    <button
                       onClick={() => {
                         setDeleteModalOpen(false);
                         setRecipeToDelete(null);
                       }}
-                      className="glass-panel backdrop-blur-xl bg-gray-500/20 border border-gray-400/30 text-gray-700 px-6 py-3 rounded-xl font-medium flex-1"
+                      className="neo-button flex-1 px-6 py-3 bg-base-200 text-base-content font-black uppercase tracking-wider"
                       disabled={loading}
                     >
                       Cancel
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                    </button>
+                    <button
                       onClick={confirmDelete}
-                      className="glass-panel backdrop-blur-xl bg-red-500/20 border border-red-400/30 text-red-700 px-6 py-3 rounded-xl font-medium flex-1"
+                      className="neo-button flex-1 px-6 py-3 bg-error text-base-content font-black uppercase tracking-wider"
                       disabled={loading}
                     >
                       {loading ? "Deleting..." : "Delete"}
-                    </motion.button>
+                    </button>
                   </div>
                 </motion.div>
               </motion.div>
@@ -747,33 +737,29 @@ export default function AdminDashboardPage() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex justify-center mb-8"
+                className="flex justify-center mb-10"
               >
-                <div className="glass-panel backdrop-blur-xl bg-white/10 border border-white/20 p-1 rounded-2xl inline-flex shadow-lg">
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`px-6 py-3 rounded-xl transition-all duration-300 font-medium ${
+                <div className="bg-base-200 border-3 border-base-content p-1 rounded-xl shadow-neo-sm inline-flex">
+                  <button
+                    className={`px-8 py-3 rounded-lg font-black uppercase tracking-wider transition-all duration-200 ${
                       selectedTab === "recipes"
-                        ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg"
-                        : "text-gray-700 hover:bg-white/20"
+                        ? "bg-primary border-3 border-base-content text-base-content shadow-neo-sm"
+                        : "text-base-content border-3 border-transparent hover:bg-base-300"
                     }`}
                     onClick={() => setSelectedTab("recipes")}
                   >
                     Recipes
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`px-6 py-3 rounded-xl transition-all duration-300 font-medium ${
+                  </button>
+                  <button
+                    className={`px-8 py-3 rounded-lg font-black uppercase tracking-wider transition-all duration-200 ${
                       selectedTab === "ai-recipes"
-                        ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg"
-                        : "text-gray-700 hover:bg-white/20"
+                        ? "bg-primary border-3 border-base-content text-base-content shadow-neo-sm"
+                        : "text-base-content border-3 border-transparent hover:bg-base-300"
                     }`}
                     onClick={() => setSelectedTab("ai-recipes")}
                   >
                     AI Recipes
-                  </motion.button>
+                  </button>
                 </div>
               </motion.div>
 
@@ -783,16 +769,17 @@ export default function AdminDashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex items-center justify-between mb-6"
               >
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h2 className="text-3xl font-black uppercase tracking-wider text-base-content">
                   Admin Dashboard
                 </h2>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={fetchRecipes}
-                  className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 text-gray-700 hover:bg-white/30 transition-all duration-300 px-6 py-3 rounded-xl font-medium shadow-lg"
+                  className="neo-button px-6 py-3 bg-secondary text-base-content font-black uppercase tracking-wider flex items-center gap-2"
                 >
-                  Refresh Data
+                  <IconRefresh size={18} stroke={2.5} />
+                  Refresh
                 </motion.button>
               </motion.div>
 
@@ -841,79 +828,57 @@ export default function AdminDashboardPage() {
                   animate={{ opacity: 1 }}
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                 >
-                  {recipes.map((recipe, index) => (
-                    <motion.div
+                  {recipes.map((recipe) => (
+                    <div
                       key={recipe.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      whileHover={{ y: -5, scale: 1.02 }}
-                      className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 rounded-2xl overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500"
+                      className="neo-card flex flex-col bg-base-100 overflow-hidden cursor-pointer group hover:translate-x-0 hover:translate-y-0 hover:-rotate-1"
                     >
                       <figure className="relative h-48">
                         <img
                           src={recipe.image}
                           alt={recipe.title}
-                          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src =
-                              "https://via.placeholder.com/400x300?text=No+Image";
+                            target.src = "/default-image.png";
                           }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-                        <div className="absolute bottom-0 left-0 right-0 p-4">
-                          <div className="badge badge-lg bg-gradient-to-r from-emerald-500 to-blue-500 text-white border-none">
-                            {recipe.category &&
-                            typeof recipe.category === "string"
-                              ? recipe.category.charAt(0).toUpperCase() +
-                                recipe.category.slice(1)
-                              : "Uncategorized"}
-                          </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <div className="absolute bottom-2 left-2 flex gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(recipe);
+                            }}
+                            className="neo-button w-10 h-10 bg-secondary flex items-center justify-center shadow-neo-sm"
+                          >
+                            <IconEdit size={18} className="text-base-content" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(recipe);
+                            }}
+                            className="neo-button w-10 h-10 bg-error flex items-center justify-center shadow-neo-sm"
+                          >
+                            <IconTrash size={18} className="text-base-content" />
+                          </button>
                         </div>
                       </figure>
-                      <div className="p-4">
-                        <h3 className="text-xl font-bold mb-2 line-clamp-1 text-gray-800">
+                      <div className="p-4 flex flex-col gap-2">
+                        <h2 className="text-xl font-black text-base-content line-clamp-1">
                           {recipe.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                        </h2>
+                        <p className="text-sm text-gray-600 line-clamp-2">
                           {recipe.description}
                         </p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-500">
-                            Portions: {recipe.portion}
-                          </span>
-                          <div className="flex items-center gap-4 text-xs text-gray-500">
-                            <span>
-                              Ingredients: {recipe.ingredients?.length || 0}
-                            </span>
-                            <span>Steps: {recipe.steps?.length || 0}</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => handleEdit(recipe)}
-                              className="glass-panel backdrop-blur-xl bg-blue-500/20 border border-blue-400/30 text-blue-700 p-2 rounded-full hover:bg-blue-500/30 transition-colors"
-                              title="Edit Recipe"
-                              aria-label={`Edit ${recipe.title}`}
-                            >
-                              <IconEdit size={18} />
-                            </motion.button>
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => handleDelete(recipe)}
-                              className="glass-panel backdrop-blur-xl bg-red-500/20 border border-red-400/30 text-red-700 p-2 rounded-full hover:bg-red-500/30 transition-colors"
-                              title="Delete Recipe"
-                              aria-label={`Delete ${recipe.title}`}
-                            >
-                              <IconTrash size={18} />
-                            </motion.button>
-                          </div>
+                        <div className="badge badge-lg bg-accent text-accent-content font-bold mt-2">
+                          {recipe.category && typeof recipe.category === "string"
+                            ? recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)
+                            : "Uncategorized"}
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
                 </motion.div>
               )}

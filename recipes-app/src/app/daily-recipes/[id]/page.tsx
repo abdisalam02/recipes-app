@@ -360,7 +360,7 @@ export default function DailyRecipeDetailPage() {
         // Initialize ingredient availability
         if (matchingRecipe.ingredients) {
           const initialAvailability: { [key: string]: boolean } = {};
-          matchingRecipe.ingredients.forEach((_, index) => {
+          matchingRecipe.ingredients.forEach((_: any, index: number) => {
             const ingredientKey = `${index}-${
               matchingRecipe.ingredients![index].name
             }`;

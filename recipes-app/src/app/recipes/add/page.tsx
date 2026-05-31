@@ -1071,11 +1071,11 @@ export default function AddRecipePage() {
 
   return (
     <div className="min-h-screen bg-base-100">
-      <div className="max-w-3xl mx-auto py-8 px-4 pb-32 md:pb-16">
+      <div className="max-w-4xl mx-auto py-8 px-4 pb-32 md:pb-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-base-100 border border-base-200 shadow-lg rounded-3xl p-6 sm:p-8 relative"
+          className="neo-card p-6 sm:p-8 relative border-4"
         >
           {/* Loading Overlay */}
           {loading && <LoadingOverlay message="Loading..." />}
@@ -1084,33 +1084,33 @@ export default function AddRecipePage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center mb-6 gap-4"
+            className="flex flex-col items-center mb-8 gap-4"
           >
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <IconChefHat size={40} className="text-primary" />
+            <div className="w-20 h-20 border-3 border-base-content bg-accent rounded-xl shadow-neo flex items-center justify-center">
+              <IconChefHat size={48} className="text-base-content" stroke={2.5} />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-base-content">Add New Recipe</h1>
-            <p className="text-sm text-base-content/50 text-center">Share your culinary masterpiece</p>
+            <h1 className="text-3xl sm:text-4xl font-black text-base-content uppercase tracking-wider">Add Recipe</h1>
+            <p className="text-lg font-bold text-base-content/70 text-center border-2 border-base-content bg-base-200 px-4 py-2 rounded-xl shadow-neo-sm mt-2">Share your culinary masterpiece</p>
           </motion.div>
 
           {/* Enhanced Tabs for Form vs JSON Input */}
-          <div className="flex justify-center mb-6">
-            <div className="bg-base-200 border border-base-300 p-1 rounded-2xl inline-flex">
+          <div className="flex justify-center mb-10">
+            <div className="bg-base-200 border-3 border-base-content p-1 rounded-xl shadow-neo-sm inline-flex">
               <button
-                className={`px-6 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm ${
+                className={`px-8 py-3 rounded-lg font-black uppercase tracking-wider transition-all duration-200 ${
                   activeTab === "form"
-                    ? "bg-base-100 text-primary shadow-sm"
-                    : "text-base-content/50 hover:text-base-content"
+                    ? "bg-primary border-3 border-base-content text-base-content shadow-neo-sm"
+                    : "text-base-content border-3 border-transparent hover:bg-base-300"
                 }`}
                 onClick={() => setActiveTab("form")}
               >
                 Form Input
               </button>
               <button
-                className={`px-6 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm ${
+                className={`px-8 py-3 rounded-lg font-black uppercase tracking-wider transition-all duration-200 ${
                   activeTab === "json"
-                    ? "bg-base-100 text-primary shadow-sm"
-                    : "text-base-content/50 hover:text-base-content"
+                    ? "bg-primary border-3 border-base-content text-base-content shadow-neo-sm"
+                    : "text-base-content border-3 border-transparent hover:bg-base-300"
                 }`}
                 onClick={() => setActiveTab("json")}
               >
@@ -1134,7 +1134,7 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
+                  className="neo-card p-6 bg-base-200"
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Recipe Title
@@ -1149,7 +1149,7 @@ export default function AddRecipePage() {
                         title: e.target.value,
                       })
                     }
-                    className="bg-base-200 border border-base-300 rounded-xl w-full px-4 py-3 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-base-100 transition-all"
+                    className="neo-input w-full px-4 py-3 bg-base-100 text-lg"
                     placeholder="Enter recipe title..."
                   />
                 </motion.div>
@@ -1159,7 +1159,7 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
+                  className="neo-card p-6 bg-base-200"
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Category
@@ -1173,7 +1173,7 @@ export default function AddRecipePage() {
                         category: e.target.value,
                       })
                     }
-                    className="bg-base-200 border border-base-300 rounded-xl w-full px-4 py-3 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-base-100 transition-all"
+                    className="neo-input w-full px-4 py-3 bg-base-100 text-lg"
                   >
                     <option disabled value="">
                       Select Category
@@ -1191,7 +1191,7 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
+                  className="neo-card p-6 bg-base-200"
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Region
@@ -1205,7 +1205,7 @@ export default function AddRecipePage() {
                         region: e.target.value,
                       })
                     }
-                    className="bg-base-200 border border-base-300 rounded-xl w-full px-4 py-3 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-base-100 transition-all"
+                    className="neo-input w-full px-4 py-3 bg-base-100 text-lg"
                   >
                     <option disabled value="">
                       Select Region
@@ -1223,7 +1223,7 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.4 }}
-                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
+                  className="neo-card p-6 bg-base-200"
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Description
@@ -1237,7 +1237,7 @@ export default function AddRecipePage() {
                         description: e.target.value,
                       })
                     }
-                    className="bg-base-200 border border-base-300 rounded-xl w-full px-4 py-3 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-base-100 transition-all"
+                    className="neo-input w-full px-4 py-3 bg-base-100 text-lg"
                     rows={3}
                     placeholder="Enter recipe description..."
                   ></textarea>
@@ -1248,7 +1248,7 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5 }}
-                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
+                  className="neo-card p-6 bg-base-200"
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Image URL (optional)
@@ -1264,7 +1264,7 @@ export default function AddRecipePage() {
                             image: e.target.value,
                           })
                         }
-                        className="bg-base-200 border border-base-300 rounded-xl w-full px-4 py-3 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-base-100 transition-all"
+                        className="neo-input w-full px-4 py-3 bg-base-100 text-lg"
                         placeholder="https://example.com/image.jpg"
                       />
                     </div>
@@ -1272,10 +1272,10 @@ export default function AddRecipePage() {
                       <button
                         type="button"
                         onClick={() => setFormData({ ...formData, image: "" })}
-                        className="glass-panel backdrop-blur-xl bg-red-500/20 border border-red-400/30 text-red-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
+                        className="neo-button bg-error text-base-content px-4 py-3 rounded-xl flex items-center justify-center shrink-0"
                         aria-label="Clear Image URL"
                       >
-                        <IconTrash size={16} />
+                        <IconTrash size={20} stroke={2.5} />
                       </button>
                     )}
                   </div>
@@ -1286,7 +1286,7 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
+                  className="neo-card p-6 bg-base-200"
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Automatically fetch default image if none provided
@@ -1300,7 +1300,7 @@ export default function AddRecipePage() {
                       }
                       className="checkbox checkbox-primary"
                     />
-                    <span className="text-sm text-gray-700">
+                    <span className="text-base font-bold text-base-content">
                       Check this box to automatically fetch a default image
                     </span>
                   </div>
@@ -1311,7 +1311,7 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.7 }}
-                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
+                  className="neo-card p-6 bg-base-200"
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Portions
@@ -1328,7 +1328,7 @@ export default function AddRecipePage() {
                     }
                     min="1"
                     max="20"
-                    className="bg-base-200 border border-base-300 rounded-xl w-full px-4 py-3 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-base-100 transition-all"
+                    className="neo-input w-full px-4 py-3 bg-base-100 text-lg"
                   />
                 </motion.div>
 
@@ -1337,17 +1337,17 @@ export default function AddRecipePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.8 }}
-                  className="bg-base-200 border border-base-300 rounded-2xl p-5"
+                  className="neo-card p-6 bg-base-200"
                 >
                   <div className="flex items-end gap-2 mb-2">
                     <label className="label">Ingredients</label>
                     <button
                       type="button"
                       onClick={handleAddIngredient}
-                      className="btn btn-circle btn-success"
+                      className="neo-button w-10 h-10 flex items-center justify-center bg-success text-base-content rounded-xl mb-1"
                       aria-label="Add Ingredient"
                     >
-                      <IconPlus size={16} />
+                      <IconPlus size={24} stroke={3} />
                     </button>
                   </div>
                   <div className="flex flex-col gap-4">
@@ -1372,7 +1372,7 @@ export default function AddRecipePage() {
                           }
                           min={0.1}
                           step={0.1}
-                          className="glass-panel backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl w-24 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                          className="neo-input w-24 px-3 py-3 bg-base-100 text-lg font-bold"
                           placeholder="Quantity"
                           aria-label={`Ingredient ${index + 1} Quantity`}
                         />
@@ -1389,7 +1389,7 @@ export default function AddRecipePage() {
                               return { ...prev, ingredients: updated };
                             })
                           }
-                          className="glass-panel backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl w-24 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                          className="neo-input w-24 px-3 py-3 bg-base-100 text-lg font-bold"
                           aria-label={`Ingredient ${index + 1} Unit`}
                         >
                           {units.map((unit) => (
@@ -1413,7 +1413,7 @@ export default function AddRecipePage() {
                                 return { ...prev, ingredients: updated };
                               })
                             }
-                            className="bg-base-200 border border-base-300 rounded-xl w-full px-4 py-3 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-base-100 transition-all"
+                            className="neo-input w-full px-4 py-3 bg-base-100 text-lg"
                             placeholder="Type or select ingredient"
                             list={`ingredients-list-${index}`}
                             aria-label={`Ingredient ${index + 1} Name`}
@@ -1426,21 +1426,21 @@ export default function AddRecipePage() {
                           </datalist>
                         </div>
                         {formData.ingredients.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                ingredients: prev.ingredients.filter(
-                                  (_, i) => i !== index
-                                ),
-                              }))
-                            }
-                            className="btn btn-circle btn-error"
-                            aria-label={`Remove Ingredient ${index + 1}`}
-                          >
-                            <IconMinus size={16} />
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  ingredients: prev.ingredients.filter(
+                                    (_, i) => i !== index
+                                  ),
+                                }))
+                              }
+                              className="neo-button w-12 h-12 shrink-0 flex items-center justify-center bg-error text-base-content rounded-xl"
+                              aria-label={`Remove Ingredient ${index + 1}`}
+                            >
+                              <IconMinus size={20} stroke={3} />
+                            </button>
                         )}
                       </div>
                     ))}
@@ -1454,15 +1454,15 @@ export default function AddRecipePage() {
                   transition={{ delay: 0.9 }}
                   className="bg-base-200 border border-base-300 rounded-2xl p-5"
                 >
-                  <div className="flex items-end gap-2 mb-2">
-                    <label className="label">Steps</label>
+                  <div className="flex items-end gap-2 mb-4">
+                    <label className="text-lg font-black uppercase text-base-content">Steps</label>
                     <button
                       type="button"
                       onClick={handleAddStep}
-                      className="btn btn-circle btn-success"
+                      className="neo-button w-10 h-10 flex items-center justify-center bg-success text-base-content rounded-xl mb-1"
                       aria-label="Add Step"
                     >
-                      <IconPlus size={16} />
+                      <IconPlus size={24} stroke={3} />
                     </button>
                   </div>
                   <div className="flex flex-col gap-4">
@@ -1475,7 +1475,7 @@ export default function AddRecipePage() {
                           type="number"
                           value={step.order || index + 1}
                           readOnly
-                          className="glass-panel backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl w-16 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                          className="neo-input w-16 px-3 py-3 bg-base-100 text-lg font-black text-center"
                           aria-label={`Step ${index + 1} Order`}
                         />
                         <textarea
@@ -1484,7 +1484,7 @@ export default function AddRecipePage() {
                           onChange={(e) =>
                             handleStepChange(index, e.target.value)
                           }
-                          className="bg-base-200 border border-base-300 rounded-xl w-full px-4 py-3 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-base-100 transition-all"
+                          className="neo-input flex-1 px-4 py-3 bg-base-100 text-lg font-bold min-w-[200px]"
                           rows={2}
                           placeholder="Step description"
                           aria-label={`Step ${index + 1} Description`}
@@ -1498,10 +1498,10 @@ export default function AddRecipePage() {
                                 steps: prev.steps.filter((_, i) => i !== index),
                               }))
                             }
-                            className="btn btn-circle btn-error"
+                            className="neo-button w-12 h-12 shrink-0 flex items-center justify-center bg-error text-base-content rounded-xl mb-auto"
                             aria-label={`Remove Step ${index + 1}`}
                           >
-                            <IconMinus size={16} />
+                            <IconMinus size={20} stroke={3} />
                           </button>
                         )}
                       </div>
@@ -1510,19 +1510,14 @@ export default function AddRecipePage() {
                 </motion.div>
 
                 {/* Enhanced Submit Button */}
-                <motion.button
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <button
                   type="button"
-                  className="glass-panel backdrop-blur-xl bg-gradient-to-r from-emerald-500 to-blue-500 text-white border border-white/30 rounded-2xl px-8 py-4 font-semibold shadow-2xl hover:shadow-emerald-500/25 transition-all duration-300 mt-4"
+                  className="neo-button w-full px-8 py-4 bg-primary text-base-content text-xl uppercase tracking-wider mt-6 disabled:opacity-50 disabled:shadow-none disabled:translate-x-1 disabled:translate-y-1 cursor-pointer disabled:cursor-not-allowed"
                   disabled={!isFormValid()}
                   onClick={() => setModalOpened(true)}
                 >
                   Add Recipe
-                </motion.button>
+                </button>
               </div>
             </motion.form>
           ) : (
@@ -1538,15 +1533,15 @@ export default function AddRecipePage() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-panel backdrop-blur-xl bg-white/10 border border-white/20 p-6 rounded-2xl shadow-lg"
+                className="neo-card p-6 bg-base-200"
               >
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xl font-black text-base-content uppercase tracking-wide mb-4">
                   Recipe JSON
                 </label>
                 {/* JSON Input Rules */}
-                <div className="glass-panel backdrop-blur-xl bg-white/10 border border-white/20 rounded-xl p-4 mb-3 text-sm text-gray-700">
-                  <strong>JSON rules:</strong> Use an object with these fields:
-                  <ul className="list-disc pl-5 mt-2 space-y-1">
+                <div className="neo-card p-4 mb-6 bg-secondary text-base-content font-bold border-2">
+                  <strong className="uppercase">JSON rules:</strong> Use an object with these fields:
+                  <ul className="list-disc pl-5 mt-2 space-y-1 font-medium">
                     <li>
                       <code>title</code>, <code>category</code>,{" "}
                       <code>region</code>, <code>description</code> (strings),{" "}
@@ -1581,24 +1576,13 @@ export default function AddRecipePage() {
                 </div>
                 <textarea
                   name="jsonData"
-                  className="glass-panel backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                  rows={10}
+                  className="neo-input w-full px-4 py-4 bg-base-100 font-mono text-sm leading-relaxed"
+                  rows={15}
                   required
                   placeholder={`{
   "title": "Chicken Msemen",
   "category": "dinner",
-  "region": "mediterranean",
-  "description": "Delicious Moroccan square pancakes...",
-  "portion": 4,
-  "ingredients": [
-    { "name": "flour", "quantity": 500, "unit": "g" },
-    { "name": "water", "quantity": 250, "unit": "ml" },
-    { "name": "salt", "quantity": 5, "unit": "g" }
-  ],
-  "steps": [
-    { "order": 1, "description": "Mix flour and salt, add water until dough forms." },
-    { "order": 2, "description": "Rest dough 30 minutes." }
-  ]
+...
 }`}
                   value={jsonData}
                   onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
@@ -1606,15 +1590,13 @@ export default function AddRecipePage() {
                   }
                 ></textarea>
 
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <button
                   type="submit"
-                  className="glass-panel backdrop-blur-xl bg-gradient-to-r from-emerald-500 to-blue-500 text-white border border-white/30 rounded-2xl px-8 py-4 font-semibold shadow-2xl hover:shadow-emerald-500/25 transition-all duration-300 w-full mt-4"
+                  className="neo-button w-full px-8 py-4 bg-primary text-base-content text-xl uppercase tracking-wider mt-6 disabled:opacity-50 disabled:shadow-none disabled:translate-x-1 disabled:translate-y-1 cursor-pointer disabled:cursor-not-allowed"
                   disabled={!jsonData.trim()}
                 >
                   Add Recipe via JSON
-                </motion.button>
+                </button>
               </motion.div>
             </motion.form>
           )}

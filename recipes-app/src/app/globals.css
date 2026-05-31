@@ -1,74 +1,9 @@
-/* Modern Recipes App - Optimized Global Styles */
+/* Modern Recipes App - Neo-Brutalist Styles */
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-:root {
-  --navbar-height: 4rem;
-  --footer-height: 3rem;
-  --primary-color: #6366f1;
-  --primary-hover: #4f46e5;
-  --glass-blur: blur(10px);
-  --glass-bg: rgba(255, 255, 255, 0.25);
-  --glass-border: rgba(255, 255, 255, 0.18);
-
-  /* Modern color variables */
-  --royal-orange: #6366f1; /* Kept name for compatibility, but it's Indigo now */
-  --emerald-fresh: #14b8a6;
-  --sunset-pink: #8b5cf6;
-  --cosmic-purple: #6366f1;
-  --ocean-blue: #3b82f6;
-
-  /* Theme-aware text colors */
-  --text-primary: #1f2937;
-  --text-secondary: #374151;
-  --text-tertiary: #6b7280;
-  --text-muted: #9ca3af;
-
-  /* Theme-aware background colors */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #e2e8f0;
-
-  /* Gradient backgrounds */
-  --bg-gradient-main: linear-gradient(135deg, #fafafa 0%, #f1f5f9 100%);
-  --bg-gradient-decorative-1: linear-gradient(
-    135deg,
-    rgba(99, 102, 241, 0.2) 0%, /* Indigo */
-    rgba(139, 92, 246, 0.2) 100% /* Violet */
-  );
-  --bg-gradient-decorative-2: linear-gradient(
-    135deg,
-    rgba(20, 184, 166, 0.2) 0%, /* Teal */
-    rgba(59, 130, 246, 0.2) 100% /* Blue */
-  );
-}
-
-/* Dark theme variables */
-[data-theme="dark"] {
-  --glass-bg: rgba(15, 23, 42, 0.25);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --text-primary: #e2e8f0;
-  --text-secondary: #cbd5e1;
-  --text-tertiary: #94a3b8;
-  --text-muted: #64748b;
-  --bg-primary: #1f2937;
-  --bg-secondary: #111827;
-  --bg-tertiary: #0f172a;
-  --bg-gradient-main: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  --bg-gradient-decorative-1: linear-gradient(
-    135deg,
-    rgba(99, 102, 241, 0.15) 0%,
-    rgba(139, 92, 246, 0.15) 100%
-  );
-  --bg-gradient-decorative-2: linear-gradient(
-    135deg,
-    rgba(20, 184, 166, 0.15) 0%,
-    rgba(59, 130, 246, 0.15) 100%
-  );
-}
 
 * {
   margin: 0;
@@ -78,52 +13,58 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  font-family: "Inter", system-ui, sans-serif;
-  font-weight: 400;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-weight: 500;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 /* Enhanced Typography */
 h1, h2, h3, h4, h5, h6 {
-  font-family: "Inter", system-ui, sans-serif;
-  font-weight: 700;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-weight: 800;
   line-height: 1.2;
   letter-spacing: -0.025em;
 }
 
-.display-font {
-  font-family: "Playfair Display", serif;
-}
+/* Neo-Brutalist Base Utilities */
+@layer components {
+  .neo-card {
+    @apply border-3 border-base-content shadow-neo rounded-2xl bg-base-100 transition-all duration-200;
+  }
+  
+  .neo-card-hover {
+    @apply hover:-translate-y-1 hover:-translate-x-1 hover:shadow-neo-hover;
+  }
+  
+  .neo-button {
+    @apply border-3 border-base-content shadow-neo font-bold rounded-xl transition-all duration-150 active:translate-y-1 active:translate-x-1 active:shadow-none select-none;
+  }
+  
+  .neo-input {
+    @apply border-3 border-base-content rounded-xl focus:outline-none focus:ring-0 focus:shadow-neo transition-shadow bg-base-100 text-base-content;
+  }
 
-.text-gradient {
-  background: linear-gradient(135deg, var(--royal-orange) 0%, var(--sunset-pink) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  .neo-badge {
+    @apply border-2 border-base-content font-bold shadow-neo-sm;
+  }
 }
 
 /* Optimized Navbar */
 .navbar {
-  height: var(--navbar-height);
+  height: 4rem;
   position: sticky;
   top: 0;
   z-index: 1000;
-}
-
-/* Optimized Glass Panel */
-.glass-panel {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 1rem;
-  box-shadow: 0 4px 16px rgba(31, 38, 135, 0.15);
 }
 
 /* Line clamp utilities */
@@ -150,17 +91,16 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Enhanced Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--fallback-b1, oklch(var(--b1) / 1));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--royal-orange);
+  background: var(--fallback-bc, oklch(var(--bc) / 1));
   border-radius: 4px;
-  opacity: 0.5;
 }
 
 /* Swipe card performance */
@@ -176,11 +116,6 @@ h1, h2, h3, h4, h5, h6 {
   * {
     animation-duration: 0.2s !important;
     transition-duration: 0.2s !important;
-  }
-
-  .glass-panel {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
   }
 }
 

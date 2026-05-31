@@ -49,10 +49,10 @@ export default function AIRecipesPage() {
     return (
       <div className="min-h-screen bg-base-100">
         <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="h-40 bg-base-200 rounded-3xl animate-pulse mb-8" />
+          <div className="neo-card h-40 bg-base-300 animate-pulse mb-8" />
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="rounded-3xl overflow-hidden bg-base-100 border border-base-200 animate-pulse">
+              <div key={i} className="neo-card overflow-hidden bg-base-200 border-4 animate-pulse">
                 <div className="h-44 bg-base-200" />
                 <div className="p-4 space-y-2">
                   <div className="h-5 bg-base-200 rounded-lg w-3/4" />
@@ -70,22 +70,21 @@ export default function AIRecipesPage() {
   return (
     <div className="min-h-screen bg-base-100">
       {/* Header */}
-      <div className="bg-gradient-to-br from-base-100 via-base-200 to-base-100 border-b border-base-200 px-4 py-10 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-56 h-56 rounded-full opacity-10 blur-3xl" style={{ backgroundColor: currentTheme.colors.secondary }} />
+      <div className="bg-secondary border-b-4 border-base-content px-4 py-10 relative overflow-hidden">
         <div className="max-w-6xl mx-auto text-center">
-          <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <IconRobot size={32} className="text-primary" />
+          <div className="w-20 h-20 bg-primary border-4 border-base-content rounded-xl shadow-neo flex items-center justify-center mx-auto mb-6">
+            <IconRobot size={40} className="text-base-content" stroke={2.5} />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-base-content mb-2">AI-Generated Recipes</h1>
-          <p className="text-base-content/50 text-sm mb-6">Unique recipes created by artificial intelligence ✨</p>
+          <h1 className="text-4xl md:text-5xl font-black text-base-content uppercase tracking-wider mb-4">AI Recipes</h1>
+          <p className="text-base-content font-bold mt-2 text-lg border-2 border-base-content bg-base-100 inline-block px-4 py-2 rounded-xl shadow-neo-sm mb-6">Unique recipes created by artificial intelligence ✨</p>
 
           <div className="flex flex-wrap gap-3 justify-center">
-            <Link href="/AI" className="px-5 py-2.5 rounded-2xl text-white font-semibold shadow-md shadow-primary/20 hover:opacity-90 transition-opacity text-sm" style={{ backgroundColor: currentTheme.colors.primary }}>
-              <IconSparkles size={14} className="inline mr-1.5" />
-              Create New AI Recipe
+            <Link href="/AI" className="neo-button px-6 py-3 bg-primary text-base-content text-sm font-black uppercase tracking-wider">
+              <IconSparkles size={18} className="inline mr-2" stroke={2.5} />
+              Create New
             </Link>
-            <Link href="/" className="px-5 py-2.5 rounded-2xl bg-base-200 hover:bg-base-300 text-base-content font-semibold transition-colors text-sm border border-base-300">
-              Browse All Recipes
+            <Link href="/" className="px-6 py-3 rounded-xl bg-base-200 border-3 border-transparent text-base-content font-black uppercase tracking-wider hover:bg-base-300 transition-colors text-sm">
+              Browse All
             </Link>
           </div>
         </div>
@@ -100,7 +99,7 @@ export default function AIRecipesPage() {
             placeholder="Search AI recipes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 rounded-2xl border border-base-300 bg-base-200 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-base-100 transition-all text-sm"
+            className="neo-input w-full pl-11 pr-4 py-3 bg-base-100 text-sm"
           />
         </div>
       </div>
@@ -119,11 +118,8 @@ export default function AIRecipesPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {filteredRecipes.map((recipe, index) => (
               <Link key={recipe.id} href={`/ai-recipes/${recipe.id}`} prefetch={true}>
-                <motion.div
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.04 }}
-                  className="rounded-3xl overflow-hidden bg-base-100 border border-base-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                <div
+                  className="neo-card group relative overflow-hidden bg-base-100 border-4 transition-all duration-300 hover:-translate-y-2 hover:-translate-x-2 hover:shadow-[8px_8px_0px_rgba(0,0,0,1)] cursor-pointer"
                 >
                   <div className="relative h-44">
                     <Image
@@ -140,7 +136,7 @@ export default function AIRecipesPage() {
                     </div>
                     {recipe.category && (
                       <div className="absolute bottom-3 left-3">
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: currentTheme.colors.primary }}>
+                        <span className="neo-badge bg-secondary text-base-content px-3 py-1 text-xs uppercase tracking-wider">
                           {recipe.category}
                         </span>
                       </div>
@@ -154,7 +150,7 @@ export default function AIRecipesPage() {
                       <span className="flex items-center gap-1"><IconClock size={11} />AI Generated</span>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               </Link>
             ))}
           </div>

@@ -27,26 +27,26 @@ const themes = [
     name: "light" as ThemeType,
     label: "Light",
     colors: {
-      primary: "#6366f1", // Indigo
-      secondary: "#14b8a6", // Teal
-      accent: "#8b5cf6", // Violet
-      background: "#ffffff",
-      surface: "#f8fafc",
-      text: "#1f2937",
-      textSecondary: "#6b7280",
+      primary: "#7C83FD", // neo-indigo
+      secondary: "#FFD369", // neo-mustard
+      accent: "#9FBB73", // neo-sage
+      background: "#FDF8F5", // neo-cream
+      surface: "#FFFFFF",
+      text: "#111827",
+      textSecondary: "#374151",
     },
   },
   {
     name: "dark" as ThemeType,
     label: "Dark",
     colors: {
-      primary: "#6366f1", // Indigo
-      secondary: "#14b8a6", // Teal
-      accent: "#8b5cf6", // Violet
-      background: "#1f2937",
-      surface: "#111827",
-      text: "#e2e8f0",
-      textSecondary: "#94a3b8",
+      primary: "#A78BFA", // neo-purple
+      secondary: "#FFD369", // neo-mustard
+      accent: "#9FBB73", // neo-sage
+      background: "#1E1E24", // neo-dark
+      surface: "#2D2D34", // neo-charcoal
+      text: "#ffffff",
+      textSecondary: "#d1d5db",
     },
   },
 ];

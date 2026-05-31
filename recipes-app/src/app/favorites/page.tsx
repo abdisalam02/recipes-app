@@ -71,14 +71,14 @@ export default function FavoritesPage() {
     return (
       <div className="min-h-screen bg-base-100">
         <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="h-24 bg-base-200 rounded-3xl animate-pulse mb-8" />
+          <div className="neo-card h-24 bg-base-300 animate-pulse mb-8" />
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="rounded-3xl overflow-hidden bg-base-100 border border-base-200 animate-pulse">
-                <div className="h-48 bg-base-200" />
+              <div key={i} className="neo-card overflow-hidden bg-base-200 border-4 animate-pulse">
+                <div className="h-48 bg-base-300" />
                 <div className="p-4 space-y-2">
-                  <div className="h-5 bg-base-200 rounded-lg w-3/4" />
-                  <div className="h-3 bg-base-200 rounded-lg w-full" />
+                  <div className="h-5 bg-base-300 rounded-lg w-3/4" />
+                  <div className="h-3 bg-base-300 rounded-lg w-full" />
                 </div>
               </div>
             ))}
@@ -92,14 +92,13 @@ export default function FavoritesPage() {
   return (
     <div className="min-h-screen bg-base-100">
       {/* Header */}
-      <div className="bg-gradient-to-br from-base-100 via-base-200 to-base-100 border-b border-base-200 px-4 py-10 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-10 blur-3xl bg-red-400" />
+      <div className="bg-secondary border-b-4 border-base-content px-4 py-10 relative overflow-hidden">
         <div className="max-w-6xl mx-auto text-center">
-          <div className="w-16 h-16 rounded-3xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-            <IconHeart size={32} className="text-red-500" />
+          <div className="w-20 h-20 bg-primary border-4 border-base-content rounded-xl shadow-neo flex items-center justify-center mx-auto mb-6">
+            <IconHeart size={40} className="text-base-content" stroke={2.5} />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-base-content">My Favourites</h1>
-          <p className="text-base-content/50 mt-2 text-sm">{favorites.length} saved recipe{favorites.length !== 1 ? "s" : ""}</p>
+          <h1 className="text-4xl md:text-5xl font-black text-base-content uppercase tracking-wider">Favourites</h1>
+          <p className="text-base-content font-bold mt-2 text-lg border-2 border-base-content bg-base-100 inline-block px-4 py-2 rounded-xl shadow-neo-sm">{favorites.length} saved recipe{favorites.length !== 1 ? "s" : ""}</p>
         </div>
       </div>
 
@@ -111,21 +110,17 @@ export default function FavoritesPage() {
             <div className="text-7xl mb-6">💔</div>
             <h2 className="text-2xl font-bold text-base-content mb-3">No favourites yet</h2>
             <p className="text-base-content/50 mb-8 max-w-xs">Start adding recipes to your favourites by tapping the heart icon on any recipe card.</p>
-            <Link href="/" className="px-7 py-3.5 rounded-2xl text-white font-semibold shadow-lg shadow-primary/20 transition-all hover:opacity-90" style={{ backgroundColor: currentTheme.colors.primary }}>
+            <Link href="/" className="neo-button px-8 py-4 bg-primary text-base-content text-xl uppercase tracking-wider mt-4 inline-block">
               Browse Recipes
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <AnimatePresence>
-              {favorites.map((fav, index) => (
-                <motion.div
+              {favorites.map((fav) => (
+                <div
                   key={fav.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="group relative rounded-3xl overflow-hidden bg-base-100 border border-base-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                  className="neo-card group relative overflow-hidden bg-base-100 border-4 transition-all duration-300 hover:-translate-y-2 hover:-translate-x-2 hover:shadow-[8px_8px_0px_rgba(0,0,0,1)]"
                 >
                   <Link href={`/recipes/${fav.recipe.id}`} prefetch={true} className="block">
                     {/* Image */}
@@ -141,7 +136,7 @@ export default function FavoritesPage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                       {fav.recipe.category && (
                         <div className="absolute bottom-3 left-3">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: currentTheme.colors.primary }}>
+                          <span className="neo-badge bg-secondary text-base-content px-3 py-1 text-xs uppercase tracking-wider">
                             {fav.recipe.category}
                           </span>
                         </div>
@@ -159,14 +154,13 @@ export default function FavoritesPage() {
                     </div>
                   </Link>
 
-                  {/* Remove button */}
                   <button
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeFavorite(fav.recipe_id); }}
-                    className="absolute top-3 right-3 p-2 rounded-full bg-base-100/90 backdrop-blur-sm shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-500"
+                    className="absolute top-3 right-3 p-2 rounded-xl border-3 border-base-content bg-base-100 shadow-neo-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error hover:text-base-content"
                   >
-                    <IconHeartOff size={14} className="text-red-400" />
+                    <IconHeartOff size={20} stroke={2.5} className="text-base-content" />
                   </button>
-                </motion.div>
+                </div>
               ))}
             </AnimatePresence>
           </div>

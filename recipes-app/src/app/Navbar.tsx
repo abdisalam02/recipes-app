@@ -19,34 +19,34 @@ export default function Navbar({ currentTheme, changeTheme }: NavbarProps) {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-base-100/95 border-b border-base-300/60 backdrop-blur-xl">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-base-100 border-b-3 border-base-content">
       <div className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center gap-4">
           {/* Logo / Brand */}
-          <Link href="/" className="flex items-center gap-2.5 font-bold text-xl text-base-content hover:opacity-80 transition-opacity">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-primary shadow-sm shadow-primary/30">
-              <IconChefHat size={20} className="text-primary-content" />
+          <Link href="/" className="flex items-center gap-2.5 font-black text-xl text-base-content hover:-translate-y-1 hover:translate-x-1 transition-transform">
+            <div className="w-10 h-10 border-3 border-base-content shadow-neo-sm rounded-xl flex items-center justify-center bg-primary">
+              <IconChefHat size={22} className="text-base-content" stroke={2.5} />
             </div>
-            <span className="hidden sm:inline">Recipes<span className="text-primary">App</span></span>
+            <span className="hidden sm:inline">RECIPES<span className="text-primary font-black">APP</span></span>
           </Link>
 
           <div className="flex items-center gap-3">
             {/* Desktop navigation links */}
-            <div className="hidden md:flex items-center gap-1 text-sm font-medium">
+            <div className="hidden md:flex items-center gap-2 text-sm font-bold">
               {[
-                { href: "/", icon: IconHome, label: "Home" },
-                { href: "/recipes/add", icon: IconPlus, label: "Add" },
-                { href: "/favorites", icon: IconHeart, label: "Favorites" },
-                { href: "/tinder", icon: IconFlame, label: "Tinder" },
-                { href: "/AI", icon: IconRobot, label: "AI" },
-                { href: "/daily-recipes", icon: IconCalendarEvent, label: "Daily" },
-              ].map(({ href, icon: Icon, label }) => (
+                { href: "/", icon: IconHome, label: "Home", bg: "bg-primary" },
+                { href: "/recipes/add", icon: IconPlus, label: "Add", bg: "bg-secondary" },
+                { href: "/favorites", icon: IconHeart, label: "Favorites", bg: "bg-accent" },
+                { href: "/tinder", icon: IconFlame, label: "Tinder", bg: "bg-base-300" },
+                { href: "/AI", icon: IconRobot, label: "AI", bg: "bg-primary" },
+                { href: "/daily-recipes", icon: IconCalendarEvent, label: "Daily", bg: "bg-secondary" },
+              ].map(({ href, icon: Icon, label, bg }) => (
                 <Link
                   key={href}
                   href={href}
-                  className="px-3 py-2 rounded-xl text-base-content/70 hover:text-base-content hover:bg-base-200 transition-all flex items-center gap-1.5"
+                  className={`px-3 py-2 rounded-xl text-base-content border-3 border-transparent hover:border-base-content hover:${bg} hover:shadow-neo-sm transition-all flex items-center gap-1.5`}
                 >
-                  <Icon size={16} />
+                  <Icon size={18} stroke={2.5} />
                   <span>{label}</span>
                 </Link>
               ))}
@@ -55,11 +55,11 @@ export default function Navbar({ currentTheme, changeTheme }: NavbarProps) {
             {/* Dark/Light Toggle */}
             <button
               onClick={toggleTheme}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-base-200 hover:bg-base-300 border border-base-300 text-base-content transition-all duration-200 hover:scale-105"
+              className="neo-button flex items-center gap-2 px-4 py-2 bg-secondary text-base-content hover:bg-accent"
               title={isDark ? "Switch to Light" : "Switch to Dark"}
             >
-              <span className="text-base">{isDark ? <IconSun size={18} /> : <IconMoon size={18} />}</span>
-              <span className="hidden sm:inline font-medium text-sm">{isDark ? "Light" : "Dark"}</span>
+              <span className="text-base">{isDark ? <IconSun size={20} stroke={2.5} /> : <IconMoon size={20} stroke={2.5} />}</span>
+              <span className="hidden sm:inline font-bold text-sm">{isDark ? "LIGHT" : "DARK"}</span>
             </button>
           </div>
         </div>

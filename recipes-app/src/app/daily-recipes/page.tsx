@@ -91,10 +91,10 @@ const Toast = ({
       className="fixed bottom-24 left-4 right-4 z-50 md:bottom-6 md:right-6 md:left-auto md:w-96"
     >
       <div
-        className={`glass-panel backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-white/20 ${
+        className={`neo-card p-4 border-4 ${
           type === "success"
-            ? "bg-emerald-500/20 border-emerald-400/30"
-            : "bg-red-500/20 border-red-400/30"
+            ? "bg-success"
+            : "bg-error"
         }`}
       >
         <div className="flex items-center gap-3">
@@ -330,20 +330,14 @@ export default function DailyRecipesPage() {
           animate={{ opacity: 1, y: 0 }}
           className="relative py-16 px-6 mb-16 rounded-4xl overflow-hidden"
         >
-          <div
-            className="backdrop-blur-xl border rounded-3xl p-8 shadow-2xl"
-            style={{
-              background: `linear-gradient(135deg, ${currentTheme.colors.surface}f0, ${currentTheme.colors.surface}80)`,
-              borderColor: `${currentTheme.colors.primary}30`,
-            }}
-          >
+          <div className="neo-card p-8 bg-base-200 border-4">
             <div className="max-w-5xl mx-auto text-center relative z-10">
               {/* Enhanced featured badge */}
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2 }}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full text-white mb-6 shadow-2xl"
+                className="neo-badge inline-flex items-center gap-2 px-6 py-3 bg-primary text-base-content mb-6"
               >
                 <IconCalendarEvent size={20} />
                 <span className="font-semibold">Daily Fresh Collection</span>
@@ -384,7 +378,7 @@ export default function DailyRecipesPage() {
                 transition={{ delay: 0.5 }}
                 className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto"
               >
-                <div className="glass-panel backdrop-blur-xl bg-white/20 border border-white/20 p-6 rounded-2xl text-center shadow-lg">
+                <div className="neo-card p-6 text-center bg-base-100">
                   <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-2">
                     {dailyRecipes.length}
                   </div>
@@ -392,7 +386,7 @@ export default function DailyRecipesPage() {
                     Fresh Recipes
                   </div>
                 </div>
-                <div className="glass-panel backdrop-blur-xl bg-white/20 border border-white/20 p-6 rounded-2xl text-center shadow-lg">
+                <div className="neo-card p-6 text-center bg-base-100">
                   <div className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent mb-2">
                     Daily
                   </div>
@@ -400,7 +394,7 @@ export default function DailyRecipesPage() {
                     Updated
                   </div>
                 </div>
-                <div className="glass-panel backdrop-blur-xl bg-white/20 border border-white/20 p-6 rounded-2xl text-center shadow-lg">
+                <div className="neo-card p-6 text-center bg-base-100">
                   <div className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
                     Chef's
                   </div>
@@ -427,7 +421,7 @@ export default function DailyRecipesPage() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-20"
           >
-            <div className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 p-12 rounded-3xl text-center max-w-md shadow-2xl">
+            <div className="neo-card p-12 text-center max-w-md bg-base-100 border-4">
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -446,7 +440,7 @@ export default function DailyRecipesPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => router.push("/")}
-                className="bg-gradient-to-r from-primary to-accent text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-primary/25 transition-all duration-300"
+                className="neo-button px-6 py-3 bg-primary text-base-content text-sm font-black uppercase tracking-wider"
               >
                 Explore All Recipes
               </motion.button>
@@ -464,7 +458,7 @@ export default function DailyRecipesPage() {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.3 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-xl border border-purple-200 rounded-full text-purple-600 font-semibold mb-4"
+                className="neo-badge inline-flex items-center gap-2 px-4 py-2 bg-secondary text-base-content mb-4"
               >
                 <IconStar size={16} />
                 <span>Curated Selection</span>
@@ -495,19 +489,11 @@ export default function DailyRecipesPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {dailyRecipes.map((recipe, index) => (
-                <motion.div
+              {dailyRecipes.map((recipe) => (
+                <div
                   key={recipe.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ y: -10, scale: 1.02 }}
                   onClick={() => router.push(`/daily-recipes/${recipe.id}`)}
-                  className="backdrop-blur-xl border rounded-2xl overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer group"
-                  style={{
-                    backgroundColor: `${currentTheme.colors.surface}f0`,
-                    borderColor: `${currentTheme.colors.primary}30`,
-                  }}
+                  className="neo-card group relative overflow-hidden bg-base-100 border-4 transition-all duration-300 hover:-translate-y-2 hover:-translate-x-2 hover:shadow-[8px_8px_0px_rgba(0,0,0,1)] cursor-pointer"
                 >
                   <figure className="relative h-56 overflow-hidden">
                     <Image
@@ -532,7 +518,7 @@ export default function DailyRecipesPage() {
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={(e) => toggleFavorite(e, recipe.id)}
-                        className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 rounded-full p-3 shadow-2xl hover:bg-white/30 transition-all duration-300"
+                        className="p-2 rounded-xl border-3 border-base-content bg-base-100 shadow-neo-sm hover:bg-error hover:text-base-content transition-all duration-300"
                         aria-label={
                           favorites.some((fav) => fav.recipe_id === recipe.id)
                             ? "Remove from favorites"
@@ -554,7 +540,7 @@ export default function DailyRecipesPage() {
 
                     {/* Enhanced category badge */}
                     <div className="absolute bottom-4 left-4">
-                      <span className="glass-panel backdrop-blur-xl bg-gradient-to-r from-emerald-500/80 to-blue-500/80 border border-white/30 rounded-full text-white text-xs font-bold uppercase tracking-wide shadow-lg">
+                      <span className="neo-badge bg-secondary text-base-content px-3 py-1 text-xs uppercase tracking-wider">
                         {recipe.category.charAt(0).toUpperCase() +
                           recipe.category.slice(1)}
                       </span>
@@ -562,7 +548,7 @@ export default function DailyRecipesPage() {
 
                     {/* Enhanced source badge */}
                     <div className="absolute top-4 left-4">
-                      <span className="glass-panel backdrop-blur-xl bg-gradient-to-r from-purple-500/90 to-pink-500/90 border border-white/30 rounded-full text-white text-xs font-medium flex items-center gap-1">
+                      <span className="neo-badge bg-primary text-base-content px-3 py-1 text-xs uppercase tracking-wider flex items-center gap-1">
                         <IconAward size={12} />
                         {recipe.source === "api" ? "Featured" : "Curated"}
                       </span>
@@ -593,7 +579,7 @@ export default function DailyRecipesPage() {
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
-                        className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 p-2 rounded-full hover:bg-emerald-500/20 transition-colors"
+                        className="p-2 rounded-xl border-2 border-base-content bg-base-200 shadow-neo-sm hover:bg-primary transition-colors"
                         onClick={(e) => shareRecipe(e, recipe)}
                         aria-label="Share recipe"
                       >
@@ -603,7 +589,7 @@ export default function DailyRecipesPage() {
 
                     {/* Enhanced Ingredients preview */}
                     {recipe.ingredients && recipe.ingredients.length > 0 && (
-                      <div className="glass-panel backdrop-blur-xl bg-white/10 border border-white/20 p-3 rounded-xl">
+                      <div className="neo-card p-3 bg-base-200">
                         <div className="flex items-center gap-2 mb-2">
                           <IconSparkles
                             size={14}
@@ -633,7 +619,7 @@ export default function DailyRecipesPage() {
                       </div>
                     )}
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </motion.div>
@@ -650,18 +636,18 @@ export default function DailyRecipesPage() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => router.push("/")}
-            className="bg-gradient-to-r from-primary to-accent text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-primary/25 transition-all duration-300 flex items-center gap-2"
+            className="neo-button px-6 py-3 bg-primary text-base-content text-sm font-black uppercase tracking-wider flex items-center gap-2"
           >
-            <IconChefHat size={18} />
+            <IconChefHat size={18} stroke={2.5} />
             <span>All Recipes</span>
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => router.push("/AI")}
-            className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 text-gray-700 hover:text-white hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 transition-all duration-300 flex items-center gap-2 font-semibold px-6 py-3 rounded-xl shadow-lg"
+            className="px-6 py-3 rounded-xl bg-base-200 border-3 border-transparent text-base-content font-black uppercase tracking-wider hover:bg-base-300 transition-colors text-sm flex items-center gap-2"
           >
-            <IconSparkles size={18} />
+            <IconSparkles size={18} stroke={2.5} />
             <span>AI Generator</span>
           </motion.button>
         </motion.div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { IconHome, IconPlus, IconHeart, IconRobot, IconFlame } from "@tabler/icons-react";
 
@@ -17,8 +17,8 @@ export const FloatingNavigation = ({ router }: { router?: any }) => {
   const pathname = usePathname();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden flex justify-center pb-5 px-4 pointer-events-none">
-      <div className="bg-base-100/95 backdrop-blur-2xl border border-base-300/80 shadow-[0_8px_40px_rgba(0,0,0,0.18)] rounded-[2rem] px-1.5 py-1.5 flex items-center gap-0.5 pointer-events-auto">
+    <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden flex justify-center pb-6 px-4 pointer-events-none">
+      <div className="bg-base-100 border-3 border-base-content shadow-neo rounded-2xl px-2 py-2 flex items-center gap-1 pointer-events-auto">
         {navItems.map((item) => {
           const isActive =
             pathname === item.path ||
@@ -36,34 +36,34 @@ export const FloatingNavigation = ({ router }: { router?: any }) => {
               className="relative"
             >
               {isAdd ? (
-                // FAB-style center button
+                // Neo-Brutalist FAB center button
                 <div className="relative mx-1">
                   <motion.div
-                    whileTap={{ scale: 0.9 }}
-                    className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30"
+                    whileTap={{ scale: 0.9, x: 2, y: 2, boxShadow: "0px 0px 0px 0px rgba(0,0,0,1)" }}
+                    className="w-14 h-14 rounded-xl bg-primary border-3 border-base-content flex items-center justify-center shadow-neo-sm transition-shadow duration-100"
                   >
-                    <IconPlus size={26} className="text-primary-content" stroke={2.5} />
+                    <IconPlus size={30} className="text-base-content" stroke={3} />
                   </motion.div>
                 </div>
               ) : (
                 <motion.div
-                  whileTap={{ scale: 0.92 }}
-                  className="relative flex flex-col items-center justify-center w-16 h-14 gap-0.5 rounded-2xl"
+                  whileTap={{ scale: 0.9 }}
+                  className="relative flex flex-col items-center justify-center w-14 h-14 gap-1 rounded-xl"
                 >
                   {/* Active background pill */}
                   {isActive && (
                     <motion.div
                       layoutId="nav-active-bg"
-                      className="absolute inset-0 bg-primary/10 rounded-2xl"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                      className="absolute inset-0 bg-base-content rounded-xl"
+                      transition={{ type: "spring", bounce: 0.4, duration: 0.5 }}
                     />
                   )}
 
-                  <div className={`relative z-10 transition-colors duration-200 ${isActive ? "text-primary" : "text-base-content/40"}`}>
-                    <item.icon size={22} stroke={isActive ? 2.5 : 2} />
+                  <div className={`relative z-10 transition-colors duration-200 ${isActive ? "text-base-100" : "text-base-content"}`}>
+                    <item.icon size={24} stroke={isActive ? 2.5 : 2} />
                   </div>
 
-                  <span className={`relative z-10 text-[10px] font-semibold tracking-wide transition-colors duration-200 ${isActive ? "text-primary" : "text-base-content/40"}`}>
+                  <span className={`relative z-10 text-[9px] font-black tracking-wide uppercase transition-colors duration-200 ${isActive ? "text-base-100" : "text-base-content"}`}>
                     {item.label}
                   </span>
                 </motion.div>

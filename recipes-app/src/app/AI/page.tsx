@@ -42,18 +42,12 @@ const AnimatedInstructions: React.FC<{ currentTheme: any }> = ({
       transition={{ duration: 0.8 }}
       className="mb-8 text-center"
     >
-      <div
-        className="backdrop-blur-xl border rounded-3xl p-8 shadow-2xl mb-6"
-        style={{
-          background: `linear-gradient(135deg, ${currentTheme.colors.surface}f0, ${currentTheme.colors.surface}80)`,
-          borderColor: `${currentTheme.colors.primary}30`,
-        }}
-      >
+      <div className="neo-card p-8 mb-6 bg-base-200 border-4">
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-white mb-6 shadow-2xl"
+          className="neo-badge inline-flex items-center gap-2 px-6 py-3 bg-primary text-base-content mb-6"
         >
           <IconBrain size={20} />
           <span className="font-semibold">AI Recipe Generator</span>
@@ -94,19 +88,19 @@ const AnimatedInstructions: React.FC<{ currentTheme: any }> = ({
           transition={{ delay: 0.5 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 max-w-2xl mx-auto"
         >
-          <div className="glass-panel backdrop-blur-xl bg-white/20 border border-white/20 p-4 rounded-2xl text-center shadow-lg">
+          <div className="neo-card p-4 text-center bg-base-100">
             <IconSparkles size={24} className="text-purple-500 mx-auto mb-2" />
             <div className="text-sm font-semibold text-gray-700">
               AI-Powered
             </div>
           </div>
-          <div className="glass-panel backdrop-blur-xl bg-white/20 border border-white/20 p-4 rounded-2xl text-center shadow-lg">
+          <div className="neo-card p-4 text-center bg-base-100">
             <IconChefHat size={24} className="text-emerald-500 mx-auto mb-2" />
             <div className="text-sm font-semibold text-gray-700">
               Custom Recipes
             </div>
           </div>
-          <div className="glass-panel backdrop-blur-xl bg-white/20 border border-white/20 p-4 rounded-2xl text-center shadow-lg">
+          <div className="neo-card p-4 text-center bg-base-100">
             <IconCalculator size={24} className="text-blue-500 mx-auto mb-2" />
             <div className="text-sm font-semibold text-gray-700">
               Nutrition Info
@@ -223,7 +217,7 @@ const ImageSlider: React.FC = () => {
   if (validImages.length === 0) return null;
 
   return (
-    <div className="w-full h-64 mb-8 relative overflow-hidden rounded-lg shadow-lg">
+    <div className="neo-card w-full h-64 mb-8 relative overflow-hidden border-4">
       <AnimatePresence>
         <motion.img
           key={validImages[currentIndex]}
@@ -1019,9 +1013,9 @@ Format the answer as JSON with the following structure:
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="glass-panel backdrop-blur-xl bg-white/20 border border-white/30 rounded-full p-4 mb-4 shadow-2xl"
+            className="w-20 h-20 bg-accent border-3 border-base-content rounded-xl shadow-neo flex items-center justify-center mb-6"
           >
-            <IconChefHat size={36} className="text-primary sm:text-5xl" />
+            <IconChefHat size={48} stroke={2.5} className="text-base-content" />
           </motion.div>
           <h1 className="text-3xl sm:text-4xl font-bold mb-2 sm:mb-4 text-center bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
             {activeMode === "recipe-generator"
@@ -1048,10 +1042,10 @@ Format the answer as JSON with the following structure:
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+            className={`px-6 py-3 rounded-xl font-black uppercase tracking-wider text-sm transition-colors border-3 ${
               activeMode === "recipe-generator"
-                ? "bg-primary text-white"
-                : "bg-base-200 text-base-content/70 hover:bg-base-300"
+                ? "bg-primary border-base-content text-base-content shadow-neo-sm"
+                : "bg-base-200 border-transparent text-base-content hover:bg-base-300"
             }`}
             onClick={() => setActiveMode("recipe-generator")}
           >
@@ -1066,10 +1060,10 @@ Format the answer as JSON with the following structure:
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+            className={`px-6 py-3 rounded-xl font-black uppercase tracking-wider text-sm transition-colors border-3 ${
               activeMode === "calorie-counter"
-                ? "bg-primary text-white"
-                : "bg-base-200 text-base-content/70 hover:bg-base-300"
+                ? "bg-primary border-base-content text-base-content shadow-neo-sm"
+                : "bg-base-200 border-transparent text-base-content hover:bg-base-300"
             }`}
             onClick={() => setActiveMode("calorie-counter")}
           >
@@ -1084,7 +1078,7 @@ Format the answer as JSON with the following structure:
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="px-5 py-2.5 rounded-xl bg-base-200 text-base-content/70 hover:bg-base-300 transition-colors text-sm font-medium"
+            className="px-6 py-3 rounded-xl bg-base-200 border-3 border-transparent text-base-content font-black uppercase tracking-wider hover:bg-base-300 transition-colors text-sm"
             onClick={() => router.push("/ai-recipes")}
           >
             <span className="text-xs sm:text-sm font-medium">
@@ -1101,7 +1095,7 @@ Format the answer as JSON with the following structure:
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="bg-base-100 border border-base-200 rounded-3xl overflow-hidden mb-8 shadow-sm"
+              className="neo-card bg-base-200 mb-8 border-4"
             >
               <div className="p-6 sm:p-8">
                 <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
@@ -1115,7 +1109,7 @@ Format the answer as JSON with the following structure:
                   <input
                     type="text"
                     placeholder="e.g., Chicken, Basil, Garlic"
-                    className="w-full px-4 py-3 rounded-xl border border-base-300 bg-base-200 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-base-100 transition-all"
+                    className="neo-input w-full px-4 py-3 bg-base-100 text-lg"
                     value={ingredientsInput}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
                       setIngredientsInput(e.target.value)
@@ -1130,7 +1124,7 @@ Format the answer as JSON with the following structure:
                   <input
                     type="text"
                     placeholder="e.g., low-carb, spicy, vegan"
-                    className="w-full px-4 py-3 rounded-xl border border-base-300 bg-base-200 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-base-100 transition-all"
+                    className="neo-input w-full px-4 py-3 bg-base-100 text-lg"
                     value={preferences}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
                       setPreferences(e.target.value)
@@ -1141,7 +1135,7 @@ Format the answer as JSON with the following structure:
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full py-3.5 rounded-2xl bg-primary text-white font-bold text-center hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="neo-button w-full py-4 bg-primary text-base-content text-xl uppercase tracking-wider mt-4 disabled:opacity-50 disabled:shadow-none disabled:translate-y-1 disabled:translate-x-1 cursor-pointer disabled:cursor-not-allowed"
                   onClick={generateRecipe}
                   disabled={loading || !ingredientsInput.trim()}
                 >

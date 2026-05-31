@@ -66,7 +66,7 @@ const SwipeableCard: React.FC<{
       className="absolute inset-0 flex items-center justify-center"
       style={{ touchAction: "pan-y", willChange: "transform" }}
     >
-      <div className="relative w-[88vw] max-w-sm h-[62vh] md:h-[55vh] rounded-[2rem] overflow-hidden shadow-2xl bg-base-100 border border-base-200 cursor-grab active:cursor-grabbing select-none">
+      <div className="neo-card relative w-[88vw] max-w-sm h-[62vh] md:h-[55vh] overflow-hidden cursor-grab active:cursor-grabbing select-none hover:translate-x-0 hover:translate-y-0 hover:shadow-neo">
         {/* Image */}
         <Image
           src={recipe.image || "/default-image.png"}
@@ -82,28 +82,28 @@ const SwipeableCard: React.FC<{
         {/* LIKE / NOPE indicators */}
         {swipeDir === "right" && (
           <div className="absolute top-8 left-8 z-20 rotate-[-15deg]" style={{ opacity: progress }}>
-            <div className="border-4 border-emerald-400 rounded-2xl px-4 py-2">
-              <span className="text-emerald-400 font-black text-3xl tracking-widest">LIKE</span>
+            <div className="border-4 border-success bg-base-100 shadow-neo-sm rounded-xl px-4 py-2">
+              <span className="text-success font-black text-3xl tracking-widest uppercase">LIKE</span>
             </div>
           </div>
         )}
         {swipeDir === "left" && (
           <div className="absolute top-8 right-8 z-20 rotate-[15deg]" style={{ opacity: progress }}>
-            <div className="border-4 border-red-400 rounded-2xl px-4 py-2">
-              <span className="text-red-400 font-black text-3xl tracking-widest">NOPE</span>
+            <div className="border-4 border-error bg-base-100 shadow-neo-sm rounded-xl px-4 py-2">
+              <span className="text-error font-black text-3xl tracking-widest uppercase">NOPE</span>
             </div>
           </div>
         )}
 
         {/* Info overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 text-white z-10">
+        <div className="absolute bottom-0 left-0 right-0 p-6 text-white z-10 bg-gradient-to-t from-black/80 to-transparent">
           {recipe.category && (
-            <span className="inline-block px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-semibold mb-2">{recipe.category}</span>
+            <span className="inline-block px-3 py-1 border-2 border-white bg-black/50 text-white rounded-lg shadow-neo-white font-black text-xs uppercase tracking-widest mb-3">{recipe.category}</span>
           )}
-          <h2 className="text-2xl font-bold leading-tight drop-shadow-lg mb-1">{recipe.title}</h2>
-          <p className="text-sm text-white/80 line-clamp-2 drop-shadow">{recipe.description}</p>
+          <h2 className="text-3xl font-black leading-tight drop-shadow-lg mb-2">{recipe.title}</h2>
+          <p className="text-sm font-bold text-white/90 line-clamp-2 drop-shadow">{recipe.description}</p>
           {recipe.portion && (
-            <p className="text-xs text-white/60 mt-2">{recipe.portion} servings</p>
+            <p className="text-xs font-bold text-white/80 mt-2 bg-black/40 inline-block px-2 py-1 rounded-md border border-white/30">{recipe.portion} servings</p>
           )}
         </div>
       </div>
@@ -176,10 +176,12 @@ export default function RecipeTinderPage() {
   return (
     <div className="min-h-screen bg-base-100 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-center gap-2.5 px-4 py-5 border-b border-base-200 bg-base-100">
-        <IconFlame size={24} className="text-primary" />
-        <h1 className="text-xl font-bold text-base-content">Recipe Matcher</h1>
-        <span className="text-base">✨</span>
+      <div className="flex items-center justify-center gap-3 px-4 py-5 border-b-3 border-base-content bg-base-100 shadow-neo-sm">
+        <div className="w-10 h-10 border-3 border-base-content bg-accent shadow-neo-sm rounded-xl flex items-center justify-center">
+          <IconFlame size={24} className="text-base-content" stroke={2.5} />
+        </div>
+        <h1 className="text-2xl font-black text-base-content tracking-wider uppercase">Recipe Matcher</h1>
+        <span className="text-2xl">✨</span>
       </div>
 
       {/* Cards area */}
@@ -187,13 +189,13 @@ export default function RecipeTinderPage() {
         {deck.length === 0 ? (
           <div className="text-center space-y-5">
             <div className="text-7xl">🎉</div>
-            <h2 className="text-2xl font-bold text-base-content">All caught up!</h2>
-            <p className="text-base-content/50 text-sm">You've swiped through all the recipes.</p>
+            <h2 className="text-3xl font-black text-base-content uppercase">All caught up!</h2>
+            <p className="text-base-content font-bold text-lg border-2 border-base-content bg-base-200 p-4 rounded-xl shadow-neo-sm">You've swiped through all the recipes.</p>
             <button
               onClick={() => setDeck(recipes)}
-              className="flex items-center gap-2 mx-auto px-6 py-3 rounded-2xl bg-primary text-white font-semibold hover:opacity-90 transition-opacity"
+              className="neo-button flex items-center justify-center gap-2 mx-auto px-8 py-4 bg-primary text-base-content text-lg uppercase tracking-wider"
             >
-              <IconRefresh size={18} />
+              <IconRefresh size={22} stroke={2.5} />
               Start Over
             </button>
           </div>
@@ -206,7 +208,7 @@ export default function RecipeTinderPage() {
             <div className="relative w-[88vw] max-w-sm h-[62vh] md:h-[55vh] mb-8">
               {/* Background card ghost */}
               {deck.length > 1 && (
-                <div className="absolute inset-0 rounded-[2rem] bg-base-200 border border-base-300 scale-[0.96] translate-y-3 -z-10" />
+                <div className="absolute inset-0 rounded-2xl border-3 border-base-content bg-base-200 shadow-neo scale-[0.96] translate-y-3 -z-10" />
               )}
               {deck.map((recipe, index) => {
                 const isTop = index === deck.length - 1;
@@ -224,27 +226,24 @@ export default function RecipeTinderPage() {
 
             {/* Action buttons */}
             <div className="flex items-center gap-8">
-              <motion.button
-                whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+              <button
                 onClick={() => setTriggerSwipe("left")}
-                className="w-16 h-16 rounded-full bg-base-100 border-2 border-base-300 shadow-md flex items-center justify-center text-red-400 hover:bg-red-50 hover:border-red-300 transition-colors"
+                className="w-16 h-16 rounded-full neo-button flex items-center justify-center text-base-content bg-error hover:bg-red-400"
                 aria-label="Dislike"
               >
-                <IconX size={28} strokeWidth={2.5} />
-              </motion.button>
+                <IconX size={32} strokeWidth={3} />
+              </button>
 
-              <motion.button
-                whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+              <button
                 onClick={() => setTriggerSwipe("right")}
-                className="w-20 h-20 rounded-full shadow-xl flex items-center justify-center text-white"
-                style={{ background: `linear-gradient(135deg, ${currentTheme.colors.primary}, #ec4899)`, boxShadow: `0 8px 25px ${currentTheme.colors.primary}40` }}
+                className="w-20 h-20 rounded-full neo-button flex items-center justify-center text-base-content bg-success hover:bg-emerald-400"
                 aria-label="Like"
               >
-                <IconHeart size={32} fill="white" />
-              </motion.button>
+                <IconHeart size={36} fill="currentColor" stroke={2} />
+              </button>
             </div>
 
-            <p className="text-xs text-base-content/30 mt-4">Swipe right to like · left to skip</p>
+            <p className="text-sm font-bold text-base-content/60 mt-6 border-2 border-base-content/20 px-4 py-2 rounded-lg border-dashed">SWIPE RIGHT TO LIKE · LEFT TO SKIP</p>
           </>
         )}
       </div>
@@ -264,34 +263,33 @@ export default function RecipeTinderPage() {
               animate={{ y: 0, scale: 1 }}
               exit={{ y: "100%", scale: 0.9 }}
               transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="relative bg-base-100 rounded-[2rem] p-8 w-full max-w-sm shadow-2xl overflow-hidden"
+              className="relative neo-card p-8 w-full max-w-sm overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               <HeartsAnimation />
 
               {/* Image */}
-              <div className="relative w-28 h-28 rounded-3xl overflow-hidden mx-auto mb-5 shadow-lg">
-                <Image src={matchRecipe.image || "/default-image.png"} alt={matchRecipe.title} fill className="object-cover" sizes="112px" />
+              <div className="relative w-32 h-32 rounded-2xl border-3 border-base-content shadow-neo-sm overflow-hidden mx-auto mb-6">
+                <Image src={matchRecipe.image || "/default-image.png"} alt={matchRecipe.title} fill className="object-cover" sizes="128px" />
               </div>
 
               <div className="text-center relative z-10">
-                <div className="text-4xl font-black bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
-                  It's a Match! 🎉
+                <div className="text-4xl font-black bg-accent border-3 border-base-content shadow-neo-sm inline-block px-4 py-2 rounded-xl text-base-content mb-3 -rotate-2">
+                  IT'S A MATCH! 🎉
                 </div>
-                <p className="text-base-content/60 text-sm mb-1">You liked</p>
-                <h3 className="text-xl font-bold text-base-content mb-6">{matchRecipe.title}</h3>
+                <p className="text-base-content font-bold text-lg mb-1">You liked</p>
+                <h3 className="text-2xl font-black text-base-content mb-8">{matchRecipe.title}</h3>
 
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-4">
                   <Link
                     href={`/recipes/${matchRecipe.id}`}
-                    className="w-full py-3.5 rounded-2xl text-white font-bold text-center shadow-lg shadow-primary/25 transition-opacity hover:opacity-90"
-                    style={{ background: `linear-gradient(135deg, ${currentTheme.colors.primary}, #ec4899)` }}
+                    className="w-full neo-button py-4 bg-primary text-base-content text-center uppercase tracking-wider text-lg block"
                   >
                     View Recipe →
                   </Link>
                   <button
                     onClick={() => setMatchRecipe(null)}
-                    className="w-full py-3.5 rounded-2xl bg-base-200 text-base-content font-semibold hover:bg-base-300 transition-colors"
+                    className="w-full neo-button py-4 bg-base-200 text-base-content uppercase tracking-wider text-lg"
                   >
                     Keep Swiping
                   </button>

@@ -56,11 +56,11 @@ export default function RootLayout({
           content="Images sourced via Google Custom Search and other APIs are subject to their respective terms of use and copyright"
         />
       </head>
-      <body className="bg-base-200">
+      <body className="bg-base-100">
         <ThemeProvider>
           <PWARouteTracker />
           <NavbarWrapper />
-          <main className="min-h-screen container mx-auto px-4 py-8">
+          <main className="min-h-screen container mx-auto px-4 pt-24 py-8">
             <FadeInWrapper>{children}</FadeInWrapper>
           </main>
           <footer className="footer p-4 bg-base-300 text-base-content">
